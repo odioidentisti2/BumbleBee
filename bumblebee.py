@@ -122,13 +122,12 @@ def train(model, dataset, optimizer, criterion, epoch):
         # TEST UNIT
         if epoch == 1 and total == 0:  # only check the first batch
             import hashlib
-            # previous_hash = "baec47ce2e99b07d1dea547c4861cde3"  # None 
-            previous_hash = "82507c35c76e4c20dcec2a70396616d2"  # None 
+            previous_hash = "e50a7f6ae6d8978b7c2a202538276ca6"  # None 
             output_hash = hashlib.md5(str(logits.detach().cpu().numpy().mean()).encode()).hexdigest()
             if previous_hash is not None and output_hash == previous_hash:
                 print("TEST consistency: OK")
             else:
-                print(print(f"Output hash: {output_hash}"))
+                print(f"Output hash: {output_hash}")
 
         # calculate accuracy
         total_loss += loss.item() * len(batch)

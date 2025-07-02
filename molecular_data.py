@@ -101,21 +101,24 @@ def bond_features(bond):
     )
 
 def smiles_to_data(smiles, target):
-    mol = Chem.MolFromSmiles(smiles)
-    # mol = Chem.MolFromSmiles(smiles, sanitize=True)
-    
+    mol = Chem.MolFromSmiles(smiles)  # sanitize=True)
     if mol is None:
         return None
     x = torch.stack([atom_features(atom) for atom in mol.GetAtoms()])
-    edge_attr = []
-    src, dst = [], []
-    for bond in mol.GetBonds():
-        i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-        feat = bond_features(bond)
-        src += [i, j]
-        dst += [j, i]
-        edge_attr += [feat, feat]
-    edge_attr = torch.stack(edge_attr)
-    edge_index = torch.tensor([src, dst], dtype=torch.long)
+    edge_index = torch.nonzero(torch.from_numpy(Chem.rdmolops.GetAdjacencyMatrix(mol))).T
+    edge_attr = torch.stack(
+        [bond_features(mol.GetBondBetweenAtoms(edge_index[0][i].item(), edge_index[1][i].item()))
+        for i in range(edge_index.shape[1])]
+    )
+    # edge_attr = []
+    # src, dst = [], []
+    # for bond in mol.GetBonds():
+    #     i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+    #     feat = bond_features(bond)
+    #     src += [i, j]
+    #     dst += [j, i]
+    #     edge_attr += [feat, feat]
+    # edge_attr = torch.stack(edge_attr)
+    # edge_index = torch.tensor([src, dst], dtype=torch.long)
     y = torch.tensor([target], dtype=torch.float)
     return {"x": x, "edge_index": edge_index, "edge_attr": edge_attr, "y": y}
