@@ -30,6 +30,9 @@ class MAB(nn.Module):
         # Compute raw attention scores
         attn = Q_.bmm(K_.transpose(1, 2)) / (K_.size(-1) ** 0.5)
 
+        print("attn.shape:", attn.shape)
+        print("adj_mask.shape:", adj_mask.shape)
+
         # Apply mask if provided (mask shape: [B, N, N] or [B*H, N, N])
         if adj_mask is not None:
             # If mask is [B, N, N], repeat for heads to [B*H, N, N]
@@ -40,15 +43,8 @@ class MAB(nn.Module):
 
         A = torch.softmax(attn, dim=2)
         # Reshape after MHA: apply attention to V and merges heads back (split and cat)
-        # O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), dim=2), dim=2)
-        # After attention:
-        O = Q_ + A.bmm(V_)  # [B*H, N, D]
-        # Merge heads: reshape to [B, N, H*D]
-        B = Q.size(0)
-        N = Q.size(1)
-        D = Q_.size(-1)  # dim_per_head
-        H = self.num_heads
-        O = O.view(H, B, N, D).transpose(0,1).contiguous().view(B, N, H*D)
+        O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), dim=2), dim=2)
+        
         # Applies layer normalization, then adds a two-layer MLP (with ReLU and linear), then another layer norm
         O = self.ln0(O)
         O = O + self.fc_r(O)
