@@ -6,19 +6,19 @@ from molecular_data import MoleculeDataset
 
 
 class MAB(nn.Module):
-    def __init__(self, dim_Q, dim_K, num_heads):
+    def __init__(self, dim_Q, dim_K, dim_V, num_heads):
         super().__init__()
         self.num_heads = num_heads
-        self.fc_q = nn.Linear(dim_Q, dim_K)
-        self.fc_k = nn.Linear(dim_K, dim_K)
-        self.fc_v = nn.Linear(dim_K, dim_K)
-        self.fc_o = nn.Linear(dim_K, dim_K)
-        self.ln0 = nn.LayerNorm(dim_K)
-        self.ln1 = nn.LayerNorm(dim_K)
+        self.fc_q = nn.Linear(dim_Q, dim_V)
+        self.fc_k = nn.Linear(dim_K, dim_V)
+        self.fc_v = nn.Linear(dim_K, dim_V)
+        self.fc_o = nn.Linear(dim_V, dim_V)
+        self.ln0 = nn.LayerNorm(dim_V)
+        self.ln1 = nn.LayerNorm(dim_V)
         self.fc_r = nn.Sequential(
-            nn.Linear(dim_K, dim_K),
+            nn.Linear(dim_V, dim_V),
             nn.ReLU(),
-            nn.Linear(dim_K, dim_K)
+            nn.Linear(dim_V, dim_V)
         )
 
     def forward(self, Q, K):
@@ -37,7 +37,7 @@ class MAB(nn.Module):
 class SAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads):
         super().__init__()
-        self.mab = MAB(dim_in, dim_out, num_heads)
+        self.mab = MAB(dim_in, dim_in, dim_out, num_heads)
     def forward(self, X):
         return self.mab(X, X)
 
@@ -46,7 +46,7 @@ class PMA(nn.Module):
         super().__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_uniform_(self.S)
-        self.mab = MAB(dim, dim, num_heads)
+        self.mab = MAB(dim, dim, dim, num_heads)
     def forward(self, X):
         S = self.S.repeat(X.size(0), 1, 1)
         return self.mab(S, X)
