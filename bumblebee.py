@@ -5,60 +5,97 @@ from molecule_dataset import MoleculeDataset
 from attention import SAB, PMA
 
 
-class ESAMoleculeClassifier(nn.Module):
+class MAGClassifier(nn.Module):
+    """
+    Implements the MAG (Masked Attention for Graphs) model.
+    - Graphs are represented as sets of edges (with edge and node features).
+    - Uses attention-only (no message passing).
+    - Attention is masked according to adjacency matrix.
+    """
+
     def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, num_inds=32, output_dim=1):
-        super().__init__()
-        self.node_proj = nn.Linear(node_dim, hidden_dim)
-        self.edge_proj = nn.Linear(edge_dim, hidden_dim)
-        self.edge_set_proj = nn.Linear(2 * hidden_dim + hidden_dim, hidden_dim)
-        self.encoder = nn.Sequential(
-            SAB(hidden_dim, hidden_dim, num_heads),
-            SAB(hidden_dim, hidden_dim, num_heads),
-            SAB(hidden_dim, hidden_dim, num_heads)
-        )
-        self.pooling = PMA(hidden_dim, num_heads, num_inds)
+        super(MAGClassifier, self).__init__()
+
+        self.node_dim = node_dim
+        self.edge_dim = edge_dim
+        self.hidden_dim = hidden_dim
+        self.num_heads = num_heads
+        self.num_inds = num_inds
+        self.output_dim = output_dim
+
+        # Project node features for edge construction
+        self.node_encoder = nn.Linear(node_dim, hidden_dim)
+        # Project edge features
+        self.edge_encoder = nn.Linear(edge_dim, hidden_dim)
+
+        # Masked Attention Blocks for edge set (see "edge masking algorithm")
+        self.edge_attention1 = SAB(hidden_dim*2, hidden_dim*2, num_heads, dropout=0.1)
+        self.edge_attention2 = SAB(hidden_dim*2, hidden_dim*2, num_heads, dropout=0.1)
+
+        # Pool the set of edge features to a graph-level embedding
+        self.pma = PMA(hidden_dim*2, num_heads, num_seeds=1, dropout=0.1)
+
+        # Output classifier
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_dim * num_inds, hidden_dim),
+            nn.Linear(hidden_dim*2, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim)
         )
 
     def forward(self, data):
-        # data: torch_geometric Batch with .x, .edge_index, .edge_attr, .batch
-        h = self.node_proj(data.x)  # [total_nodes, hidden_dim]
-        e = self.edge_proj(data.edge_attr)  # [total_edges, hidden_dim]
+        # data: a batch from MoleculeDataset (torch_geometric.data.Data)
+        # data.x: [num_nodes, node_dim]
+        # data.edge_index: [2, num_edges]
+        # data.edge_attr: [num_edges, edge_dim]
 
-        # Compute edge features for all edges in the batch
-        src, dst = data.edge_index  # [2, total_edges]
-        edge_inputs = torch.cat([h[src], h[dst], e], dim=1)  # [total_edges, 3*hidden_dim]
-        edge_feats = self.edge_set_proj(edge_inputs)  # [total_edges, hidden_dim]
+        x = data.x                          # [num_nodes, node_dim]
+        edge_index = data.edge_index        # [2, num_edges]
+        edge_attr = data.edge_attr          # [num_edges, edge_dim]
 
-        # Group edges per graph in the batch
-        # Build a batch index for edges using the batch assignment of source nodes
-        edge_batch = data.batch[src]  # [total_edges]
+        # 1. Encode node and edge features
+        node_feat = self.node_encoder(x)                # [num_nodes, hidden_dim]
+        edge_feat = self.edge_encoder(edge_attr)        # [num_edges, hidden_dim]
 
-        # Find the max number of edges in any graph in the batch
-        num_graphs = data.num_graphs
-        counts = torch.bincount(edge_batch, minlength=num_graphs)
-        max_edges = counts.max().item()
+        # 2. Represent each edge as concatenation of its (masked) node features and edge features
+        src, dst = edge_index                          # each [num_edges]
+        edge_nodes = torch.cat([node_feat[src], node_feat[dst]], dim=1)  # [num_edges, 2*hidden_dim]
+        edge_input = torch.cat([edge_nodes, edge_feat], dim=1)           # [num_edges, 2*hidden_dim + hidden_dim]
+        # But for MAG, we want [src_node, dst_node] as single vector, optionally concatenate edge_feat.
+        edge_repr = torch.cat([node_feat[src], node_feat[dst]], dim=1)   # [num_edges, 2*hidden_dim]
+        edge_repr = edge_repr + torch.cat([edge_feat, edge_feat], dim=1) # add edge_feat to both ends
 
-        # Pad edge features per graph to shape [batch, max_edges, hidden_dim]
-        E = torch.zeros(num_graphs, max_edges, edge_feats.size(1), device=edge_feats.device)
-        adj_mask = torch.zeros(num_graphs, max_edges, dtype=torch.bool, device=edge_feats.device)
-        idxs = torch.zeros(num_graphs, dtype=torch.long, device=edge_feats.device)
-        for i in range(edge_feats.size(0)):
-            g = edge_batch[i].item()
-            pos = idxs[g]
-            E[g, pos] = edge_feats[i]
-            adj_mask[g, pos] = 1
-            idxs[g] += 1
+        # 3. Prepare attention mask for the edge set
+        # The mask ensures that attention between edges is allowed only if the two edges share a node
+        num_edges = edge_repr.size(0)
+        # Build [num_edges, num_edges] mask: mask[i, j] = 1 if edge i and edge j share a node
+        src_dst = torch.stack([src, dst], dim=1)  # [num_edges, 2]
+        edge_mask = torch.zeros((num_edges, num_edges), dtype=torch.bool, device=edge_repr.device)
+        for i in range(num_edges):
+            for j in range(num_edges):
+                # If two edges share a node, mask is True (allow attention)
+                if len(set(src_dst[i].tolist()) & set(src_dst[j].tolist())) > 0:
+                    edge_mask[i, j] = True
+        # In SAB, mask shape is [batch, num_heads, seq_len, seq_len]; add batch and head dims
+        edge_mask = edge_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, num_edges, num_edges]
 
-        # MAG encoder and pooling (batch)
-        for layer in self.encoder:
-            E = layer(E, adj_mask=adj_mask)
-        pooled = self.pooling(E, adj_mask=adj_mask)
-        logits = self.classifier(pooled.view(pooled.size(0), -1)).squeeze(-1)
-        return logits
+        # 4. Process edge set with attention blocks (masked)
+        # Add batch dimension: [1, num_edges, 2*hidden_dim]
+        edge_repr = edge_repr.unsqueeze(0)
+        edge_repr = self.edge_attention1(edge_repr, adj_mask=edge_mask)
+        edge_repr = self.edge_attention2(edge_repr, adj_mask=edge_mask)
+        # Remove batch: [num_edges, 2*hidden_dim]
+        edge_repr = edge_repr.squeeze(0)
+
+        # 5. Pool edge set to graph representation (PMA, with mask)
+        # PMA expects [batch, seq_len, feature_dim]
+        edge_repr = edge_repr.unsqueeze(0)  # [1, num_edges, 2*hidden_dim]
+        graph_repr = self.pma(edge_repr, adj_mask=None)  # [1, num_seeds=1, 2*hidden_dim]
+        graph_repr = graph_repr.squeeze(0).squeeze(0)    # [2*hidden_dim]
+
+        # 6. Classifier
+        out = self.classifier(graph_repr)                # [output_dim]
+        return out.view(-1)                              # Match [batch_size] shape for BCEWithLogitsLoss
+
 
 def train(model, loader, optimizer, criterion, epoch):
     model.train()  # set training mode
@@ -84,7 +121,7 @@ def train(model, loader, optimizer, criterion, epoch):
 def main():
     dataset = MoleculeDataset('DATASETS/MUTA_SARPY_4204.csv')
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
-    model = ESAMoleculeClassifier(dataset.node_dim, dataset.edge_dim).to(DEVICE)
+    model = MAGClassifier(dataset.node_dim, dataset.edge_dim).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
     for epoch in range(1, NUM_EPOCHS + 1):
@@ -95,7 +132,7 @@ def main():
 if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\nDEVICE: {DEVICE}")
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     LR = 1e-4
     NUM_EPOCHS = 20 
     # Set seeds for reproducibility
