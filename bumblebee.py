@@ -142,8 +142,9 @@ def main():
 
 if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # DEVICE = torch.device('cpu)
     print(f"\nDEVICE: {DEVICE}")
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     LR = 1e-4
     NUM_EPOCHS = 20 
     # Set seeds for reproducibility

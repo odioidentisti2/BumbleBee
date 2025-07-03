@@ -61,16 +61,16 @@ class MAB(nn.Module):
         if adj_mask is not None:
             adj_mask = adj_mask.expand(-1, self.num_heads, -1, -1)
 
-        # try:    
-        with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+        try:    
+            with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+                out = F.scaled_dot_product_attention(
+                    Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                )
+        except RuntimeError as e:
             out = F.scaled_dot_product_attention(
                 Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
             )
-        # except RuntimeError as e:
-        # out = F.scaled_dot_product_attention(
-        #     Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-        # )
-
+        
         # Transpose back and flatten head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
