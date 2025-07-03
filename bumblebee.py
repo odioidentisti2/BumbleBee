@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.loader import DataLoadercccc
+from torch_geometric.loader import DataLoader
 from attention import SAB, PMA
 from molecule_dataset import MoleculeDataset
 
