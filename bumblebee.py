@@ -6,11 +6,6 @@ from attention import SAB, PMA
 from molecule_dataset import MoleculeDataset
 
 class MAGClassifier(nn.Module):
-    """
-    MAG model with batch support for PyTorch Geometric DataLoader.
-    - Each graph is represented as a set of edges.
-    - Uses masked attention, where the mask is based on edge connectivity (sharing a node).
-    """
 
     def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, num_inds=32, output_dim=1):
         super(MAGClassifier, self).__init__()
@@ -26,7 +21,7 @@ class MAGClassifier(nn.Module):
         self.node_encoder = nn.Linear(node_dim, hidden_dim)
         self.edge_encoder = nn.Linear(edge_dim, hidden_dim)
 
-        # Two SAB layers for edge representations
+        # Masked Attention Blocks
         self.edge_attention1 = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
         self.edge_attention2 = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
 
@@ -77,10 +72,25 @@ class MAGClassifier(nn.Module):
                 continue
             src_dst = torch.stack([src_g, dst_g], dim=1) # [num_edges, 2]
             mask = torch.zeros((num_edges, num_edges), dtype=torch.bool, device=edge_repr.device)
-            for i in range(num_edges):
-                for j in range(num_edges):
-                    if len(set(src_dst[i].tolist()) & set(src_dst[j].tolist())) > 0:
-                        mask[i, j] = True
+
+            # GPU PARALLEL VERSION
+            # src_dst: [num_edges, 2]
+            src_nodes = src_dst[:, 0:1]  # [num_edges, 1]
+            dst_nodes = src_dst[:, 1:2]  # [num_edges, 1]
+
+            # Check for node sharing (broadcasting)
+            shared_src = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
+            shared_dst = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
+
+            mask = shared_src | shared_dst  # [num_edges, num_edges]
+
+            # # CPU version
+            # for i in range(num_edges):
+            #     for j in range(num_edges):
+            #         if len(set(src_dst[i].tolist()) & set(src_dst[j].tolist())) > 0:
+            #         # If two edges share a node, mask is True (allow attention)
+            #             mask[i, j] = True
+
             mask = mask.unsqueeze(0).unsqueeze(1) # [1, 1, num_edges, num_edges]
 
             # SAB expects [batch, seq, feat]
@@ -142,7 +152,7 @@ def main():
 
 if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # DEVICE = torch.device('cpu)
+    # DEVICE = torch.device('cpu')
     print(f"\nDEVICE: {DEVICE}")
     BATCH_SIZE = 64
     LR = 1e-4
