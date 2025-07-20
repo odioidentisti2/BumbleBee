@@ -7,6 +7,56 @@ from molecule_dataset import MoleculeDataset
 
 class MAGClassifier(nn.Module):
 
+    @staticmethod
+    # Return a boolean edge adjacency mask
+    def _edge_adjacency(source, target):
+        # stack and slice
+        src_trg = torch.stack([source, target], dim=1) # [num_edges, 2]
+        src_nodes = src_trg[:, 0:1]  # [num_edges, 1]
+        trg_nodes = src_trg[:, 1:2]  # [num_edges, 1]
+        # Create adjacency mask: edges are adjacent if they share a node
+        src_adj = (src_nodes == src_nodes.T) | (src_nodes == trg_nodes.T)
+        trg_adj = (trg_nodes == src_nodes.T) | (trg_nodes == trg_nodes.T)
+        return src_adj | trg_adj  # [num_edges, num_edges]
+
+    def _compute_graph_embeddings(self, edge_repr, src, trg, edge_batch, batch):
+        """
+        For each graph in the batch, compute the graph embedding using edge representations and attention masks.
+
+        Args:
+            edge_repr (Tensor): [total_edges, 2*hidden_dim] edge representations.
+            src (Tensor): [total_edges] source node indices for each edge.
+            trg (Tensor): [total_edges] target node indices for each edge.
+            edge_batch (Tensor): [total_edges] batch indices for each edge.
+            batch (Tensor): [total_nodes] batch indices for each node.
+
+        Returns:
+            Tensor: Graph embeddings of shape [num_graphs, 2*hidden_dim].
+        """
+        num_graphs = batch.max().item() + 1
+        out = torch.zeros((num_graphs, self.hidden_dim * 2), device=edge_repr.device)
+        for g in range(num_graphs):
+            mask_g = (edge_batch == g)
+            edge_repr_g = edge_repr[mask_g]  # [num_edges_g, 2*hidden_dim]
+            src_g = src[mask_g]
+            dst_g = trg[mask_g]
+            # Compute edge-edge attention mask
+            adj_mask = self._edge_adjacency(src_g, dst_g)
+            # attn_mask = self._edge_adjacency_CPU(src_g, dst_g)
+            adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, num_edges_g, num_edges_g]
+            # Pass through attention blocks
+            edge_repr_g = edge_repr_g.unsqueeze(0)
+            for att_layer in self.encoder:
+                if att_layer.to_be_masked:
+                    edge_repr_g = att_layer(edge_repr_g, adj_mask=adj_mask)
+                else:
+                    edge_repr_g = att_layer(edge_repr_g)
+
+            # PMA pooling
+            pooled = self.pma(edge_repr_g)
+            out[g] = pooled.squeeze(0).squeeze(0)  # [2*hidden_dim]
+        return out
+    
     def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, num_inds=32, output_dim=1):
         super(MAGClassifier, self).__init__()
 
@@ -21,9 +71,17 @@ class MAGClassifier(nn.Module):
         self.node_encoder = nn.Linear(node_dim, hidden_dim)
         self.edge_encoder = nn.Linear(edge_dim, hidden_dim)
 
-        # Masked Attention Blocks
-        self.edge_attention1 = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
-        self.edge_attention2 = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
+        # ESA encoder
+        layer_types = ['M', 'M', 'S']  # M for masked, S for self-attention
+        # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
+        self.encoder = nn.ModuleList()
+        for layer_type in layer_types:
+            layer = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
+            if layer_type == 'M':
+                layer.to_be_masked = True
+            elif layer_type == 'S':
+                layer.to_be_masked = False
+            self.encoder.append(layer)
 
         # PMA pooling (for each graph in the batch)
         self.pma = PMA(hidden_dim * 2, num_heads, num_seeds=1, dropout=0.1)
@@ -52,61 +110,7 @@ class MAGClassifier(nn.Module):
         edge_nodes = torch.cat([node_feat[src], node_feat[dst]], dim=1)  # [total_edges, 2*hidden_dim]
         edge_repr = edge_nodes + torch.cat([edge_feat, edge_feat], dim=1)
 
-        # For batching, group edges by graph in the batch
-        # We'll need to build a mask for each graph's edge set
-        out = []
-        num_graphs = batch.max().item() + 1
-        for graph_idx in range(num_graphs):
-            edge_mask = (edge_batch == graph_idx)
-            edge_repr_g = edge_repr[edge_mask]              # [num_edges_g, 2*hidden_dim]
-            src_g = src[edge_mask]
-            dst_g = dst[edge_mask]
-
-            # Edge-edge attention mask for this graph
-            # mask[i, j] = True if edge i and edge j share a node
-            num_edges = edge_repr_g.size(0)
-            if num_edges == 0:
-                # Safeguard for graphs with no edges
-                graph_emb = torch.zeros(self.hidden_dim * 2, device=edge_repr.device)
-                out.append(graph_emb)
-                continue
-            src_dst = torch.stack([src_g, dst_g], dim=1) # [num_edges, 2]
-            mask = torch.zeros((num_edges, num_edges), dtype=torch.bool, device=edge_repr.device)
-
-            # GPU PARALLEL VERSION
-            # src_dst: [num_edges, 2]
-            src_nodes = src_dst[:, 0:1]  # [num_edges, 1]
-            dst_nodes = src_dst[:, 1:2]  # [num_edges, 1]
-
-            # Check for node sharing (broadcasting)
-            shared_src = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
-            shared_dst = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
-
-            mask = shared_src | shared_dst  # [num_edges, num_edges]
-
-            # # CPU version
-            # for i in range(num_edges):
-            #     for j in range(num_edges):
-            #         if len(set(src_dst[i].tolist()) & set(src_dst[j].tolist())) > 0:
-            #         # If two edges share a node, mask is True (allow attention)
-            #             mask[i, j] = True
-
-            mask = mask.unsqueeze(0).unsqueeze(1) # [1, 1, num_edges, num_edges]
-
-            # SAB expects [batch, seq, feat]
-            edge_repr_g = edge_repr_g.unsqueeze(0)
-            edge_repr_g = self.edge_attention1(edge_repr_g, adj_mask=mask)
-            edge_repr_g = self.edge_attention2(edge_repr_g, adj_mask=mask)
-            edge_repr_g = edge_repr_g.squeeze(0) # [num_edges, 2*hidden_dim]
-
-            # PMA pooling to get single graph embedding
-            edge_repr_g = edge_repr_g.unsqueeze(0)
-            graph_emb = self.pma(edge_repr_g, adj_mask=None)   # [1, 1, 2*hidden_dim]
-            graph_emb = graph_emb.squeeze(0).squeeze(0)        # [2*hidden_dim]
-            out.append(graph_emb)
-
-        # Stack all graph representations into a batch
-        graph_repr = torch.stack(out, dim=0)    # [batch_size, 2*hidden_dim]
+        graph_repr = self._compute_graph_embeddings(edge_repr, src, dst, edge_batch, batch)  # [batch_size, 2*hidden_dim]
         logits = self.classifier(graph_repr)    # [batch_size, output_dim]
         return logits.view(-1)                  # [batch_size]
 
@@ -145,9 +149,11 @@ def main():
     model = MAGClassifier(dataset.node_dim, dataset.edge_dim).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
+    import time
+    start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
         loss, acc = train(model, loader, optimizer, criterion, epoch)
-        print(f"Epoch {epoch}: Loss {loss:.4f} Acc {acc:.4f}")
+        print(f"Epoch {epoch}: Loss {loss:.4f} Acc {acc:.4f} Time {time.time() - start_time:.2f}s")
     print("Training complete.")
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ def encoding(value, allowed_values):
 
 
 def atom_features(atom):
-    return torch.tensor(
+    return (
         encoding(atom.GetAtomicNum(), list(range(1, 54))) + 
         encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +
@@ -42,12 +42,11 @@ def atom_features(atom):
             Chem.rdchem.HybridizationType.SP3D,
             Chem.rdchem.HybridizationType.SP3D2,
             ]) +
-        [float(atom.GetIsAromatic())],
-        dtype=torch.float
+        [float(atom.GetIsAromatic())]
     )
 
 def bond_features(bond):
-    return torch.tensor(
+    return (
         encoding(bond.GetBondType(), [
             Chem.rdchem.BondType.SINGLE,
             Chem.rdchem.BondType.DOUBLE,
@@ -55,26 +54,23 @@ def bond_features(bond):
             Chem.rdchem.BondType.AROMATIC
         ]) +
         [float(bond.GetIsConjugated()),
-         float(bond.IsInRing())],
-        dtype=torch.float
+         float(bond.IsInRing())]
     )
 
+# ESA/data_loading/transforms.py > add_chemprop_features
 def smiles2graph(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
+    mol = Chem.AddHs(mol)
 
-    # Node
-    x = torch.stack([atom_features(atom) for atom in mol.GetAtoms()])
-
-    # Edges   
-    edge_index = torch.nonzero(torch.from_numpy(Chem.rdmolops.GetAdjacencyMatrix(mol))).T
-    edge_attr = torch.stack(
-        [bond_features(mol.GetBondBetweenAtoms(edge_index[0][i].item(), edge_index[1][i].item()))
-        for i in range(edge_index.shape[1])]
-    )
-
-    return Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
+    ei = torch.nonzero(torch.from_numpy(Chem.rdmolops.GetAdjacencyMatrix(mol))).T  # Edge index
+    node_feat = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
+    edge_feat = torch.tensor([
+        bond_features(mol.GetBondBetweenAtoms(ei[0][i].item(), ei[1][i].item()))
+        for i in range(ei.shape[1])
+    ], dtype=torch.float)  # Edges
+    return Data(x=node_feat, edge_index=ei, edge_attr=edge_feat)
 
 class MoleculeDataset(Dataset):
     def __init__(self, csv_path):
