@@ -4,10 +4,9 @@ from torch.nn import functional as F
 from torch.nn.init import xavier_normal_  # , xavier_uniform_, constant_ 
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
-# Multihead Attention Block
-class MAB(nn.Module):
+class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.0):
-        super(MAB, self).__init__()
+        super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.dropout = dropout  # rate of train elements randomly set to zero in each forward pass (prevent overfitting)
 
@@ -77,25 +76,29 @@ class MAB(nn.Module):
         out = out + F.mish(self.fc_o(out))
         return out
 
-# Set Attention Block: Applies MAB with same input for both Q and K (self-attention)
-class SAB(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, dropout):
-        super(SAB, self).__init__()
-        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, dropout)
+# Self-Attention Block: same input for both Q and K
+class SelfAttention(nn.Module):
+    def __init__(self, dim_in, dim_out, num_heads, dropout=0.1, to_be_masked=False):
+        super(SelfAttention, self).__init__()
+        self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
+        self.to_be_masked = to_be_masked
 
     def forward(self, X, adj_mask=None):
-        return self.mab(X, X, adj_mask=adj_mask)
-
-# Pooling by Multihead Attention (PMA): Pools a set of elements to a fixed number of outputs (seeds)
+        if self.to_be_masked:
+            assert adj_mask is not None
+        return self.mha(X, X, adj_mask=adj_mask)
+    
+# Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
+# num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
-    def __init__(self, dim, num_heads, num_seeds, dropout):
+    def __init__(self, dim, num_heads, num_seeds=32, dropout=0.1):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_normal_(self.S)
-        # MAB takes seeds as Q and the input set as K
-        self.mab = MAB(dim, dim, dim, num_heads, dropout=dropout)
+        # MultiHeadAttention takes seeds as Q and the input set as K
+        self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
 
     def forward(self, X, adj_mask=None):
-        # Repeat seeds across batch, use as queries; X as keys/values
-        return self.mab(self.S.repeat(X.size(0), 1, 1), X, adj_mask=adj_mask)
+        # Repeat seeds across batch, use seeds as queries; X as keys/values
+        return self.mha(self.S.repeat(X.size(0), 1, 1), X)

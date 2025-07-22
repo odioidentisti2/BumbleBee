@@ -5,23 +5,24 @@ from rdkit.Chem import rdmolops
 import numpy as np
 import csv
 
-TOX_MAP = {'Mutagenic': 1, 'NON-Mutagenic': 0}
 smiles_header = 'SMILES'
 label_header = 'Experimental_value'
+TOX_MAP = {'Mutagenic': 1, 'NON-Mutagenic': 0}
 
-
-# FEATURE EXTRACTORS
 
 def encoding(value, allowed_values):
-    # Return one-hot encoding of value with an extra category for "other" if value is not in allowed_values
+    """
+    Return one-hot encoding of value. 
+    Add an extra category for "other" if value is not in allowed_values
+    """
     if value not in allowed_values:
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
         return [float(value == v) for v in allowed_values] + [0]
-# in the ESA repo this is implemented weirdly: the "other" category is not extra but it overwrites the last category,
-# even if that is quite ok for positive choices only, for "formal_charge": [-1, -2, 1, 2, 0]
-#  any other charge (like -3 or +3) is mapped the same way as 0 charge.... ASK the developers!
-
+    # In the ESA repo this is implemented weirdly: the "other" category is not extra 
+    # but it overwrites the last category, even if that is quite ok for positive choices, 
+    # for "formal_charge": [-1, -2, 1, 2, 0] any other charge (like -3 or +3) is mapped 
+    # the same way as 0 charge.... ASK the developers!
 
 def atom_features(atom):
     return (
@@ -29,11 +30,11 @@ def atom_features(atom):
         encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +
-        encoding(atom.GetChiralTag(), [         
+        encoding(atom.GetChiralTag(), [    
             Chem.rdchem.CHI_UNSPECIFIED,
             Chem.rdchem.CHI_TETRAHEDRAL_CW,
             Chem.rdchem.CHI_TETRAHEDRAL_CCW,
-            # Chem.rdchem.CHI_OTHER,  # "other" is already added in the encoding function
+            # Chem.rdchem.CHI_OTHER,  # "other" is already added by the encoding function
             ]) +
         encoding(atom.GetHybridization(), [
             Chem.rdchem.HybridizationType.SP,
@@ -72,7 +73,7 @@ def smiles2graph(smiles):
     ], dtype=torch.float)  # Edges
     return Data(x=node_feat, edge_index=ei, edge_attr=edge_feat)
 
-class MoleculeDataset(Dataset):
+class GraphDataset(Dataset):
     def __init__(self, csv_path):
         super().__init__()
         self.graphs = []
@@ -83,7 +84,8 @@ class MoleculeDataset(Dataset):
                 label = row[label_header]
                 data = smiles2graph(smiles)
                 if data is not None:
-                    data.y = torch.tensor([TOX_MAP[label]], dtype=torch.float)
+                    target = TOX_MAP[label]
+                    data.y = torch.tensor([target], dtype=torch.float)
                     self.graphs.append(data)
         self.node_dim = self.graphs[0].x.size(1)
         self.edge_dim = self.graphs[0].edge_attr.size(1)

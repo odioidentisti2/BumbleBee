@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from attention import SAB, PMA
-from molecule_dataset import MoleculeDataset
+from attention import SelfAttention, PMA
+from molecule_dataset import GraphDataset
 
 class MAGClassifier(nn.Module):
 
@@ -18,44 +18,6 @@ class MAGClassifier(nn.Module):
         src_adj = (src_nodes == src_nodes.T) | (src_nodes == trg_nodes.T)
         trg_adj = (trg_nodes == src_nodes.T) | (trg_nodes == trg_nodes.T)
         return src_adj | trg_adj  # [num_edges, num_edges]
-
-    def _compute_graph_embeddings(self, edge_repr, src, trg, edge_batch, batch):
-        """
-        For each graph in the batch, compute the graph embedding using edge representations and attention masks.
-
-        Args:
-            edge_repr (Tensor): [total_edges, 2*hidden_dim] edge representations.
-            src (Tensor): [total_edges] source node indices for each edge.
-            trg (Tensor): [total_edges] target node indices for each edge.
-            edge_batch (Tensor): [total_edges] batch indices for each edge.
-            batch (Tensor): [total_nodes] batch indices for each node.
-
-        Returns:
-            Tensor: Graph embeddings of shape [num_graphs, 2*hidden_dim].
-        """
-        num_graphs = batch.max().item() + 1
-        out = torch.zeros((num_graphs, self.hidden_dim * 2), device=edge_repr.device)
-        for g in range(num_graphs):
-            mask_g = (edge_batch == g)
-            edge_repr_g = edge_repr[mask_g]  # [num_edges_g, 2*hidden_dim]
-            src_g = src[mask_g]
-            dst_g = trg[mask_g]
-            # Compute edge-edge attention mask
-            adj_mask = self._edge_adjacency(src_g, dst_g)
-            # attn_mask = self._edge_adjacency_CPU(src_g, dst_g)
-            adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, num_edges_g, num_edges_g]
-            # Pass through attention blocks
-            edge_repr_g = edge_repr_g.unsqueeze(0)
-            for att_layer in self.encoder:
-                if att_layer.to_be_masked:
-                    edge_repr_g = att_layer(edge_repr_g, adj_mask=adj_mask)
-                else:
-                    edge_repr_g = att_layer(edge_repr_g)
-
-            # PMA pooling
-            pooled = self.pma(edge_repr_g)
-            out[g] = pooled.squeeze(0).squeeze(0)  # [2*hidden_dim]
-        return out
     
     def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, num_inds=32, output_dim=1):
         super(MAGClassifier, self).__init__()
@@ -71,20 +33,32 @@ class MAGClassifier(nn.Module):
         self.node_encoder = nn.Linear(node_dim, hidden_dim)
         self.edge_encoder = nn.Linear(edge_dim, hidden_dim)
 
-        # ESA encoder
-        layer_types = ['M', 'M', 'S']  # M for masked, S for self-attention
+        # ESA BLOCK :
+        layer_types = 'MMSP'
+        # Specify the number and order of layers:
+        #   S for self-attention (SAB) 
+        #   M for masked SAB (MSAB)
+        #   P for the PMA decoder 
+        # S and M layers can be alternated in any order as desired. 
+        # For graph-level tasks, there must be a single P layer specified. 
+        # The P layer can be followed by S layers (decoder), but not by M layers.
         # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
-        self.encoder = nn.ModuleList()
-        for layer_type in layer_types:
-            layer = SAB(hidden_dim * 2, hidden_dim * 2, num_heads, dropout=0.1)
-            if layer_type == 'M':
-                layer.to_be_masked = True
-            elif layer_type == 'S':
-                layer.to_be_masked = False
-            self.encoder.append(layer)
 
-        # PMA pooling (for each graph in the batch)
-        self.pma = PMA(hidden_dim * 2, num_heads, num_seeds=1, dropout=0.1)
+        # Encoder
+        enc_layers = layer_types[:layer_types.index('P')]
+        self.encoder = nn.ModuleList()
+        for type in enc_layers:
+            assert type in 'MS'
+            self.encoder.append(SelfAttention(hidden_dim * 2, hidden_dim * 2, num_heads,
+                                    to_be_masked=(type == 'M')))
+
+        # Decoder
+        dec_layers = layer_types[layer_types.index('P') + 1:]
+        assert set(dec_layers).issubset({'S'})  # debug
+        self.decoder = nn.Sequential(PMA(hidden_dim * 2, num_heads))
+        for type in dec_layers:
+            assert type == 'S'
+            self.decoder.append(SelfAttention(hidden_dim * 2, hidden_dim * 2, num_heads))
 
         # Classifier
         self.classifier = nn.Sequential(
@@ -94,25 +68,44 @@ class MAGClassifier(nn.Module):
         )
 
     def forward(self, data):
-        # data: batch from DataLoader (torch_geometric.data.Batch)
-        x = data.x                  # [total_nodes, node_dim]
-        edge_index = data.edge_index # [2, total_edges]
-        edge_attr = data.edge_attr   # [total_edges, edge_dim]
-        batch = data.batch           # [total_nodes]
-        edge_batch = self._edge_batch(edge_index, batch) # [total_edges]
+        """
+        Args:
+            data: batch from DataLoader (torch_geometric.data.Batch)
+                data.x              # [batch_nodes, node_dim]
+                data.edge_index     # [2, batch_edges]
+                data.edge_attr      # [batch_edges, edge_dim]
+                data.batch          # [batch_nodes]
+        """
+        # PER-BATCH: Build edge set representation
+        node_feat = self.node_encoder(data.x)                # [batch_nodes, hidden_dim]
+        edge_feat = self.edge_encoder(data.edge_attr)        # [batch_edges, hidden_dim]
+        src, dst = data.edge_index                           # each [batch_edges]
+        # Concatenate [src_node, dst_node] features + edge features
+        edge_set = torch.cat([node_feat[src], node_feat[dst]], dim=1) + \
+                    torch.cat([edge_feat, edge_feat], dim=1)  # [batch_edges, 2*hidden_dim]
 
-        # Encode node and edge features
-        node_feat = self.node_encoder(x)                # [total_nodes, hidden_dim]
-        edge_feat = self.edge_encoder(edge_attr)        # [total_edges, hidden_dim]
+        # PER-GRAPH: Attention
+        batch_size = data.batch.max().item() + 1
+        edge_batch = self._edge_batch(data.edge_index, data.batch)  # [batch_edges]
+        out = torch.zeros((batch_size, self.hidden_dim * 2), device=edge_set.device)
+        for i in range(batch_size):
+            graph_mask = (edge_batch == i)
+            # Compute edge-edge adjacency mask
+            adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])
+            adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, graph_edges, graph_edges]
+            # Encoder
+            h = edge_set[graph_mask].unsqueeze(0)  # [1, graph_edges, 2*hidden_dim]
+            for layer in self.encoder:
+                if layer.to_be_masked:
+                    h = layer(h, adj_mask=adj_mask)  # Masked Self-Attention Block
+                else:
+                    h = layer(h)  #  Self-Attention Block
+            # Decoder
+            pooled = self.decoder(h)  # PMA Block
+            out[i] = pooled.squeeze(0).mean(dim=0)  # [2*hidden_dim] (aggregating seeds by mean)
 
-        # Build edge representation: [src_node, dst_node] features + edge features
-        src, dst = edge_index                           # each [total_edges]
-        edge_nodes = torch.cat([node_feat[src], node_feat[dst]], dim=1)  # [total_edges, 2*hidden_dim]
-        edge_repr = edge_nodes + torch.cat([edge_feat, edge_feat], dim=1)
-
-        graph_repr = self._compute_graph_embeddings(edge_repr, src, dst, edge_batch, batch)  # [batch_size, 2*hidden_dim]
-        logits = self.classifier(graph_repr)    # [batch_size, output_dim]
-        return logits.view(-1)                  # [batch_size]
+        logits = self.classifier(out)    # [batch_size, output_dim]
+        return logits.view(-1)           # [batch_size]
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
@@ -144,7 +137,7 @@ def train(model, loader, optimizer, criterion, epoch):
     return total_loss / total, correct / total
 
 def main():
-    dataset = MoleculeDataset('DATASETS/MUTA_SARPY_4204.csv')
+    dataset = GraphDataset('DATASETS/MUTA_SARPY_4204.csv')
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
     model = MAGClassifier(dataset.node_dim, dataset.edge_dim).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
