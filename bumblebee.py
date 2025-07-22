@@ -19,7 +19,7 @@ class MAGClassifier(nn.Module):
         trg_adj = (trg_nodes == src_nodes.T) | (trg_nodes == trg_nodes.T)
         return src_adj | trg_adj  # [num_edges, num_edges]
     
-    def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, num_inds=32, output_dim=1):
+    def __init__(self, node_dim, edge_dim, hidden_dim=256, num_heads=8, num_inds=32, output_dim=1):
         super(MAGClassifier, self).__init__()
 
         self.node_dim = node_dim
@@ -29,9 +29,13 @@ class MAGClassifier(nn.Module):
         self.num_inds = num_inds
         self.output_dim = output_dim
 
-        # Node and edge encoders
-        self.node_encoder = nn.Linear(node_dim, hidden_dim)
-        self.edge_encoder = nn.Linear(edge_dim, hidden_dim)
+        # MultiLayer Perceptron  (in the ESA repo is 2 layers)
+        dropout_p = 0  # TEMPORARY
+        self.node_edge_mlp = nn.Sequential(
+            nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),  # [2*node_dim + edge_dim, hidden_dim]
+            nn.Dropout(p=dropout_p) if dropout_p > 0 else nn.Identity(),
+            nn.Mish(),
+        )
 
         # ESA BLOCK :
         layer_types = 'MMSP'
@@ -49,20 +53,20 @@ class MAGClassifier(nn.Module):
         self.encoder = nn.ModuleList()
         for type in enc_layers:
             assert type in 'MS'
-            self.encoder.append(SelfAttention(hidden_dim * 2, hidden_dim * 2, num_heads,
+            self.encoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads,
                                     to_be_masked=(type == 'M')))
 
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         assert set(dec_layers).issubset({'S'})  # debug
-        self.decoder = nn.Sequential(PMA(hidden_dim * 2, num_heads))
+        self.decoder = nn.Sequential(PMA(hidden_dim, num_heads))
         for type in dec_layers:
             assert type == 'S'
-            self.decoder.append(SelfAttention(hidden_dim * 2, hidden_dim * 2, num_heads))
+            self.decoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads))
 
         # Classifier
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim)
         )
@@ -76,25 +80,23 @@ class MAGClassifier(nn.Module):
                 data.edge_attr      # [batch_edges, edge_dim]
                 data.batch          # [batch_nodes]
         """
-        # PER-BATCH: Build edge set representation
-        node_feat = self.node_encoder(data.x)                # [batch_nodes, hidden_dim]
-        edge_feat = self.edge_encoder(data.edge_attr)        # [batch_edges, hidden_dim]
+        # PER-BATCH: Build edge set embedding
         src, dst = data.edge_index                           # each [batch_edges]
-        # Concatenate [src_node, dst_node] features + edge features
-        edge_set = torch.cat([node_feat[src], node_feat[dst]], dim=1) + \
-                    torch.cat([edge_feat, edge_feat], dim=1)  # [batch_edges, 2*hidden_dim]
+        # Concatenate node (src and dst) and edge features
+        edge_feat = torch.cat([data.x[src], data.x[dst], data.edge_attr], dim=1)
+        batched_h = self.node_edge_mlp(edge_feat)  # [batch_edges, hidden_dim]
 
         # PER-GRAPH: Attention
         batch_size = data.batch.max().item() + 1
         edge_batch = self._edge_batch(data.edge_index, data.batch)  # [batch_edges]
-        out = torch.zeros((batch_size, self.hidden_dim * 2), device=edge_set.device)
+        out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
         for i in range(batch_size):
             graph_mask = (edge_batch == i)
             # Compute edge-edge adjacency mask
             adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])
             adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, graph_edges, graph_edges]
             # Encoder
-            h = edge_set[graph_mask].unsqueeze(0)  # [1, graph_edges, 2*hidden_dim]
+            h = batched_h[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
             for layer in self.encoder:
                 if layer.to_be_masked:
                     h = layer(h, adj_mask=adj_mask)  # Masked Self-Attention Block
@@ -102,7 +104,7 @@ class MAGClassifier(nn.Module):
                     h = layer(h)  #  Self-Attention Block
             # Decoder
             pooled = self.decoder(h)  # PMA Block
-            out[i] = pooled.squeeze(0).mean(dim=0)  # [2*hidden_dim] (aggregating seeds by mean)
+            out[i] = pooled.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
 
         logits = self.classifier(out)    # [batch_size, output_dim]
         return logits.view(-1)           # [batch_size]
@@ -114,7 +116,7 @@ class MAGClassifier(nn.Module):
         # (assumes all edges within a graph)
         return node_batch[edge_index[0]]
 
-
+# trainer.fit
 def train(model, loader, optimizer, criterion, epoch):
     model.train()  # set training mode
     total_loss = 0

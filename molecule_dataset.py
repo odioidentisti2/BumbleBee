@@ -1,7 +1,6 @@
 import torch
 from torch_geometric.data import Data, Dataset
 from rdkit import Chem
-from rdkit.Chem import rdmolops
 import numpy as np
 import csv
 
@@ -65,7 +64,8 @@ def smiles2graph(smiles):
         return None
     mol = Chem.AddHs(mol)
 
-    ei = torch.nonzero(torch.from_numpy(Chem.rdmolops.GetAdjacencyMatrix(mol))).T  # Edge index
+    adj_matrix = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    ei = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]
     node_feat = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
     edge_feat = torch.tensor([
         bond_features(mol.GetBondBetweenAtoms(ei[0][i].item(), ei[1][i].item()))
