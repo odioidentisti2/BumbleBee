@@ -11,30 +11,28 @@ class MAGClassifier(nn.Module):
     # Return a boolean edge adjacency mask
     def _edge_adjacency(source, target):
         # stack and slice
-        src_trg = torch.stack([source, target], dim=1) # [num_edges, 2]
-        src_nodes = src_trg[:, 0:1]  # [num_edges, 1]
-        trg_nodes = src_trg[:, 1:2]  # [num_edges, 1]
+        src_dst = torch.stack([source, target], dim=1) # [num_edges, 2]
+        src_nodes = src_dst[:, 0:1]  # [num_edges, 1]
+        dst_nodes = src_dst[:, 1:2]  # [num_edges, 1]
         # Create adjacency mask: edges are adjacent if they share a node
-        src_adj = (src_nodes == src_nodes.T) | (src_nodes == trg_nodes.T)
-        trg_adj = (trg_nodes == src_nodes.T) | (trg_nodes == trg_nodes.T)
-        return src_adj | trg_adj  # [num_edges, num_edges]
+        src_adj = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
+        dst_adj = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
+        return src_adj | dst_adj  # [num_edges, num_edges]
     
-    def __init__(self, node_dim, edge_dim, hidden_dim=256, num_heads=8, num_inds=32, output_dim=1):
+    def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, output_dim=1):
         super(MAGClassifier, self).__init__()
 
         self.node_dim = node_dim
         self.edge_dim = edge_dim
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
-        self.num_inds = num_inds
         self.output_dim = output_dim
 
-        # MultiLayer Perceptron  (in the ESA repo is 2 layers)
-        dropout_p = 0  # TEMPORARY
+        # MultiLayer Perceptron  
         self.node_edge_mlp = nn.Sequential(
-            nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),  # [2*node_dim + edge_dim, hidden_dim]
-            nn.Dropout(p=dropout_p) if dropout_p > 0 else nn.Identity(),
+            nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),
             nn.Mish(),
+            nn.Linear(hidden_dim, hidden_dim),
         )
 
         # ESA BLOCK :
@@ -67,7 +65,7 @@ class MAGClassifier(nn.Module):
         # Classifier
         self.classifier = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Mish(), 
             nn.Linear(hidden_dim, output_dim)
         )
 
@@ -107,7 +105,7 @@ class MAGClassifier(nn.Module):
             out[i] = pooled.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
 
         logits = self.classifier(out)    # [batch_size, output_dim]
-        return logits.view(-1)           # [batch_size]
+        return logits.view(-1)           # [batch_size]  potrei usare torch.flatten
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
@@ -157,7 +155,13 @@ if __name__ == "__main__":
     print(f"\nDEVICE: {DEVICE}")
     BATCH_SIZE = 64
     LR = 1e-4
-    NUM_EPOCHS = 20 
+    NUM_EPOCHS = 20
+    ## ESA
+    # HIDDEN_DIM = 256
+    # BATCH_SIZE = 128
+    # NUM_HEADS = 16
+    # LAYER_TYPES = ['MSMSMP']
+    # DROPOUT = 0
     # Set seeds for reproducibility
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
