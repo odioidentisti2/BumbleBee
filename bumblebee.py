@@ -28,7 +28,7 @@ class MAGClassifier(nn.Module):
         self.num_heads = num_heads
         self.output_dim = output_dim
 
-        # MultiLayer Perceptron  
+        # Edge feature encoder (input MLP)
         self.node_edge_mlp = nn.Sequential(
             nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),
             nn.Mish(),
@@ -51,19 +51,21 @@ class MAGClassifier(nn.Module):
         self.encoder = nn.ModuleList()
         for type in enc_layers:
             assert type in 'MS'
+            self.encoder.append(nn.LayerNorm(hidden_dim, eps=1e-8))
             self.encoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads,
                                     to_be_masked=(type == 'M')))
 
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         assert set(dec_layers).issubset({'S'})  # debug
-        self.decoder = nn.Sequential(PMA(hidden_dim, num_heads))
+        self.decoder = nn.Sequential(nn.LayerNorm(hidden_dim, eps=1e-8), PMA(hidden_dim, num_heads))
         for type in dec_layers:
             assert type == 'S'
+            self.decoder.append(nn.LayerNorm(hidden_dim, eps=1e-8))
             self.decoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads))
 
-        # Classifier
-        self.classifier = nn.Sequential(
+        # Classifier (output MLP)
+        self.output_mlp = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.Mish(), 
             nn.Linear(hidden_dim, output_dim)
@@ -96,16 +98,18 @@ class MAGClassifier(nn.Module):
             # Encoder
             h = batched_h[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
             for layer in self.encoder:
-                if layer.to_be_masked:
+                if hasattr(layer, "to_be_masked"):
+                # if layer.to_be_masked:
                     h = layer(h, adj_mask=adj_mask)  # Masked Self-Attention Block
                 else:
-                    h = layer(h)  #  Self-Attention Block
+                    h = layer(h)  #  Self-Attention Block or LayerNorm
             # Decoder
             pooled = self.decoder(h)  # PMA Block
             out[i] = pooled.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
 
-        logits = self.classifier(out)    # [batch_size, output_dim]
-        return logits.view(-1)           # [batch_size]  potrei usare torch.flatten
+        logits = self.output_mlp(out)    # [batch_size, output_dim]
+        return torch.flatten(logits)     # [batch_size]
+        # return logits.view(-1)           # [batch_size]
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
@@ -157,11 +161,11 @@ if __name__ == "__main__":
     LR = 1e-4
     NUM_EPOCHS = 20
     ## ESA
-    # HIDDEN_DIM = 256
+    # HIDDEN_DIM = 256  # = MLP_hidden = graph_dim
     # BATCH_SIZE = 128
     # NUM_HEADS = 16
     # LAYER_TYPES = ['MSMSMP']
-    # DROPOUT = 0
+    # DROPOUT = 0  # mlp?
     # Set seeds for reproducibility
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
