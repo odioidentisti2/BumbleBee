@@ -76,22 +76,20 @@ class MultiHeadAttention(nn.Module):
         out = out + F.mish(self.fc_o(out))
         return out
 
-# Self-Attention Block: same input for both Q and K
+# Same input for both Q and K
 class SelfAttention(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, dropout=0.1, to_be_masked=False):
+    def __init__(self, dim_in, dim_out, num_heads, dropout=0.0):
         super(SelfAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
-        self.to_be_masked = to_be_masked
 
     def forward(self, X, adj_mask=None):
-        if self.to_be_masked:
-            assert adj_mask is not None
         return self.mha(X, X, adj_mask=adj_mask)
     
+   
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
-    def __init__(self, dim, num_heads, num_seeds=32, dropout=0.1):
+    def __init__(self, dim, num_heads, num_seeds=32, dropout=0.0):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
@@ -102,3 +100,20 @@ class PMA(nn.Module):
     def forward(self, X, adj_mask=None):
         # Repeat seeds across batch, use seeds as queries; X as keys/values
         return self.mha(self.S.repeat(X.size(0), 1, 1), X)
+
+
+class TransformerBlock(nn.Module):
+    def __init__(self, hidden_dim, num_heads, layer_type):
+        super(TransformerBlock, self).__init__()
+        self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
+        self.layer_type = layer_type
+        if layer_type == 'P':
+            self.attention = PMA(hidden_dim, num_heads)
+        else:
+            self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
+
+    def forward(self, X, adj_mask=None):
+        assert (self.layer_type == 'M') == (adj_mask is not None)
+        return self.attention(self.norm(X), adj_mask=adj_mask)
+        
+            

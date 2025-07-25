@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from attention import SelfAttention, PMA
+from attention import TransformerBlock
 from molecule_dataset import GraphDataset
 
 class MAGClassifier(nn.Module):
@@ -37,32 +38,29 @@ class MAGClassifier(nn.Module):
 
         # ESA BLOCK :
         layer_types = 'MMSP'
+        assert layer_types.count('P') == 1
         # Specify the number and order of layers:
-        #   S for self-attention (SAB) 
-        #   M for masked SAB (MSAB)
-        #   P for the PMA decoder 
-        # S and M layers can be alternated in any order as desired. 
-        # For graph-level tasks, there must be a single P layer specified. 
+        #   S for self-attention
+        #   M for masked self-attention
+        #   P for the PMA decoder
+        # S and M layers can be alternated in any order as desired.
+        # For graph-level tasks, there must be a single P layer specified.
         # The P layer can be followed by S layers (decoder), but not by M layers.
         # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
 
         # Encoder
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
-        for type in enc_layers:
-            assert type in 'MS'
-            self.encoder.append(nn.LayerNorm(hidden_dim, eps=1e-8))
-            self.encoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads,
-                                    to_be_masked=(type == 'M')))
+        for layer_type in enc_layers:
+            assert layer_type in 'MS'
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
 
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
-        assert set(dec_layers).issubset({'S'})  # debug
-        self.decoder = nn.Sequential(nn.LayerNorm(hidden_dim, eps=1e-8), PMA(hidden_dim, num_heads))
-        for type in dec_layers:
-            assert type == 'S'
-            self.decoder.append(nn.LayerNorm(hidden_dim, eps=1e-8))
-            self.decoder.append(SelfAttention(hidden_dim, hidden_dim, num_heads))
+        self.decoder = nn.Sequential(TransformerBlock(hidden_dim, num_heads, 'P'))
+        for layer_type in dec_layers:
+            assert layer_type == 'S'
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
 
         # Classifier (output MLP)
         self.output_mlp = nn.Sequential(
@@ -98,13 +96,12 @@ class MAGClassifier(nn.Module):
             # Encoder
             h = batched_h[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
             for layer in self.encoder:
-                if getattr(layer, "to_be_masked", False):
-                # if layer.to_be_masked:
-                    h = layer(h, adj_mask=adj_mask)  # Masked Self-Attention Block
+                if layer.layer_type == 'M':  # Masked Self-Attention Block
+                    h = layer(h, adj_mask=adj_mask)
                 else:
-                    h = layer(h)  #  Self-Attention Block or LayerNorm
+                    h = layer(h)
             # Decoder
-            pooled = self.decoder(h)  # PMA Block
+            pooled = self.decoder(h)
             out[i] = pooled.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
@@ -165,7 +162,7 @@ if __name__ == "__main__":
     # BATCH_SIZE = 128
     # NUM_HEADS = 16
     # LAYER_TYPES = ['MSMSMP']
-    # DROPOUT = 0  # mlp?
+    # DROPOUT = 0
     # Set seeds for reproducibility
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
