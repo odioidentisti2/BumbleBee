@@ -98,7 +98,7 @@ class MAGClassifier(nn.Module):
             # Encoder
             h = batched_h[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
             for layer in self.encoder:
-                getattr(layer, "to_be_masked", False):
+                if getattr(layer, "to_be_masked", False):
                 # if layer.to_be_masked:
                     h = layer(h, adj_mask=adj_mask)  # Masked Self-Attention Block
                 else:
