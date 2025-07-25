@@ -113,7 +113,39 @@ class TransformerBlock(nn.Module):
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
 
     def forward(self, X, adj_mask=None):
-        assert (self.layer_type == 'M') == (adj_mask is not None)
+        # assert (self.layer_type == 'M') == (adj_mask is not None)
+        if self.layer_type != 'M':
+            adj_mask = None
         return self.attention(self.norm(X), adj_mask=adj_mask)
+    
+class ESA(nn.Module):
+    # Specify the number and order of layers:
+    #   S for self-attention
+    #   M for masked self-attention
+    #   P for the PMA decoder
+    # S and M layers can be alternated in any order as desired.
+    # For graph-level tasks, there must be a single P layer specified.
+    # The P layer can be followed by S layers (decoder), but not by M layers.
+    # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
+    def __init__(self, hidden_dim, num_heads, layer_types):
+        super(ESA, self).__init__()
+        assert layer_types.count('P') == 1
+        # Encoder
+        enc_layers = layer_types[:layer_types.index('P')]
+        self.encoder = nn.ModuleList()
+        for layer_type in enc_layers:
+            assert layer_type in 'MS'
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+        # Decoder
+        dec_layers = layer_types[layer_types.index('P') + 1:]
+        self.decoder = nn.Sequential(TransformerBlock(hidden_dim, num_heads, 'P'))
+        for layer_type in dec_layers:
+            assert layer_type == 'S'
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+
+    def forward(self, X, adj_mask=None):
+        for layer in self.encoder:
+            X = layer(X, adj_mask=adj_mask)
+        return self.decoder(X)
         
             

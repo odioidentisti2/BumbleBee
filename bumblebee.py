@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from attention import SelfAttention, PMA
+from attention import *
 from attention import TransformerBlock
 from molecule_dataset import GraphDataset
 
@@ -36,31 +36,8 @@ class MAGClassifier(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
         )
 
-        # ESA BLOCK :
-        layer_types = 'MMSP'
-        assert layer_types.count('P') == 1
-        # Specify the number and order of layers:
-        #   S for self-attention
-        #   M for masked self-attention
-        #   P for the PMA decoder
-        # S and M layers can be alternated in any order as desired.
-        # For graph-level tasks, there must be a single P layer specified.
-        # The P layer can be followed by S layers (decoder), but not by M layers.
-        # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
-
-        # Encoder
-        enc_layers = layer_types[:layer_types.index('P')]
-        self.encoder = nn.ModuleList()
-        for layer_type in enc_layers:
-            assert layer_type in 'MS'
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
-
-        # Decoder
-        dec_layers = layer_types[layer_types.index('P') + 1:]
-        self.decoder = nn.Sequential(TransformerBlock(hidden_dim, num_heads, 'P'))
-        for layer_type in dec_layers:
-            assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+        # ESA BLOCK
+        self.esa = ESA(hidden_dim, num_heads, 'MMSP')
 
         # Classifier (output MLP)
         self.output_mlp = nn.Sequential(
@@ -82,7 +59,7 @@ class MAGClassifier(nn.Module):
         src, dst = data.edge_index                           # each [batch_edges]
         # Concatenate node (src and dst) and edge features
         edge_feat = torch.cat([data.x[src], data.x[dst], data.edge_attr], dim=1)
-        batched_h = self.node_edge_mlp(edge_feat)  # [batch_edges, hidden_dim]
+        batched_X = self.node_edge_mlp(edge_feat)  # [batch_edges, hidden_dim]
 
         # PER-GRAPH: Attention
         batch_size = data.batch.max().item() + 1
@@ -93,16 +70,9 @@ class MAGClassifier(nn.Module):
             # Compute edge-edge adjacency mask
             adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])
             adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, graph_edges, graph_edges]
-            # Encoder
-            h = batched_h[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
-            for layer in self.encoder:
-                if layer.layer_type == 'M':  # Masked Self-Attention Block
-                    h = layer(h, adj_mask=adj_mask)
-                else:
-                    h = layer(h)
-            # Decoder
-            pooled = self.decoder(h)
-            out[i] = pooled.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
+            X = batched_X[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
+            graph_out = self.esa(X, adj_mask=adj_mask)  # [1, graph_edges, hidden_dim]
+            out[i] = graph_out.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
