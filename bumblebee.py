@@ -36,11 +36,6 @@ class MAGClassifier(nn.Module):
 
         # Classifier
         self.output_mlp = getMLP(hidden_dim, 128, output_dim)
-        # self.output_mlp = nn.Sequential(
-        #     nn.Linear(hidden_dim, hidden_dim),
-        #     nn.Mish(), 
-        #     nn.Linear(hidden_dim, output_dim)
-        # )
 
     def forward(self, data):
         """
