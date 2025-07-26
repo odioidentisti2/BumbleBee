@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from attention import ESA
+from esa import ESA, getMLP
 from molecule_dataset import GraphDataset
 
 class MAGClassifier(nn.Module):
@@ -29,21 +29,18 @@ class MAGClassifier(nn.Module):
         self.output_dim = output_dim
 
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = nn.Sequential(
-            nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),
-            nn.Mish(),
-            nn.Linear(hidden_dim, hidden_dim),
-        )
+        self.input_mlp = getMLP(2 * self.node_dim + self.edge_dim, 128, hidden_dim)
 
         # ESA BLOCK
         self.esa = ESA(hidden_dim, num_heads, 'MMSP')
 
         # Classifier
-        self.output_mlp = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Mish(), 
-            nn.Linear(hidden_dim, output_dim)
-        )
+        self.output_mlp = getMLP(hidden_dim, 128, output_dim)
+        # self.output_mlp = nn.Sequential(
+        #     nn.Linear(hidden_dim, hidden_dim),
+        #     nn.Mish(), 
+        #     nn.Linear(hidden_dim, output_dim)
+        # )
 
     def forward(self, data):
         """

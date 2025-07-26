@@ -2,12 +2,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from attention import *
 
-# def get_mlp(in_dim, out_dim):
-#     return nn.Sequential(
-#             nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),
-#             nn.Mish(),
-#             nn.Linear(hidden_dim, hidden_dim),
-#         )
+def getMLP(in_dim, inter_dim, out_dim):
+    return nn.Sequential(
+            nn.Linear(in_dim, inter_dim),
+            nn.Mish(),
+            nn.Linear(inter_dim, out_dim),
+        )
+
 
 class TransformerBlock(nn.Module):
     def __init__(self, hidden_dim, num_heads, layer_type):
@@ -23,12 +24,10 @@ class TransformerBlock(nn.Module):
         # assert (self.layer_type == 'M') == (adj_mask is not None)
         if self.layer_type != 'M':
             adj_mask = None
-        X = self.norm(X)  # Pre-LayerNormalization
-        out = self.attention(X, adj_mask=adj_mask)  # Attention
+        out = self.attention(self.norm(X), adj_mask=adj_mask)  # Pre-LayerNorm
         if self.layer_type != 'P':
             out = X + out  # Residual connection
-        return out
-    
+        return out    
     
 class ESA(nn.Module):
     # Specify the number and order of layers:
