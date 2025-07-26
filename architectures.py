@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from attention import *
 
-def getMLP(in_dim, inter_dim, out_dim):
+def mlp(in_dim, inter_dim, out_dim):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
@@ -20,18 +20,19 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = getMLP(hidden_dim, mlp_hidden_dim, hidden_dim)
+        self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None):
         if self.layer_type != 'M':
             adj_mask = None
         # Attention
-        out_attn = self.attention(self.norm(X), adj_mask=adj_mask)  # Pre-LayerNorm
+        out = self.attention(self.norm(X), adj_mask=adj_mask)  # Pre-LayerNorm
         if self.layer_type != 'P':
-            out_attn = X + out_attn  # Residual connection
+            out = X + out  # Residual connection
+        # out = out
         # MLP
-        out_mlp = self.mlp(self.norm_mlp(out_attn))  # Pre-LayerNorm
-        out = out_attn + out_mlp  # Residual connection
+        out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
+        out = out + out_mlp  # Residual connection
         return out
 
 class ESA(nn.Module):
