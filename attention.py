@@ -56,9 +56,9 @@ class MultiHeadAttention(nn.Module):
         K = K.transpose(1, 2)
         V = V.transpose(1, 2)
 
-        # Attention mask
+        # Attention mask: add num_head dimension
         if adj_mask is not None:
-            adj_mask = adj_mask.expand(-1, self.num_heads, -1, -1)
+            adj_mask = adj_mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
 
         try:    
             with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
@@ -116,7 +116,10 @@ class TransformerBlock(nn.Module):
         # assert (self.layer_type == 'M') == (adj_mask is not None)
         if self.layer_type != 'M':
             adj_mask = None
-        return self.attention(self.norm(X), adj_mask=adj_mask)
+        out = self.attention(self.norm(X), adj_mask=adj_mask)  # Pre-LayerNorm
+        if self.layer_type != 'P':
+            out = X + out  # Residual connection
+        return out    
     
 class ESA(nn.Module):
     # Specify the number and order of layers:
@@ -126,7 +129,6 @@ class ESA(nn.Module):
     # S and M layers can be alternated in any order as desired.
     # For graph-level tasks, there must be a single P layer specified.
     # The P layer can be followed by S layers (decoder), but not by M layers.
-    # Always use nn.ModuleList (or nn.Sequential) for lists of layers in PyTorch!
     def __init__(self, hidden_dim, num_heads, layer_types):
         super(ESA, self).__init__()
         assert layer_types.count('P') == 1
@@ -142,10 +144,16 @@ class ESA(nn.Module):
         for layer_type in dec_layers:
             assert layer_type == 'S'
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+        # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask=None):
+    def forward(self, X, adj_mask):
+         # Squeeze/Unsqueeze batch dimension before/after attention
+        X = X.unsqueeze(0) 
+        adj_mask = adj_mask.unsqueeze(0)
+        enc = X
         for layer in self.encoder:
-            X = layer(X, adj_mask=adj_mask)
-        return self.decoder(X)
-        
-            
+            enc = layer(enc, adj_mask=adj_mask)
+        enc = enc + X  # Residual connection
+        out = self.decoder(enc).squeeze(0).mean(dim=0)  # Aggregate seeds by mean
+        return F.mish(out)  # Final output projection
+        # return F.mish(self.decoder_linear(out))  # Final output projection

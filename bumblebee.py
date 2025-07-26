@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from attention import *
-from attention import TransformerBlock
+from attention import ESA
 from molecule_dataset import GraphDataset
 
 class MAGClassifier(nn.Module):
@@ -29,8 +28,8 @@ class MAGClassifier(nn.Module):
         self.num_heads = num_heads
         self.output_dim = output_dim
 
-        # Edge feature encoder (input MLP)
-        self.node_edge_mlp = nn.Sequential(
+        # Edge feature encoder (node-edge MLP)
+        self.input_mlp = nn.Sequential(
             nn.Linear(2 * self.node_dim + self.edge_dim, hidden_dim),
             nn.Mish(),
             nn.Linear(hidden_dim, hidden_dim),
@@ -39,7 +38,7 @@ class MAGClassifier(nn.Module):
         # ESA BLOCK
         self.esa = ESA(hidden_dim, num_heads, 'MMSP')
 
-        # Classifier (output MLP)
+        # Classifier
         self.output_mlp = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.Mish(), 
@@ -59,7 +58,7 @@ class MAGClassifier(nn.Module):
         src, dst = data.edge_index                           # each [batch_edges]
         # Concatenate node (src and dst) and edge features
         edge_feat = torch.cat([data.x[src], data.x[dst], data.edge_attr], dim=1)
-        batched_X = self.node_edge_mlp(edge_feat)  # [batch_edges, hidden_dim]
+        batched_X = self.input_mlp(edge_feat)  # [batch_edges, hidden_dim]
 
         # PER-GRAPH: Attention
         batch_size = data.batch.max().item() + 1
@@ -67,12 +66,10 @@ class MAGClassifier(nn.Module):
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
         for i in range(batch_size):
             graph_mask = (edge_batch == i)
+            X = batched_X[graph_mask]  # [graph_edges, hidden_dim]
             # Compute edge-edge adjacency mask
-            adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])
-            adj_mask = adj_mask.unsqueeze(0).unsqueeze(1)  # [1, 1, graph_edges, graph_edges]
-            X = batched_X[graph_mask].unsqueeze(0)  # [1, graph_edges, hidden_dim]
-            graph_out = self.esa(X, adj_mask=adj_mask)  # [1, graph_edges, hidden_dim]
-            out[i] = graph_out.squeeze(0).mean(dim=0)  # [hidden_dim] (aggregating seeds by mean)
+            adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
+            out[i] = self.esa(X, adj_mask=adj_mask)  # [hidden_dim]
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
@@ -114,6 +111,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
     import time
+    print(time.strftime("%Y-%m-%d %H:%M:%S"))
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
         loss, acc = train(model, loader, optimizer, criterion, epoch)
