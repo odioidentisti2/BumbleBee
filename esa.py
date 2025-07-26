@@ -11,7 +11,7 @@ def getMLP(in_dim, inter_dim, out_dim):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, hidden_dim, num_heads, layer_type):
+    def __init__(self, hidden_dim, num_heads, layer_type, mlp_hidden_dim=256):
         super(TransformerBlock, self).__init__()
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
@@ -20,7 +20,7 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = getMLP(hidden_dim, 256, hidden_dim)
+        self.mlp = getMLP(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None):
         if self.layer_type != 'M':
@@ -32,8 +32,8 @@ class TransformerBlock(nn.Module):
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out_attn))  # Pre-LayerNorm
         out = out_attn + out_mlp  # Residual connection
-        return out    
-    
+        return out
+
 class ESA(nn.Module):
     # Specify the number and order of layers:
     #   S for self-attention

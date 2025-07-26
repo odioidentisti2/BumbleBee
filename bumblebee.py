@@ -19,23 +19,15 @@ class MAGClassifier(nn.Module):
         dst_adj = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
         return src_adj | dst_adj  # [num_edges, num_edges]
     
-    def __init__(self, node_dim, edge_dim, hidden_dim=128, num_heads=8, output_dim=1):
+    def __init__(self, node_dim, edge_dim, hidden_dim=128, mlp_hidden_dim=128, num_heads=8, output_dim=1):
         super(MAGClassifier, self).__init__()
-
-        self.node_dim = node_dim
-        self.edge_dim = edge_dim
         self.hidden_dim = hidden_dim
-        self.num_heads = num_heads
-        self.output_dim = output_dim
-
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = getMLP(2 * self.node_dim + self.edge_dim, 128, hidden_dim)
-
+        self.input_mlp = getMLP(2 * node_dim + edge_dim, mlp_hidden_dim, hidden_dim)
         # ESA BLOCK
         self.esa = ESA(hidden_dim, num_heads, 'MMSP')
-
         # Classifier
-        self.output_mlp = getMLP(hidden_dim, 128, output_dim)
+        self.output_mlp = getMLP(hidden_dim, mlp_hidden_dim, output_dim)
 
     def forward(self, data):
         """
