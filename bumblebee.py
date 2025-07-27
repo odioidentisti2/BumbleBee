@@ -88,24 +88,52 @@ def train(model, loader, optimizer, criterion, epoch):
         total += batch.num_graphs
     return total_loss / total, correct / total
 
+def test(model, loader, criterion):
+    model.eval()  # set evaluation mode
+    total_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for batch in loader:
+            batch = batch.to(DEVICE)
+            targets = batch.y.view(-1).to(DEVICE)
+            logits = model(batch)
+            loss = criterion(logits, targets)
+            total_loss += loss.item() * batch.num_graphs
+            preds = (torch.sigmoid(logits) > 0.5).float()
+            correct += (preds == targets).sum().item()
+            total += batch.num_graphs
+    return total_loss / total, correct / total
+
 def main():
-    dataset = GraphDataset('DATASETS/MUTA_SARPY_4204.csv')
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
-    model = MAGClassifier(dataset.node_dim, dataset.edge_dim).to(DEVICE)
+    print(f"/nTraining on: {dataset_path}")
+    trainingset = GraphDataset(dataset_path) #, split='Training')
+    loader = DataLoader(trainingset, batch_size=BATCH_SIZE, shuffle=False)
+    model = MAGClassifier(trainingset.node_dim, trainingset.edge_dim).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
-    import time
-    print(time.strftime("%Y-%m-%d %H:%M:%S"))
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
         loss, acc = train(model, loader, optimizer, criterion, epoch)
         print(f"Epoch {epoch}: Loss {loss:.4f} Acc {acc:.4f} Time {time.time() - start_time:.2f}s")
     print("Training complete.")
+    
+    # model.eval()
+    # test_loss, test_acc = test(model, loader, criterion)  # Same loader as training
+    # print(f"Same Loader Test Loss: {test_loss:.4f} Test Acc: {test_acc:.4f}")
+    
+    # print(f"\nTesting on: {dataset_path}")
+    # testset = GraphDataset(dataset_path) #, split='test')
+    # test_loader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
+    # test_loss, test_acc = test(model, test_loader, criterion)
+    # print(f"Test Loss: {test_loss:.4f} Test Acc: {test_acc:.4f}")
+    # print("Testing complete.")
 
 if __name__ == "__main__":
+    import time
+    print(time.strftime("%Y-%m-%d %H:%M:%S"))
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # DEVICE = torch.device('cpu')
-    print(f"\nDEVICE: {DEVICE}")
+    print(f"DEVICE: {DEVICE}")
     BATCH_SIZE = 64
     LR = 1e-4
     NUM_EPOCHS = 20
@@ -118,4 +146,5 @@ if __name__ == "__main__":
     # Set seeds for reproducibility
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
+    dataset_path = 'DATASETS/MUTA_SARPY_4204.csv'
     main()

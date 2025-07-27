@@ -6,6 +6,7 @@ import csv
 
 smiles_header = 'SMILES'
 label_header = 'Experimental_value'
+split_header = 'Status'
 TOX_MAP = {'Mutagenic': 1, 'NON-Mutagenic': 0}
 
 
@@ -74,12 +75,14 @@ def smiles2graph(smiles):
     return Data(x=node_feat, edge_index=ei, edge_attr=edge_feat)
 
 class GraphDataset(Dataset):
-    def __init__(self, csv_path):
+    def __init__(self, csv_path, split=None):
         super().__init__()
         self.graphs = []
         with open(csv_path, 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
+                if split is not None and row[split_header] != split:
+                    continue                    
                 smiles = row[smiles_header]
                 label = row[label_header]
                 data = smiles2graph(smiles)
@@ -87,8 +90,12 @@ class GraphDataset(Dataset):
                     target = TOX_MAP[label]
                     data.y = torch.tensor([target], dtype=torch.float)
                     self.graphs.append(data)
-        self.node_dim = self.graphs[0].x.size(1)
-        self.edge_dim = self.graphs[0].edge_attr.size(1)
+        
+        if self.graphs:  # Check if we have any graphs
+            self.node_dim = self.graphs[0].x.size(1)
+            self.edge_dim = self.graphs[0].edge_attr.size(1)
+        else:
+            raise ValueError(f"No graphs found for split: {split}")
 
     def len(self):
         return len(self.graphs)
