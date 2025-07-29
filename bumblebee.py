@@ -70,7 +70,6 @@ class MAGClassifier(nn.Module):
 def train(model, loader, optimizer, criterion, epoch):
     model.train()  # set training mode
     total_loss = 0
-    correct = 0
     total = 0
     for batch in loader:
         batch = batch.to(DEVICE)
@@ -80,13 +79,10 @@ def train(model, loader, optimizer, criterion, epoch):
         loss = criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
         optimizer.step()  # update weights
-
-        # calculate accuracy
+        # calculate statistics
         total_loss += loss.item() * batch.num_graphs
-        preds = (torch.sigmoid(logits) > 0.5).float()
-        correct += (preds == targets).sum().item()
         total += batch.num_graphs
-    return total_loss / total, correct / total
+    return total_loss / total
 
 def test(model, loader, criterion):
     model.eval()  # set evaluation mode
@@ -106,38 +102,41 @@ def test(model, loader, criterion):
     return total_loss / total, correct / total
 
 def main():
-    print(f"/nTraining on: {dataset_path}")
-    trainingset = GraphDataset(dataset_path) #, split='Training')
-    loader = DataLoader(trainingset, batch_size=BATCH_SIZE, shuffle=False)
+    print(f"\nTraining on: {dataset_path}")
+    # trainingset = GraphDataset(dataset_path)
+    trainingset = GraphDataset(dataset_path, split='Training')
+    loader = DataLoader(trainingset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
     model = MAGClassifier(trainingset.node_dim, trainingset.edge_dim).to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
     start_time = time.time()
     for epoch in range(1, NUM_EPOCHS + 1):
-        loss, acc = train(model, loader, optimizer, criterion, epoch)
-        print(f"Epoch {epoch}: Loss {loss:.4f} Acc {acc:.4f} Time {time.time() - start_time:.2f}s")
+        loss = train(model, loader, optimizer, criterion, epoch)
+        print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
     print("Training complete.")
-    
-    # model.eval()
-    # test_loss, test_acc = test(model, loader, criterion)  # Same loader as training
-    # print(f"Same Loader Test Loss: {test_loss:.4f} Test Acc: {test_acc:.4f}")
-    
-    # print(f"\nTesting on: {dataset_path}")
-    # testset = GraphDataset(dataset_path) #, split='test')
-    # test_loader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
-    # test_loss, test_acc = test(model, test_loader, criterion)
-    # print(f"Test Loss: {test_loss:.4f} Test Acc: {test_acc:.4f}")
-    # print("Testing complete.")
+
+    loss, acc  = test(model, loader, criterion)
+    print(f"Final Training Loss: {loss:.3f} Acc: {acc:.3f}")
+
+    print(f"\nTesting on: {dataset_path}")
+    # testset = GraphDataset(dataset_path)
+    testset = GraphDataset(dataset_path, split='Test')
+    test_loader = DataLoader(testset, batch_size=BATCH_SIZE)
+    test_loss, test_acc = test(model, test_loader, criterion)
+    print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
+    print("Testing complete.")
 
 if __name__ == "__main__":
     import time
+    print()
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"DEVICE: {DEVICE}")
-    BATCH_SIZE = 64
+    BATCH_SIZE = 64  # reducing waste since drop_last=True
     LR = 1e-4
     NUM_EPOCHS = 20
     ## ESA
+    # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
     # HIDDEN_DIM = 256  # = MLP_hidden = graph_dim
     # BATCH_SIZE = 128
     # NUM_HEADS = 16

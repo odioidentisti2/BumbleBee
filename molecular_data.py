@@ -24,38 +24,38 @@ def encoding(value, allowed_values):
     # for "formal_charge": [-1, -2, 1, 2, 0] any other charge (like -3 or +3) is mapped 
     # the same way as 0 charge.... ASK the developers!
 
-def atom_features(atom):
+def atom_features(atom):  # 84
     return (
-        encoding(atom.GetAtomicNum(), list(range(1, 54))) + 
-        encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +
-        encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +
-        encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +
-        encoding(atom.GetChiralTag(), [    
+        encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
+        encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
+        encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
+        encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1
+        encoding(atom.GetChiralTag(), [
             Chem.rdchem.CHI_UNSPECIFIED,
             Chem.rdchem.CHI_TETRAHEDRAL_CW,
             Chem.rdchem.CHI_TETRAHEDRAL_CCW,
             # Chem.rdchem.CHI_OTHER,  # "other" is already added by the encoding function
-            ]) +
+            ]) +  # 3 + 1
         encoding(atom.GetHybridization(), [
             Chem.rdchem.HybridizationType.SP,
             Chem.rdchem.HybridizationType.SP2,
             Chem.rdchem.HybridizationType.SP3,
             Chem.rdchem.HybridizationType.SP3D,
             Chem.rdchem.HybridizationType.SP3D2,
-            ]) +
-        [float(atom.GetIsAromatic())]
+            ]) +  # 5 + 1
+        [float(atom.GetIsAromatic())]  # 1
     )
 
-def bond_features(bond):
+def bond_features(bond):  # 7
     return (
         encoding(bond.GetBondType(), [
             Chem.rdchem.BondType.SINGLE,
             Chem.rdchem.BondType.DOUBLE,
             Chem.rdchem.BondType.TRIPLE,
             Chem.rdchem.BondType.AROMATIC
-        ]) +
-        [float(bond.GetIsConjugated()),
-         float(bond.IsInRing())]
+        ]) +  # 4 + 1
+        [float(bond.GetIsConjugated()),  # 1
+         float(bond.IsInRing())]  # 1
     )
 
 # ESA/data_loading/transforms.py > add_chemprop_features
@@ -90,12 +90,15 @@ class GraphDataset(Dataset):
                     target = TOX_MAP[label]
                     data.y = torch.tensor([target], dtype=torch.float)
                     self.graphs.append(data)
+                else:
+                    print(f"Invalid SMILES: {smiles}")
+        print(f"Loaded {len(self.graphs)} molecules")
         
-        if self.graphs:  # Check if we have any graphs
+        if self.graphs:
             self.node_dim = self.graphs[0].x.size(1)
             self.edge_dim = self.graphs[0].edge_attr.size(1)
         else:
-            raise ValueError(f"No graphs found for split: {split}")
+            raise ValueError(f"No data")
 
     def len(self):
         return len(self.graphs)
