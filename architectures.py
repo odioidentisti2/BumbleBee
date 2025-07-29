@@ -70,4 +70,4 @@ class ESA(nn.Module):
         enc = enc + X  # Residual connection
         out = self.decoder(enc).squeeze(0).mean(dim=0)  # Aggregate seeds by mean
         return F.mish(out)  # Final output projection
-        # return F.mish(self.decoder_linear(out))  # Final output projection
+        # return F.mish(self.decoder_linear(out))  # Final output projection 

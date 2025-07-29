@@ -100,3 +100,4 @@ class PMA(nn.Module):
     def forward(self, X, adj_mask=None):
         # Repeat seeds across batch, use seeds as queries; X as keys/values
         return self.mha(self.S.repeat(X.size(0), 1, 1), X, adj_mask=adj_mask)
+ 
