@@ -1,5 +1,28 @@
 import torch
 
+
+def get_first_unique_index(t):
+    # This is taken from Stack Overflow :)
+    unique, idx, counts = torch.unique(t, sorted=True, return_inverse=True, return_counts=True)
+    _, ind_sorted = torch.sort(idx, stable=True)
+    cum_sum = counts.cumsum(0)
+    zero = torch.tensor([0], device=torch.device("cuda:0"))
+    cum_sum = torch.cat((zero, cum_sum[:-1]))
+    first_indicies = ind_sorted[cum_sum]
+    return first_indicies
+
+def generate_consecutive_tensor(input_tensor, final):
+    # Calculate the length of each segment
+    lengths = input_tensor[1:] - input_tensor[:-1]
+    # Append the final length
+    lengths = torch.cat((lengths, torch.tensor([final - input_tensor[-1]], device=torch.device("cuda:0"))))
+    # Create ranges for each segment
+    ranges = [torch.arange(0, length, device=torch.device("cuda:0")) for length in lengths]
+    # Concatenate all ranges into a single tensor
+    result = torch.cat(ranges)
+    return result
+
+
 # Return a boolean edge adjacency mask
 def edge_adjacency(source, target):
     # stack and slice
@@ -20,5 +43,17 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
         dtype=torch.bool,
         requires_grad=False,
     )
-    edge_batch_mapping = b_map.index_select(0, edge_index[0, :])
     edge_batch_mapping = b_map[b_edge_index[0]]
+    edge_adj_matrix = edge_adjacency(b_edge_index[0], b_edge_index[1])
+    edge_batch_index_to_original_index = generate_consecutive_tensor(
+        get_first_unique_index(edge_batch_mapping), edge_batch_mapping.shape[0]
+    )
+    eam_nonzero = edge_adj_matrix.nonzero()
+    adj_mask[
+        edge_batch_mapping[eam_nonzero[:, 0]],
+        edge_batch_index_to_original_index[eam_nonzero[:, 0]],
+        edge_batch_index_to_original_index[eam_nonzero[:, 1]],
+    ] = True
+    adj_mask = ~adj_mask
+    adj_mask = adj_mask.unsqueeze(1)
+    return adj_mask
