@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from architectures import ESA, mlp
 from molecular_data import GraphDataset
+from adj_mask_utils import *
 from depict import *
 
 class MAGClassifier(nn.Module):
@@ -18,7 +19,8 @@ class MAGClassifier(nn.Module):
         # Create adjacency mask: edges are adjacent if they share a node
         src_adj = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
         dst_adj = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
-        return src_adj | dst_adj  # [num_edges, num_edges]
+        adj_mask = src_adj | dst_adj  # [num_edges, num_edges]
+        return adj_mask.fill_diagonal_(0)  # # Mask out self-adjacency
     
     def __init__(self, node_dim, edge_dim, hidden_dim=128, mlp_hidden_dim=128, num_heads=8, output_dim=1):
         super(MAGClassifier, self).__init__()
@@ -54,7 +56,7 @@ class MAGClassifier(nn.Module):
             graph_mask = (edge_batch == i)
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
             # Compute edge-edge adjacency mask
-            adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
+            adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
             if return_attention:
                 out[i], attn = self.esa(h, adj_mask, return_attention)
                 attn_weights.append(attn)
