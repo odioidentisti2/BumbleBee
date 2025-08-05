@@ -66,13 +66,14 @@ def smiles2graph(smiles):
     mol = Chem.AddHs(mol)
 
     adj_matrix = Chem.rdmolops.GetAdjacencyMatrix(mol)
-    ei = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]
     node_feat = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
+    ei = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]
+    
     edge_feat = torch.tensor([
         bond_features(mol.GetBondBetweenAtoms(ei[0][i].item(), ei[1][i].item()))
         for i in range(ei.shape[1])
     ], dtype=torch.float)  # Edges
-    return Data(x=node_feat, edge_index=ei, edge_attr=edge_feat)
+    return Data(x=node_feat, edge_index=ei, edge_attr=edge_feat, mol=mol, smiles=smiles)
 
 class GraphDataset(Dataset):
     def __init__(self, csv_path, split=None):
