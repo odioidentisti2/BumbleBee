@@ -4,7 +4,7 @@ import torch
 import io
 
 
-def depict(mol, graph_attention, graph_edge_index):
+def depict(mol, attention, edge_index):
     """
     Visualize molecule with attention-based highlighting in a popup window
     
@@ -20,16 +20,16 @@ def depict(mol, graph_attention, graph_edge_index):
         return None
     
     # Convert attention weights to numpy
-    if torch.is_tensor(graph_attention):
-        weights = graph_attention.detach().cpu().numpy()
+    if torch.is_tensor(attention):
+        weights = attention.detach().cpu().numpy()
     else:
-        weights = graph_attention
+        weights = attention
     
     # Convert edge_index to numpy if needed
-    if torch.is_tensor(graph_edge_index):
-        edge_index = graph_edge_index.detach().cpu().numpy()
+    if torch.is_tensor(edge_index):
+        edge_index = edge_index.detach().cpu().numpy()
     else:
-        edge_index = graph_edge_index
+        edge_index = edge_index
     
     # Get bond indices and atoms for highlighting
     highlight_bonds = []
@@ -65,7 +65,8 @@ def depict(mol, graph_attention, graph_edge_index):
                 # Also color the connected atoms
                 atom_colors[src_idx] = (1.0, 1.0-intensity*0.5, 1.0-intensity*0.5)
                 atom_colors[dst_idx] = (1.0, 1.0-intensity*0.5, 1.0-intensity*0.5)
-                print(bond_idx, intensity)
+                
+                # print(bond_idx, intensity)
     
     # Create drawer
     drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
@@ -88,16 +89,18 @@ def depict(mol, graph_attention, graph_edge_index):
     
     drawer.FinishDrawing()
     
-    # Get image data and display in popup
-    img_data = drawer.GetDrawingText()
+    # # Get image data and display in popup
+    # img_data = drawer.GetDrawingText()
     
-    # Convert to PIL Image
-    img = Image.open(io.BytesIO(img_data))
+    # # Convert to PIL Image
+    # img = Image.open(io.BytesIO(img_data))
     
-    # Show in popup window
-    img.show()
+    # # Show in popup window
+    # img.show()
     
-    print(f"Displayed molecule with {len(highlight_bonds)} highlighted bonds and {len(highlight_atoms)} highlighted atoms")
-    # print(f"Attention range: {weights.min():.3f} - {weights.max():.3f}")
-    
-    return img_data
+    # print(f"Displayed molecule with {len(highlight_bonds)} highlighted bonds and {len(highlight_atoms)} highlighted atoms")
+    # print(f"Attention range: {attention.min():.3f} - {attention.max():.3f}")
+    # print(attention)
+    # input("Press Enter to continue...")
+
+    # return img_data

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.nn.init import xavier_normal_  # , xavier_uniform_, constant_ 
+from torch.nn.init import xavier_normal_, xavier_uniform_, constant_ 
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
 class MultiHeadAttention(nn.Module):
@@ -30,18 +30,18 @@ class MultiHeadAttention(nn.Module):
         # constant_(self.fc_o.bias, 0.01)
 
         # NOTE: this additional LN for queries/keys might be useful for some datasets (DOCKSTRING)
-        # self.ln_q = nn.LayerNorm(dim_Q, eps=1e-8)
-        # self.ln_k = nn.LayerNorm(dim_K, eps=1e-8)
+        self.ln_q = nn.LayerNorm(dim_Q, eps=1e-8)
+        self.ln_k = nn.LayerNorm(dim_K, eps=1e-8)
 
-    def forward(self, Q, K, adj_mask=None):
+    def forward(self, Q, K, adj_mask=None, return_attention=False):
         # Project Q, K, V
         Q = self.fc_q(Q)
         V = self.fc_v(K)
         K = self.fc_k(K)
 
         # Additional normalisation for queries/keys. See above
-        # Q = self.ln_q(Q).to(torch.bfloat16)
-        # K = self.ln_k(K).to(torch.bfloat16)
+        Q = self.ln_q(Q)
+        K = self.ln_k(K)
 
         # Reshape for multi-head attention: [batch, seq_len, num_heads, head_dim]
         batch_size = Q.size(0)
@@ -60,20 +60,38 @@ class MultiHeadAttention(nn.Module):
         if adj_mask is not None:
             adj_mask = adj_mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
 
-        try:    
-            with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+        if return_attention:
+            # Manual attention computation to preserve mask information in weights
+            scale = head_dim ** -0.5
+            attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale            
+            if adj_mask is not None:
+                # Apply mask: set masked positions to -inf before softmax
+                attn_scores = attn_scores.masked_fill(adj_mask == 0, float('-inf'))            
+            # Softmax to get attention weights
+            attn_weights = F.softmax(attn_scores, dim=-1)            
+            # Important: For masked positions, softmax(-inf) = 0, so masked connections have 0 attention
+            # This preserves graph connectivity in the attention weights            
+            if self.training and self.dropout > 0:
+                attn_weights = F.dropout(attn_weights, p=self.dropout)            
+            out = torch.matmul(attn_weights, V)
+        else:
+            try:    
+                with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+                    out = F.scaled_dot_product_attention(
+                        Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                    )
+                # print("Using efficient attention kernel")
+            except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
                 )
-        except RuntimeError as e:
-            out = F.scaled_dot_product_attention(
-                Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-            )
         
-        # Transpose back and flatten head dimension
+        # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
+        if return_attention:
+            return out, attn_scores.mean(dim=1)  # averaging attn_weights across heads
         return out
 
 # Same input for both Q and K
@@ -82,10 +100,10 @@ class SelfAttention(nn.Module):
         super(SelfAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
-    def forward(self, X, adj_mask=None):
-        return self.mha(X, X, adj_mask=adj_mask)
-    
-   
+    def forward(self, X, adj_mask=None, return_attention=False):
+        return self.mha(X, X, adj_mask, return_attention)
+
+
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
@@ -97,7 +115,7 @@ class PMA(nn.Module):
         # MultiHeadAttention takes seeds as Q and the input set as K
         self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
 
-    def forward(self, X, adj_mask=None):
-        # Repeat seeds across batch, use seeds as queries; X as keys/values
-        return self.mha(self.S.repeat(X.size(0), 1, 1), X, adj_mask=adj_mask)
- 
+    def forward(self, X, adj_mask=None, return_attention=False):
+        # Repeat seeds across batch: use seeds as queries, X as keys/values
+        seeds = self.S.repeat(X.size(0), 1, 1)
+        return self.mha(seeds, X, adj_mask, return_attention)

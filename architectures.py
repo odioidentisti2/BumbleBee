@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+# from attention import *
 from attention import *
 
 def mlp(in_dim, inter_dim, out_dim):
@@ -22,17 +23,22 @@ class TransformerBlock(nn.Module):
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
-    def forward(self, X, adj_mask=None):
+    def forward(self, X, adj_mask=None, return_attention=False):
         if self.layer_type != 'M':
             adj_mask = None
         # Attention
-        out = self.attention(self.norm(X), adj_mask=adj_mask)  # Pre-LayerNorm
+        if return_attention:
+            out, attn_scores = self.attention(self.norm(X), adj_mask=adj_mask, return_attention=True)
+        else:
+            out = self.attention(self.norm(X), adj_mask=adj_mask)
+            attn_scores = None
         if self.layer_type != 'P':
             out = X + out  # Residual connection
-        # out = out
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
+        if return_attention:
+            return out, attn_scores
         return out
 
 class ESA(nn.Module):
@@ -54,13 +60,14 @@ class ESA(nn.Module):
             self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
-        self.decoder = nn.Sequential(TransformerBlock(hidden_dim, num_heads, 'P'))
+        self.decoder = nn.ModuleList()
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P'))
         for layer_type in dec_layers:
             assert layer_type == 'S'
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask):
+    def forward(self, X, adj_mask, return_attention=True):
          # Squeeze/Unsqueeze batch dimension before/after attention
         X = X.unsqueeze(0) 
         adj_mask = adj_mask.unsqueeze(0)
@@ -68,6 +75,18 @@ class ESA(nn.Module):
         for layer in self.encoder:
             enc = layer(enc, adj_mask=adj_mask)
         enc = enc + X  # Residual connection
-        out = self.decoder(enc).squeeze(0).mean(dim=0)  # Aggregate seeds by mean
+        for layer in self.decoder:
+            if return_attention and layer.layer_type == 'P':
+                enc, attn_scores = layer(enc, return_attention=return_attention)
+                attn_scores = attn_scores.sum(dim=1)  # Aggregate seeds by sum
+            else:
+                enc = layer(enc)
+        out = enc.squeeze(0)  # Remove batch dimension  (DEBUG)
+        out = out.mean(dim=0)
+        # out = self.decoder(enc).squeeze(0).mean(dim=0)  # Aggregate seeds by mean
+        if return_attention:
+            attn_scores = attn_scores.squeeze(0)  # Remove batch dimension  (DEBUG)
+            attn_weights = F.softmax(attn_scores, dim=-1)
+            return F.mish(out), attn_weights
         return F.mish(out)  # Final output projection
         # return F.mish(self.decoder_linear(out))  # Final output projection 

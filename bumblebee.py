@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from architectures import ESA, mlp
 from molecular_data import GraphDataset
+from depict import *
 
 class MAGClassifier(nn.Module):
 
@@ -29,7 +30,7 @@ class MAGClassifier(nn.Module):
         # Classifier
         self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
 
-    def forward(self, data):
+    def forward(self, data, return_attention=False):
         """
         Args:
             data: batch from DataLoader (torch_geometric.data.Batch)
@@ -42,20 +43,33 @@ class MAGClassifier(nn.Module):
         src, dst = data.edge_index                           # each [batch_edges]
         # Concatenate node (src and dst) and edge features
         edge_feat = torch.cat([data.x[src], data.x[dst], data.edge_attr], dim=1)
-        batched_X = self.input_mlp(edge_feat)  # [batch_edges, hidden_dim]
+        batched_h = self.input_mlp(edge_feat)  # [batch_edges, hidden_dim]
 
         # PER-GRAPH: Attention
         batch_size = data.batch.max().item() + 1
         edge_batch = self._edge_batch(data.edge_index, data.batch)  # [batch_edges]
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
+        attn_weights = []
         for i in range(batch_size):
             graph_mask = (edge_batch == i)
-            X = batched_X[graph_mask]  # [graph_edges, hidden_dim]
+            h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
             # Compute edge-edge adjacency mask
             adj_mask = self._edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
-            out[i] = self.esa(X, adj_mask=adj_mask)  # [hidden_dim]
+            if return_attention:
+                out[i], attn = self.esa(h, adj_mask, return_attention)
+                attn_weights.append(attn)
+                # Per-graph edge_index
+                graph_edges = data.edge_index[:, graph_mask]
+                graph_nodes = (data.batch == i).nonzero(as_tuple=True)[0]
+                offset = graph_nodes[0].item()
+                graph_edge_index = graph_edges - offset  # subtracting the offset (1st node index)
+                depict(data.mol[i], attn, graph_edge_index)
+            else:
+                out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
+        if return_attention:
+            return torch.flatten(logits), attn_weights
         return torch.flatten(logits)     # [batch_size]
         # return logits.view(-1)           # [batch_size]
 
@@ -71,11 +85,17 @@ def train(model, loader, optimizer, criterion, epoch):
     model.train()  # set training mode
     total_loss = 0
     total = 0
+    batch_num = 0
     for batch in loader:
+        batch_num += 1
         batch = batch.to(DEVICE)
         targets = batch.y.view(-1).to(DEVICE)
         optimizer.zero_grad()  # zero gradients
-        logits = model(batch)  # forward pass
+        # if batch_num == 1:
+        logits, batch_attention = model(batch, return_attention=True)  # forward pass
+        # else:
+        #     logits = model(batch)  # forward pass
+        # logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
         optimizer.step()  # update weights
@@ -93,7 +113,8 @@ def test(model, loader, criterion):
         for batch in loader:
             batch = batch.to(DEVICE)
             targets = batch.y.view(-1).to(DEVICE)
-            logits = model(batch)
+            # logits, batch_attention = model(batch, return_attention=True)  # forward pass
+            logits = model(batch)  # forward pass
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             preds = (torch.sigmoid(logits) > 0.5).float()
