@@ -68,16 +68,15 @@ class MAGClassifier(nn.Module):
                     graph_nodes = (data.batch == i).nonzero(as_tuple=True)[0]
                     offset = graph_nodes[0].item()
                     graph_edge_index = graph_edges - offset  # subtracting the offset (1st node index)
-                    # depict(data.mol[i], attn, graph_edge_index)
+                    depict(data.mol[i], attn, graph_edge_index)
                 else:
                     _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
+        if device.type == 'cuda':
+            print('TEST:', out == _out)
+            print(out.shape, _out.shape)
+            print(out, _out)
+        else:
             out = _out
-        # if device.type == 'cuda':
-        #     print('TEST:', out == _out)
-        #     print(out.shape, _out.shape)
-        #     print(out, _out)
-        # else:
-        #     out = _out
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         # if return_attention:

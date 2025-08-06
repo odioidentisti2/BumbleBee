@@ -47,7 +47,7 @@ def edge_adjacency(source, target):
     src_adj = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
     dst_adj = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
     adj_mask = src_adj | dst_adj  # [num_edges, num_edges]
-    return adj_mask.fill_diagonal_(0)  # # Mask out self-adjacency
+    return adj_mask.fill_diagonal_(False)  # # Mask out self-adjacency
 
 def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     """
@@ -80,5 +80,4 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
         ei_to_original_index[eam_nonzero[:, 0]],
         ei_to_original_index[eam_nonzero[:, 1]],
     ] = True
-    adj_mask = ~adj_mask  # WHY INVERTING THE MASK?
     return adj_mask

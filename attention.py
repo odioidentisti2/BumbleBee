@@ -66,7 +66,7 @@ class MultiHeadAttention(nn.Module):
             attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale            
             if adj_mask is not None:
                 # Apply mask: set masked positions to -inf before softmax
-                attn_scores = attn_scores.masked_fill(adj_mask == 0, float('-inf'))            
+                attn_scores = attn_scores.masked_fill(~adj_mask, float('-inf'))            
             # Softmax to get attention weights
             attn_weights = F.softmax(attn_scores, dim=-1)            
             # Important: For masked positions, softmax(-inf) = 0, so masked connections have 0 attention
