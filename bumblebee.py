@@ -47,7 +47,7 @@ class MAGClassifier(nn.Module):
             adj_mask = edge_mask(data.edge_index, data.batch, data.num_graphs, max_edges)
             out = self.esa(dense_batch_h, adj_mask, return_attention=return_attention)  # [batch_size, hidden_dim]
 
-        if True:  # CPU: per-graph Attention
+        else:  # CPU: per-graph Attention
             print("Using CPU attention")
             # Initialize output tensor
             _out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
@@ -72,12 +72,13 @@ class MAGClassifier(nn.Module):
                     # depict(data.mol[i], attn, graph_edge_index)
                 else:
                     _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
-        if device.type == 'cuda':
-            print('TEST:', out == _out)
-            print(out.shape, _out.shape)
-            print(out, _out)
-        else:
             out = _out
+        # if device.type == 'cuda':
+        #     print('TEST:', out == _out)
+        #     print(out.shape, _out.shape)
+        #     print(out, _out)
+        # else:
+        #     out = _out
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         # if return_attention:
