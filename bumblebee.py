@@ -41,15 +41,14 @@ class MAGClassifier(nn.Module):
 
         device = edge_feat.device
         if device.type == 'cuda':  # GPU: batch Attention
-            print("Using GPU attention")
+            # print("Using GPU attention")
             max_edges = max([g.num_edges for g in data.to_data_list()])
             dense_batch_h, _ = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
             adj_mask = edge_mask(data.edge_index, data.batch, data.num_graphs, max_edges)
             out = self.esa(dense_batch_h, adj_mask, return_attention=return_attention)  # [batch_size, hidden_dim]
 
         else:  # CPU: per-graph Attention
-            print("Using CPU attention")
-            # Initialize output tensor
+            # print("Using CPU attention")
             _out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
             attn_weights = []
             for i in range(batch_size):
