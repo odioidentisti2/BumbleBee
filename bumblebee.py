@@ -47,7 +47,7 @@ class MAGClassifier(nn.Module):
             adj_mask = edge_mask(data.edge_index, data.batch, data.num_graphs, max_edges)
             out = self.esa(dense_batch_h, adj_mask, return_attention=return_attention)  # [batch_size, hidden_dim]
 
-        elif True:  # CPU: per-graph Attention
+        if True:  # CPU: per-graph Attention
             print("Using CPU attention")
             # Initialize output tensor
             _out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
