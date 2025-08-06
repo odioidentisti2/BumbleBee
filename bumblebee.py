@@ -40,7 +40,7 @@ class MAGClassifier(nn.Module):
         edge_batch = self._edge_batch(data.edge_index, data.batch)  # [batch_edges]
 
         device = edge_feat.device
-        if device == 'cuda':  # GPU: batch Attention
+        if device.type == 'cuda':  # GPU: batch Attention
             print("Using GPU attention")
             max_edges = max([g.num_edges for g in data.to_data_list()])
             dense_batch_h, _ = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
@@ -72,10 +72,12 @@ class MAGClassifier(nn.Module):
                     # depict(data.mol[i], attn, graph_edge_index)
                 else:
                     _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
+        if device.type == 'cuda':
             print('TEST:', out == _out)
             print(out.shape, _out.shape)
             print(out, _out)
-            # out = _out
+        else:
+            out = _out
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         # if return_attention:
