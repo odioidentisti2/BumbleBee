@@ -47,19 +47,35 @@ class MAGClassifier(nn.Module):
             adj_mask = edge_mask(data.edge_index, data.batch, data.num_graphs, max_edges)
             out = self.esa(dense_batch_h, adj_mask, return_attention=return_attention)  # [batch_size, hidden_dim]
 
-        else:  # CPU: per-graph Attention
-            # print("Using CPU attention")
+        # else:  # CPU: per-graph Attention with SAME padding as GPU
+            # print("Using CPU per-graph attention with padding")
             _out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
             attn_weights = []
+
+            # Use SAME padded data as GPU version
+            max_edges = max([g.num_edges for g in data.to_data_list()])
+            dense_batch_h, _ = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+
             for i in range(batch_size):
+                # Extract single graph from SAME padded batch as GPU
+                h_padded = dense_batch_h[i:i+1]  # [1, max_edges, hidden_dim] - same padding!
+                
+                # Create adjacency mask for this graph with same padding
                 graph_mask = (edge_batch == i)
-                h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
-                # Compute edge-edge adjacency mask
-                adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
-                h = h.unsqueeze(0)  # Add batch dimension
-                adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension
+                actual_edges = graph_mask.sum().item()
+                
+                # Create padded adjacency mask (same as GPU approach)
+                adj_mask_single = torch.zeros(max_edges, max_edges, dtype=torch.bool, device=device)
+                if actual_edges > 0:
+                    # Compute adjacency for actual edges only
+                    adj_actual = edge_adjacency(src[graph_mask], dst[graph_mask])
+                    # Place in padded mask
+                    adj_mask_single[:actual_edges, :actual_edges] = adj_actual
+                
+                adj_mask_single = adj_mask_single.unsqueeze(0)  # [1, max_edges, max_edges]
+                
                 if return_attention:
-                    _out[i], attn = self.esa(h, adj_mask, return_attention)
+                    _out[i], attn = self.esa(h_padded, adj_mask_single, return_attention)
                     attn = attn.squeeze(0)  # Remove batch dimension
                     _out[i] = _out[i].squeeze(0)  # Remove batch dimension
                     attn_weights.append(attn)
@@ -70,7 +86,7 @@ class MAGClassifier(nn.Module):
                     graph_edge_index = graph_edges - offset  # subtracting the offset (1st node index)
                     depict(data.mol[i], attn, graph_edge_index)
                 else:
-                    _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
+                    _out[i] = self.esa(h_padded, adj_mask_single, return_attention).squeeze(0)  # [hidden_dim]
         if device.type == 'cuda':
             print('TEST:', out == _out)
             print(out.shape, _out.shape)
@@ -178,4 +194,4 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
     dataset_path = 'DATASETS/MUTA_SARPY_4204.csv'
-    main() 
+    main()
