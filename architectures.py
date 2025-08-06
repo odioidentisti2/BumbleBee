@@ -68,24 +68,18 @@ class ESA(nn.Module):
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, return_attention=True):
-         # Squeeze/Unsqueeze batch dimension before/after attention
-        X = X.unsqueeze(0) 
-        adj_mask = adj_mask.unsqueeze(0)
         enc = X
         for layer in self.encoder:
             enc = layer(enc, adj_mask=adj_mask)
-        enc = enc + X  # Residual connection
+        dec = enc + X  # Residual connection
         for layer in self.decoder:
             if return_attention and layer.layer_type == 'P':
-                enc, attn_scores = layer(enc, return_attention=return_attention)
+                dec, attn_scores = layer(dec, return_attention=return_attention)
                 attn_scores = attn_scores.sum(dim=1)  # Aggregate seeds by sum
             else:
-                enc = layer(enc)
-        out = enc.squeeze(0)  # Remove batch dimension  (DEBUG)
-        out = out.mean(dim=0)
-        # out = self.decoder(enc).squeeze(0).mean(dim=0)  # Aggregate seeds by mean
+                dec = layer(dec)
+        out = dec.mean(dim=1)  # Aggregate seeds by mean
         if return_attention:
-            attn_scores = attn_scores.squeeze(0)  # Remove batch dimension  (DEBUG)
             attn_weights = F.softmax(attn_scores, dim=-1)
             return F.mish(out), attn_weights
         return F.mish(out)  # Final output projection

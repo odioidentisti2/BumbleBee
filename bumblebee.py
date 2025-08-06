@@ -2,25 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
+from torch_geometric.utils import to_dense_batch
 from architectures import ESA, mlp
 from molecular_data import GraphDataset
 from adj_mask_utils import *
 from depict import *
 
-class MAGClassifier(nn.Module):
 
-    @staticmethod
-    # Return a boolean edge adjacency mask
-    def _edge_adjacency(source, target):
-        # stack and slice
-        src_dst = torch.stack([source, target], dim=1) # [num_edges, 2]
-        src_nodes = src_dst[:, 0:1]  # [num_edges, 1]
-        dst_nodes = src_dst[:, 1:2]  # [num_edges, 1]
-        # Create adjacency mask: edges are adjacent if they share a node
-        src_adj = (src_nodes == src_nodes.T) | (src_nodes == dst_nodes.T)
-        dst_adj = (dst_nodes == src_nodes.T) | (dst_nodes == dst_nodes.T)
-        adj_mask = src_adj | dst_adj  # [num_edges, num_edges]
-        return adj_mask.fill_diagonal_(0)  # # Mask out self-adjacency
+class MAGClassifier(nn.Module):
     
     def __init__(self, node_dim, edge_dim, hidden_dim=128, mlp_hidden_dim=128, num_heads=8, output_dim=1):
         super(MAGClassifier, self).__init__()
@@ -47,31 +36,45 @@ class MAGClassifier(nn.Module):
         edge_feat = torch.cat([data.x[src], data.x[dst], data.edge_attr], dim=1)
         batched_h = self.input_mlp(edge_feat)  # [batch_edges, hidden_dim]
 
-        # PER-GRAPH: Attention
-        batch_size = data.batch.max().item() + 1
+        batch_size = data.batch.max().item() + 1  # data.num_graphs
         edge_batch = self._edge_batch(data.edge_index, data.batch)  # [batch_edges]
-        out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
-        attn_weights = []
-        for i in range(batch_size):
-            graph_mask = (edge_batch == i)
-            h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
-            # Compute edge-edge adjacency mask
-            adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
-            if return_attention:
-                out[i], attn = self.esa(h, adj_mask, return_attention)
-                attn_weights.append(attn)
-                # Per-graph edge_index
-                graph_edges = data.edge_index[:, graph_mask]
-                graph_nodes = (data.batch == i).nonzero(as_tuple=True)[0]
-                offset = graph_nodes[0].item()
-                graph_edge_index = graph_edges - offset  # subtracting the offset (1st node index)
-                depict(data.mol[i], attn, graph_edge_index)
-            else:
-                out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
+
+        device = edge_feat.device
+        if device == 'cuda':  # GPU: batch Attention
+
+            max_edges = max([g.num_edges for g in data.to_data_list()])
+            dense_batch_h, _ = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+            adj_mask = edge_mask(data.edge_index, data.batch, data.num_graphs, max_edges)
+            out = self.esa(dense_batch_h, adj_mask, return_attention=return_attention)  # [batch_size, hidden_dim]
+            
+        else:  # CPU: per-graph Attention
+            _out = torch.zeros((batch_size, self.hidden_dim), device=edge_feat.device)
+            attn_weights = []
+            for i in range(batch_size):
+                graph_mask = (edge_batch == i)
+                h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
+                # Compute edge-edge adjacency mask
+                adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
+                h = h.unsqueeze(0)  # Add batch dimension
+                adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension
+                if return_attention:
+                    _out[i], attn = self.esa(h, adj_mask, return_attention)
+                    attn = attn.squeeze(0)  # Remove batch dimension
+                    _out[i] = _out[i].squeeze(0)  # Remove batch dimension
+                    attn_weights.append(attn)
+                    # Per-graph edge_index
+                    graph_edges = data.edge_index[:, graph_mask]
+                    graph_nodes = (data.batch == i).nonzero(as_tuple=True)[0]
+                    offset = graph_nodes[0].item()
+                    graph_edge_index = graph_edges - offset  # subtracting the offset (1st node index)
+                    # depict(data.mol[i], attn, graph_edge_index)
+                else:
+                    _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
+            out = _out
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
-        if return_attention:
-            return torch.flatten(logits), attn_weights
+        # if return_attention:
+        #     return torch.flatten(logits), attn_weights
         return torch.flatten(logits)     # [batch_size]
         # return logits.view(-1)           # [batch_size]
 
@@ -94,10 +97,10 @@ def train(model, loader, optimizer, criterion, epoch):
         targets = batch.y.view(-1).to(DEVICE)
         optimizer.zero_grad()  # zero gradients
         # if batch_num == 1:
-        logits, batch_attention = model(batch, return_attention=True)  # forward pass
+            # logits, batch_attention = model(batch, return_attention=True)  # forward pass
         # else:
         #     logits = model(batch)  # forward pass
-        # logits = model(batch)  # forward pass
+        logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
         optimizer.step()  # update weights
