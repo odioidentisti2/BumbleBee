@@ -71,11 +71,6 @@ class MAGClassifier(nn.Module):
                     depict(data.mol[i], attn, graph_edge_index)
                 else:
                     _out[i] = self.esa(h, adj_mask, return_attention)  # [hidden_dim]
-        if device.type == 'cuda':
-            print('TEST:', out == _out)
-            print(out.shape, _out.shape)
-            print(out, _out)
-        else:
             out = _out
 
         logits = self.output_mlp(out)    # [batch_size, output_dim]
