@@ -86,8 +86,7 @@ class MultiHeadAttention(nn.Module):
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
-        attn_scores = attn_scores.mean(dim=1)  # Averaging scores across heads
-        return out, attn_scores
+        return out, attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
 
 # Same input for both Q and K
 class SelfAttention(nn.Module):
