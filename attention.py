@@ -60,39 +60,34 @@ class MultiHeadAttention(nn.Module):
         if adj_mask is not None:
             adj_mask = adj_mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
 
-        if return_attention:
-            # Manual attention computation to preserve mask information in weights
+        if True:  # Manual attention computation to get attention weights
             scale = head_dim ** -0.5
-            attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale            
-            if adj_mask is not None:
-                # Apply mask: set masked positions to -inf before softmax
-                attn_scores = attn_scores.masked_fill(~adj_mask, float('-inf'))            
-            # Softmax to get attention weights
-            attn_weights = F.softmax(attn_scores, dim=-1)            
-            # Important: For masked positions, softmax(-inf) = 0, so masked connections have 0 attention
-            # This preserves graph connectivity in the attention weights            
-            if self.training and self.dropout > 0:
-                attn_weights = F.dropout(attn_weights, p=self.dropout)            
+            attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+            if adj_mask is not None:  # MASK: set masked positions to -inf before softmax
+                attn_scores = attn_scores.masked_fill(~adj_mask, float('-inf'))
+            attn_weights = F.softmax(attn_scores, dim=-1)         
+            # if self.training and self.dropout > 0:
+            #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
             out = torch.matmul(attn_weights, V)
-        else:
-            try:    
-                with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
-                    out = F.scaled_dot_product_attention(
-                        Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-                    )
-                # print("Using efficient attention kernel")
-            except RuntimeError as e:
-                out = F.scaled_dot_product_attention(
-                    Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-                )
+        # else:
+        #     attn_scores = None
+        #     try:    
+        #         with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+        #             out = F.scaled_dot_product_attention(
+        #                 Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+        #             )
+        #         # print("Using efficient attention kernel")
+        #     except RuntimeError as e:
+        #         out = F.scaled_dot_product_attention(
+        #             Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+        #         )
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
-        if return_attention:
-            return out, attn_scores.mean(dim=1)  # averaging attn_weights across heads
-        return out
+        attn_scores = attn_scores.mean(dim=1)  # Averaging scores across heads
+        return out, attn_scores
 
 # Same input for both Q and K
 class SelfAttention(nn.Module):

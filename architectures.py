@@ -1,8 +1,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
-# from attention import *
 from attention import *
 
+
+# Multilayer Perceptron
 def mlp(in_dim, inter_dim, out_dim):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
@@ -21,34 +22,44 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
+        self.attn_scores = None
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
-    def forward(self, X, adj_mask=None, return_attention=False):
-        if self.layer_type != 'M':
+    def forward(self, X, adj_mask=None):
+        if self.layer_type != 'M':  # Unmasked layer
             adj_mask = None
         # Attention
-        if return_attention:
-            out, attn_scores = self.attention(self.norm(X), adj_mask=adj_mask, return_attention=True)
-        else:
-            out = self.attention(self.norm(X), adj_mask=adj_mask)
-            attn_scores = None
+        out, self.attn_scores = self.attention(self.norm(X), adj_mask=adj_mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
-        if return_attention:
-            return out, attn_scores
         return out
+    
 
 class ESA(nn.Module):
-    # Specify the number and order of layers:
-    #   S for self-attention
-    #   M for masked self-attention
-    #   P for the PMA decoder
-    # S and M layers can be alternated in any order as desired.
-    # For graph-level tasks, there must be a single P layer specified.
-    # The P layer can be followed by S layers (decoder), but not by M layers.
+    """
+    ESA (Edge-Set Attention) module for graph-level tasks.
+
+    Args:
+        hidden_dim (int): The dimensionality of the hidden representations.
+        num_heads (int): Number of attention heads in each transformer block.
+        layer_types (str): Specify the order and type of layers.
+            - 'S': Self-attention layer.
+            - 'M': Masked self-attention layer.
+            - 'P': PMA (Pooling by Multihead Attention) decoder layer.
+            The string must contain exactly one 'P' layer. 'S' and 'M' layers can be arranged in any order before 'P'.
+            After 'P', only 'S' layers are allowed.
+
+    Attributes:
+        encoder (nn.ModuleList): List of transformer blocks for the encoder ('S' and 'M' layers).
+        decoder (nn.ModuleList): List of transformer blocks for the decoder ('P' and followed by optional 'S' layers).
+
+    Returns:
+        torch.Tensor: Output graph-level representation after pooling and non-linearity.
+        torch.Tensor (optional): Attention scores from the 'P' layer if `return_attention` is True.
+    """
     def __init__(self, hidden_dim, num_heads, layer_types):
         super(ESA, self).__init__()
         assert layer_types.count('P') == 1
@@ -56,7 +67,7 @@ class ESA(nn.Module):
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
-            assert layer_type in 'MS'
+            assert layer_type in ['M', 'S']
             self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
@@ -67,20 +78,18 @@ class ESA(nn.Module):
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask, return_attention=True):
+    def forward(self, X, adj_mask):
+        # Encoder
         enc = X
         for layer in self.encoder:
             enc = layer(enc, adj_mask=adj_mask)
         dec = enc + X  # Residual connection
+        # Decoder
         for layer in self.decoder:
-            if return_attention and layer.layer_type == 'P':
-                dec, attn_scores = layer(dec, return_attention=return_attention)
-                attn_scores = attn_scores.sum(dim=1)  # Aggregate seeds by sum
-            else:
                 dec = layer(dec)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
-        if return_attention:
-            attn_weights = F.softmax(attn_scores, dim=-1)
-            return F.mish(out), attn_weights
-        return F.mish(out)  # Final output projection
-        # return F.mish(self.decoder_linear(out))  # Final output projection 
+        return F.mish(out)  
+        # return F.mish(self.decoder_linear(out))
+
+    def get_attn_weights(self):
+        return self.decoder[-1].attn_scores.mean(dim=1)  # Aggregate seeds by mean (sum?)
