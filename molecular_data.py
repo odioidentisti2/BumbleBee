@@ -4,6 +4,8 @@ from rdkit import Chem
 import numpy as np
 import csv
 
+ATOM_DIM = 84
+BOND_DIM = 7
 smiles_header = 'SMILES'
 label_header = 'Experimental_value'
 split_header = 'Status'
@@ -95,8 +97,8 @@ class GraphDataset(Dataset):
         print(f"Loaded {len(self.graphs)} molecules")
         
         if self.graphs:
-            self.node_dim = self.graphs[0].x.size(1)
-            self.edge_dim = self.graphs[0].edge_attr.size(1)
+            assert self.graphs[0].x.shape[1] == ATOM_DIM  # DEBUG
+            assert self.graphs[0].edge_attr.shape[1] == BOND_DIM  # DEBUG
         else:
             raise ValueError(f"No data")
 

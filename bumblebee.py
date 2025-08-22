@@ -1,10 +1,12 @@
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import to_dense_batch
+import numpy as np
 from architectures import ESA, mlp
-from molecular_data import GraphDataset
+from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from adj_mask_utils import *
 from model_explainer import *
 
@@ -21,12 +23,13 @@ class MAGClassifier(nn.Module):
         # Classifier
         self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
 
-    def graph_forward(self, edge_features, edge_index, batch, return_attention=False):
+    def single_forward(self, edge_features, edge_index, batch, return_attention=False):
+        # I shouldn't pass the batch here...
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
         out = torch.zeros((batch.num_graphs, self.hidden_dim), device=edge_features.device)
         src, dst = edge_index
-        # attn_weights = []
+        attn_weights = []
         for i in range(batch.num_graphs):
             graph_mask = (edge_batch == i)
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
@@ -37,13 +40,13 @@ class MAGClassifier(nn.Module):
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
                 attn = self.esa.get_attn_weights().squeeze(0)  # Remove batch dimension
-                # attn_weights.append(attn)
-                graph = batch.to_data_list()[i]
-                print("\nDEPICT ATTENTION")
-                depict(graph, attn, graph.edge_index)
+                attn_weights.append(attn.detach().cpu().numpy())
+                # graph = batch.to_data_list()[i]
+                # print("\nDEPICT ATTENTION")
+                # depict(graph, attn, graph.edge_index)
+        if return_attention:
+            return attn_weights
         logits = self.output_mlp(out)    # [batch_size, output_dim]
-        # if return_attention:
-        #     return torch.flatten(logits), attn_weights
         return torch.flatten(logits)     # [batch_size]
     
     def batch_forward(self, edge_features, edge_index, batch):
@@ -65,14 +68,18 @@ class MAGClassifier(nn.Module):
                 batch.edge_attr      # [batch_edges, edge_dim]
                 batch.batch          # [batch_nodes]
         """
-        src, dst = batch.edge_index
-        # Concatenate node (src and dst) and edge features
-        edge_feat = torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+        edge_feat = MAGClassifier.get_features(batch)
 
         if edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch)
         else:  # CPU: per-graph Attention
-            return self.graph_forward(edge_feat, batch.edge_index, batch, return_attention)
+            return self.single_forward(edge_feat, batch.edge_index, batch, return_attention)
+        
+    @staticmethod
+    def get_features(batch):
+        # Concatenate node (src and dst) and edge features
+        src, dst = batch.edge_index
+        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
@@ -92,7 +99,6 @@ def train(model, loader, optimizer, criterion, epoch):
         batch = batch.to(DEVICE)
         targets = batch.y.view(-1).to(DEVICE)
         optimizer.zero_grad()  # zero gradients
-        # logits = model(batch, return_attention=True)  # forward pass
         logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
@@ -111,61 +117,125 @@ def test(model, loader, criterion):
         batch = batch.to(DEVICE)
         targets = batch.y.view(-1).to(DEVICE)
         with torch.no_grad():
-            # logits = model(batch, return_attention=True)  # forward pass
             logits = model(batch)  # forward pass
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             preds = (torch.sigmoid(logits) > 0.5).float()
             correct += (preds == targets).sum().item()
             total += batch.num_graphs
-        # model.train()
-        # explanation = explain(model, batch)
-        # model.eval()  
     return total_loss / total, correct / total
 
+def save(model):
+    model_path = f"model_{time.strftime('%Y%m%d_%H%M')}_{glob['BATCH_SIZE']}_{glob['LR']}_{glob['NUM_EPOCHS']}.pt"
+    torch.save(model.state_dict(), model_path)
+    print(f"Model saved to: {model_path}")
+
+def load(model_path):
+    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    model.load_state_dict(torch.load(model_path, weights_only=True))
+    model.eval()
+    return model
+
 def main():
-    print(f"\nTraining on: {dataset_path}")
-    # trainingset = GraphDataset(dataset_path)
-    trainingset = GraphDataset(dataset_path, split='Training')
-    loader = DataLoader(trainingset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
-    model = MAGClassifier(trainingset.node_dim, trainingset.edge_dim).to(DEVICE)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     criterion = nn.BCEWithLogitsLoss()
-    start_time = time.time()
-    for epoch in range(1, NUM_EPOCHS + 1):
-        loss = train(model, loader, optimizer, criterion, epoch)
-        print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
-    print("Training complete.")
 
-    loss, acc  = test(model, loader, criterion)
-    print(f"Final Training Loss: {loss:.3f} Acc: {acc:.3f}")
+    # Train
+    # print(f"\nTraining on: {DATASET_PATH}")
+    # trainingset = GraphDataset(DATASET_PATH, split='Training')
+    # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    # model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    # start_time = time.time()
+    # for epoch in range(1, glob['NUM_EPOCHS'] + 1):
+    #     loss = train(model, loader, optimizer, criterion, epoch)
+    #     print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
+    # save(model)
+    ## loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
+    ## loss, acc  = test(model, loader, criterion)
+    ## print(f"Training Loss: {loss:.3f} Acc: {acc:.3f}")
 
-    print(f"\nTesting on: {dataset_path}")
-    # testset = GraphDataset(dataset_path)
-    testset = GraphDataset(dataset_path, split='Test')
-    test_loader = DataLoader(testset, batch_size=BATCH_SIZE)
+    # Load saved model
+    model_path = 'model_20250822_210138.pt'
+    print(f"\nLoading model {model_path}")
+    model = load(model_path)
+
+    # Test
+    print(f"\nTesting on: {DATASET_PATH}")
+    testset = GraphDataset(DATASET_PATH, split='Test')
+    test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
     test_loss, test_acc = test(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
-    print("Testing complete.")
+
+    # Explain with gradients
+    model.eval()
+    for dummy_batch in DataLoader(testset, batch_size=1):
+        explain_with_gradients(model, dummy_batch, steps=100)
 
 if __name__ == "__main__":
-    import time
+    # Set seeds for reproducibility
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+    # GLOBALS
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
+    glob = {
+        "BATCH_SIZE": 64,  # I should try reducing waste since drop_last=True
+        "LR": 1e-4,
+        "NUM_EPOCHS": 20,
+    }
+    # Print time and model stamps
     print()
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
-    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"DEVICE: {DEVICE}")
-    BATCH_SIZE = 64  # reducing waste since drop_last=True
-    LR = 1e-4
-    NUM_EPOCHS = 20
-    ## ESA
+    # import pprint
+    # pprint.pprint(glob)
+    main() 
+
+    ## ESA repo
     # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
     # HIDDEN_DIM = 256  # = MLP_hidden = graph_dim
     # BATCH_SIZE = 128
     # NUM_HEADS = 16
     # LAYER_TYPES = ['MSMSMP']
     # DROPOUT = 0
-    # Set seeds for reproducibility
-    torch.manual_seed(42)
-    torch.cuda.manual_seed_all(42)
-    dataset_path = 'DATASETS/MUTA_SARPY_4204.csv'
-    main() 
+
+
+
+
+# def explain(model, train_loader, test_loader):
+#     model.eval()
+
+#     # Place this inside explain_with_attention
+#     # In the depiction of attention, I highlight bonds with an intensity proportional to their attention weights.
+#     # I'd like this intensity to be "absolute" (referred to the whole training set).
+#     # But attention weights are very relative to each molecule (and proportionate to the number of bonds, after softmax).
+#     # So I need to find a "max intensity" threshold from the training set, to normalize it,
+#     # I can divide by the mean attention weight for each molecule.
+#     # In conclusion: given the distribution of attention max/mean ratio in the training set, I can set a threshold
+#     # (e.g. mean + std) to be the "max intensity" (1.0) in the depiction, so that only "outlier" weights
+#     # are fully highlighted. In other words, let's say that the maximum max/mean ratio in any molecule
+#     # in the training set was 30 (30 times more attention than the average), mean + std will be lower than that,
+#     # let's say 7, so in the depiction an attention weight 7 times higher than the average
+#     # will be highlighted with intensity 1.0.
+#     train_attn_weights = []
+#     for batch in train_loader:
+#         batch = batch.to(DEVICE)
+#         with torch.no_grad():
+#             train_attn_weights.extend(model(batch, return_attention=True))
+#     dist = np.array([aw.max() / aw.mean() for aw in train_attn_weights])
+#     top = dist.mean() + dist.std()
+#     print(f"Top attention weight: {top:.3f}")
+#     for batch in test_loader:
+#         batch = batch.to(DEVICE)
+#         with torch.no_grad():
+#             attn_weights = model(batch, return_attention=True)
+#         normalized_attn = []
+#         for aw in attn_weights:
+#             bond_ratios = aw / aw.mean()  # Relative to this molecule
+#             normalized = np.clip(bond_ratios / top, 0, 1)  # Scale by training threshold
+#             normalized_attn.append(normalized)
+
+#         # explain_with_attention(batch.to_data_list(), normalized_attn)  # Normalize        
+#         for data, attention in zip(batch.to_data_list(), normalized_attn):
+#             print("\nDEPICT ATTENTION")
+#             depict(data, attention) 
