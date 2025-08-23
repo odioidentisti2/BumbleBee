@@ -6,80 +6,65 @@ import torch
 import io
 
 
-def depict(data, weights, target_only=True):
-    data = data.to('cpu').detach()  # Ensure data is on CPU for RDKit
-    print(int(data.y.item()), data.smiles)
-    
-    if (mol := data.mol) is None:
-        print("Invalid molecule object")
-        return None
+def red_or_green(weight):
+    if weight > 0:
+        return (1.0, 1.0-weight, 1.0-weight)
+    else:
+        return (1.0-abs(weight), 1.0, 1.0-abs(weight))
 
+def depict(data, weights, attention=True):
+    data = data.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.astype(float)
     edge_index = data.edge_index
+    threshold = 0
+    if attention:
+        threshold = weights.mean() # + weights.std()  # Mean + 1 std dev
+
+    # DEBUG
+    print("\nDEPICT EDGE IMPORTANCE")
+    print(int(data.y.item()), data.smiles)
+    print(f"Weights range: {weights.min():.2f} - {weights.max():.2f}")
+    print(weights)
+    print(f"Weight sum: {weights.sum():.2f}")
+    print(f"Threshold: {threshold:.2f}")
+
+    if (mol := data.mol) is None:
+        print("Invalid molecule object")
+        return
     
-    bond_intensity = {}
-    highlight_bonds = []
-    highlight_atoms = set()
+    bond_weights = {}
+    atom_weights = {}
     bond_colors = {}
     atom_colors = {}
 
-    threshold = 0
-    if target_only:
-        threshold = weights.mean() # + weights.std()  # Mean + 1 std dev
-    
-    # Bond intensity
-    for i, (src, dst) in enumerate(edge_index.T):
-        src_idx, dst_idx = int(src), int(dst)
-        bond_idx = mol.GetBondBetweenAtoms(src_idx, dst_idx).GetIdx()
-        weight = weights[i]
-        if bond_intensity.get(bond_idx) is None:
-            bond_intensity[bond_idx] = weight
+    # Populating bond_intensity dict
+    for directional_weight, (src, dst) in zip(weights, edge_index.T):
+        bond = mol.GetBondBetweenAtoms(int(src), int(dst))
+        bond_idx = bond.GetIdx()
+        if bond_idx not in bond_weights:
+            bond_weights[bond_idx] = directional_weight
+            continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
+        if attention:  # temp... I should proably divide by 2 (in the normalization) and sum them here
+            weight = max(bond_weights[bond_idx], directional_weight)  # MAX weight for bidirectional bonds
         else:
-            bond_intensity[bond_idx] = max(bond_intensity[bond_idx], weight)  # Keep max weight for bidirectional bonds
-    
-    atom_norm_intensity = {}
-    for bond_idx, weight in bond_intensity.items():
-        bond = mol.GetBondWithIdx(bond_idx)
-        bond.SetProp("bondNote", str(bond_idx))  # Draw bond index
-        if abs(weight) > threshold:  # Only highlight important bonds
-            highlight_bonds.append(bond_idx)
-            if target_only:
-                norm_intensity = weight  # / max(bond_intensity.values())
-            else:
-                # TODO: pre-norm it in his own function, using 0.5 - baseline
-                norm_intensity = abs(weight) / max(abs(weights.min()), abs(weights.max()))  # Normalize to [0, 1]
-            if weight > 0:
-                bond_colors[bond_idx] = (1.0, 1.0-norm_intensity, 1.0-norm_intensity)
-            else:
-                bond_colors[bond_idx] = (1.0-norm_intensity, 1.0, 1.0-norm_intensity)
+            weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
+        print(f"Bond {bond_idx}: {bond_weights[bond_idx]:.2f}, {directional_weight:.2f} => {weight:.2f}")
+        bond_weights[bond_idx] = weight
+        bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
+
+        if abs(weight) > abs(threshold):  # Only highlight important bonds 
+            bond_colors[bond_idx] = red_or_green(weight)
+
             # Atoms connected by this bond
             for atom in (bond.GetBeginAtom(), bond.GetEndAtom()):
                 atom_idx = atom.GetIdx()
-                if atom_norm_intensity.get(atom_idx) is None:
-                    atom_norm_intensity[atom_idx] = norm_intensity
-                    highlight_atoms.add(atom_idx)
-                elif norm_intensity > atom_norm_intensity[atom_idx]:
-                    atom_norm_intensity[atom_idx] = norm_intensity
+                if atom_idx not in atom_weights:
+                    atom_weights[atom_idx] = weight
+                elif abs(weight) > abs(atom_weights[atom_idx]):
+                    atom_weights[atom_idx] = weight
                 else:
                     continue
-                if weight > 0:
-                    atom_colors[atom_idx] = (1.0,
-                                            1.0 - atom_norm_intensity[atom_idx], 
-                                            1.0 - atom_norm_intensity[atom_idx])
-                else:
-                    atom_colors[atom_idx] = (1.0 - atom_norm_intensity[atom_idx], 
-                                            1.0, 
-                                            1.0 - atom_norm_intensity[atom_idx])
-                # else:
-                # #     atom_norm_intensity[atom_idx] = max(atom_norm_intensity[atom_idx], norm_intensity)
-                # if weight > 0:
-                #     atom_colors[atom_idx] = (1.0,
-                #                             1.0 - atom_norm_intensity[atom_idx], 
-                #                             1.0 - atom_norm_intensity[atom_idx])
-                # else:
-                #     atom_colors[atom_idx] = (1.0 - atom_norm_intensity[atom_idx], 
-                #                             1.0, 
-                #                             1.0 - atom_norm_intensity[atom_idx])
+                atom_colors[atom_idx] = red_or_green(weight)
     
     # Create drawer
     drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
@@ -96,38 +81,18 @@ def depict(data, weights, target_only=True):
     legend = f"{data.smiles}\n{target_label}"
 
     # Draw molecule with highlighting
-    if highlight_bonds or highlight_atoms:
-        drawer.DrawMolecule(mol,
-                           highlightAtoms=list(highlight_atoms),
-                           highlightAtomColors=atom_colors,
-                           highlightBonds=highlight_bonds,
-                           highlightBondColors=bond_colors,
-                           legend=legend) 
-    else:
-        # No highlighting if no important edges found
-        drawer.DrawMolecule(mol, legend=legend) 
-
+    drawer.DrawMolecule(mol,
+                        highlightAtoms=atom_colors.keys(),
+                        highlightAtomColors=atom_colors,
+                        highlightBonds=bond_colors.keys(),
+                        highlightBondColors=bond_colors,
+                        legend=legend)
     drawer.FinishDrawing()
-    
-    # Get image data and display in popup
-    img_data = drawer.GetDrawingText()
+    Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
-    # Convert to PIL Image
-    img = Image.open(io.BytesIO(img_data))
-    
-    # Show in popup window
-    img.show()
-    
-    print(f"Displayed molecule with {len(highlight_bonds)} highlighted bonds and {len(highlight_atoms)} highlighted atoms")
-    print(f"Weights range: {weights.min():.3f} - {weights.max():.3f}")
-    print(f"Threshold: {threshold:.3f}")
-    print(weights)
-    print(f"Sum: {weights.sum():.3f}")
-    for i, norm_intensity in bond_intensity.items():
-        print(f"Bond {i}: {norm_intensity:.3f}")
+    print(f"Sum: {sum(bond_weights.values()):.2f}")
     input("Press Enter to continue...")
 
-    return img_data
 
 def explain_with_attention(batch, attn_weights):
     for data, attention in zip(batch, attn_weights):
@@ -142,8 +107,8 @@ def explain_with_gradients(model, single_batch, steps=5):
 
     # Get baseline and final predictions for verification
     with torch.no_grad():
-        baseline_pred = model.graph_forward(baseline, single_batch.edge_index, single_batch)
-        final_pred = model.graph_forward(edge_feat, single_batch.edge_index, single_batch)
+        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch)
+        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch)
     print(f"\nBaseline prediction: {baseline_pred.item():.4f}")
     # print(f"Expected attribution sum: {(final_pred - baseline_pred).item():.4f}")
 
@@ -155,7 +120,7 @@ def explain_with_gradients(model, single_batch, steps=5):
         interp_feat.requires_grad_(True)
         
         # Forward pass
-        prediction = model.graph_forward(interp_feat, single_batch.edge_index, single_batch)
+        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch)
 
         grad = torch.autograd.grad(
             outputs=prediction,
@@ -173,10 +138,11 @@ def explain_with_gradients(model, single_batch, steps=5):
     attribution_sum = edge_importance.sum().item()
     expected_sum = (final_pred - baseline_pred).item()
     
-    print(f"Attribution sum: {attribution_sum:.4f}")
-    print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.4f}")
-    
-    print(f"PREDICTION: {final_pred.item():.4f}")
-    print("\nDEPICT EDGE IMPORTANCE")
+    print(f"Attribution sum: {attribution_sum:.2f}")
+    print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
+    print(f"PREDICTION: {final_pred.item():.2f}")
+
     graph = single_batch.to_data_list()[0]
-    depict(graph, edge_importance.detach().cpu().numpy(), target_only=False)
+    weights = edge_importance.detach().cpu().numpy()
+    # Before depict I should normalize edge_importance by 0.5 - baseline
+    depict(graph, weights, attention=False)
