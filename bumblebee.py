@@ -1,14 +1,12 @@
 import time
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import to_dense_batch
-import numpy as np
 from architectures import ESA, mlp
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from adj_mask_utils import *
-from model_explainer import *
+from explainer import *
 
 
 class MAGClassifier(nn.Module):
@@ -40,10 +38,7 @@ class MAGClassifier(nn.Module):
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
                 attn = self.esa.get_attn_weights().squeeze(0)  # Remove batch dimension
-                attn_weights.append(attn.detach().cpu().numpy())
-                # graph = batch.to_data_list()[i]
-                # print("\nDEPICT ATTENTION")
-                # depict(graph, attn, graph.edge_index)
+                attn_weights.append(attn.detach().cpu())
         if return_attention:
             return attn_weights
         logits = self.output_mlp(out)    # [batch_size, output_dim]
@@ -125,6 +120,15 @@ def test(model, loader, criterion):
             total += batch.num_graphs
     return total_loss / total, correct / total
 
+def explain(model, single_loader):
+    # Explain with gradients
+    model.eval()
+    for molecule in single_loader:
+        explain_with_attention(model, molecule)
+        explain_with_gradients(model, molecule, steps=100)
+        input("Press Enter to continue...")
+
+
 def save(model):
     model_path = f"model_{time.strftime('%Y%m%d_%H%M')}_{glob['BATCH_SIZE']}_{glob['LR']}_{glob['NUM_EPOCHS']}.pt"
     torch.save(model.state_dict(), model_path)
@@ -139,7 +143,7 @@ def load(model_path):
 def main():
     criterion = nn.BCEWithLogitsLoss()
 
-    # Train
+    ## Train
     # print(f"\nTraining on: {DATASET_PATH}")
     # trainingset = GraphDataset(DATASET_PATH, split='Training')
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
@@ -149,7 +153,7 @@ def main():
     # for epoch in range(1, glob['NUM_EPOCHS'] + 1):
     #     loss = train(model, loader, optimizer, criterion, epoch)
     #     print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
-    # save(model)
+    ## save(model)
     ## loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     ## loss, acc  = test(model, loader, criterion)
     ## print(f"Training Loss: {loss:.3f} Acc: {acc:.3f}")
@@ -166,10 +170,9 @@ def main():
     test_loss, test_acc = test(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
 
-    # Explain with gradients
-    model.eval()
-    for dummy_batch in DataLoader(testset, batch_size=1):
-        explain_with_gradients(model, dummy_batch, steps=100)
+    # Explain
+    single_loader = DataLoader(testset, batch_size=1)
+    explain(model, single_loader)
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
@@ -198,44 +201,3 @@ if __name__ == "__main__":
     # NUM_HEADS = 16
     # LAYER_TYPES = ['MSMSMP']
     # DROPOUT = 0
-
-
-
-
-# def explain(model, train_loader, test_loader):
-#     model.eval()
-
-#     # Place this inside explain_with_attention
-#     # In the depiction of attention, I highlight bonds with an intensity proportional to their attention weights.
-#     # I'd like this intensity to be "absolute" (referred to the whole training set).
-#     # But attention weights are very relative to each molecule (and proportionate to the number of bonds, after softmax).
-#     # So I need to find a "max intensity" threshold from the training set, to normalize it,
-#     # I can divide by the mean attention weight for each molecule.
-#     # In conclusion: given the distribution of attention max/mean ratio in the training set, I can set a threshold
-#     # (e.g. mean + std) to be the "max intensity" (1.0) in the depiction, so that only "outlier" weights
-#     # are fully highlighted. In other words, let's say that the maximum max/mean ratio in any molecule
-#     # in the training set was 30 (30 times more attention than the average), mean + std will be lower than that,
-#     # let's say 7, so in the depiction an attention weight 7 times higher than the average
-#     # will be highlighted with intensity 1.0.
-#     train_attn_weights = []
-#     for batch in train_loader:
-#         batch = batch.to(DEVICE)
-#         with torch.no_grad():
-#             train_attn_weights.extend(model(batch, return_attention=True))
-#     dist = np.array([aw.max() / aw.mean() for aw in train_attn_weights])
-#     top = dist.mean() + dist.std()
-#     print(f"Top attention weight: {top:.3f}")
-#     for batch in test_loader:
-#         batch = batch.to(DEVICE)
-#         with torch.no_grad():
-#             attn_weights = model(batch, return_attention=True)
-#         normalized_attn = []
-#         for aw in attn_weights:
-#             bond_ratios = aw / aw.mean()  # Relative to this molecule
-#             normalized = np.clip(bond_ratios / top, 0, 1)  # Scale by training threshold
-#             normalized_attn.append(normalized)
-
-#         # explain_with_attention(batch.to_data_list(), normalized_attn)  # Normalize        
-#         for data, attention in zip(batch.to_data_list(), normalized_attn):
-#             print("\nDEPICT ATTENTION")
-#             depict(data, attention) 
