@@ -115,7 +115,7 @@ class PMA(nn.Module):
     def forward(self, X, mask=None, return_attention=False):
         # Repeat seeds across batch: use seeds as queries, X as keys/values
         seeds = self.S.repeat(X.size(0), 1, 1)
-        if mask is not None:
+        if mask is not None: 
             mask = mask.unsqueeze(1)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
         return self.mha(seeds, X, mask, return_attention)

@@ -26,7 +26,7 @@ class TransformerBlock(nn.Module):
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
-        if self.layer_type == 'M':
+        if self.layer_type == 'M': 
             mask = adj_mask
             if pad_mask is not None:
                 mask = mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]

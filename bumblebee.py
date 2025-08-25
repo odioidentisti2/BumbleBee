@@ -53,7 +53,7 @@ class MAGClassifier(nn.Module):
         adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         logits = self.output_mlp(out)    # [batch_size, output_dim]
-        return torch.flatten(logits)     # [batch_size]
+        return torch.flatten(logits)     # [batch_size] 
 
     def forward(self, batch, return_attention=False):
         """
