@@ -1,6 +1,5 @@
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Geometry import Point2D
-from torch_geometric.utils import unbatch
 from PIL import Image
 import io
 
@@ -13,6 +12,20 @@ def red_or_green(weight):
 
 def yellow(weight):
     return (1.0, 1.0, 1.0-abs(weight))
+
+def sum_bond_weights(edge_index, weights):
+    # edge_index: shape [2, num_edges]
+    # weights: shape [num_edges]
+    src = edge_index[0]
+    dst = edge_index[1]
+    # Make undirected: always (min, max)
+    bond_pairs = torch.stack([torch.minimum(src, dst), torch.maximum(src, dst)], dim=1)  # [num_edges, 2]
+    # Find unique bonds and sum weights
+    bond_keys, inverse_indices = torch.unique(bond_pairs, dim=0, return_inverse=True)
+    summed_weights = torch.zeros(len(bond_keys), dtype=weights.dtype, device=weights.device)
+    summed_weights.scatter_add_(0, inverse_indices, weights)
+    return bond_keys, summed_weights
+
 
 def depict(data, weights, attention=True):
     data = data.to('cpu').detach()  # Ensure data is on CPU for RDKit

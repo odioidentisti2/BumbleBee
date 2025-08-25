@@ -69,14 +69,7 @@ def smiles2graph(smiles):
 
     adj_matrix = Chem.rdmolops.GetAdjacencyMatrix(mol)
     node_feat = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
-
-    edge_index = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]
-    # # Extract only upper triangle to avoid duplicates
-    # adj_tensor = torch.from_numpy(adj_matrix)
-    # upper_triangle = torch.triu(adj_tensor, diagonal=1)  # Upper triangle, exclude diagonal
-    # edge_index = torch.nonzero(upper_triangle).T  # Only unique edges
-    
-
+    edge_index = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]    
     edge_feat = torch.tensor([
         bond_features(mol.GetBondBetweenAtoms(src.item(), dst.item()))
         for src, dst in edge_index.T

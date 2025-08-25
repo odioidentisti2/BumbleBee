@@ -121,12 +121,21 @@ def test(model, loader, criterion):
     return total_loss / total, correct / total
 
 def explain(model, single_loader):
-    # Explain with gradients
     model.eval()
+    current_intensity = 1
     for molecule in single_loader:
-        explain_with_attention(model, molecule)
-        explain_with_gradients(model, molecule, steps=100)
-        input("Press Enter to continue...")
+        repeat = True
+        while repeat:
+            explain_with_attention(model, molecule, intensity=current_intensity)
+            explain_with_gradients(model, molecule, steps=100, intensity=current_intensity)
+            explain_with_mlp_integrated_gradients(model, molecule, intensity=current_intensity)
+            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+            plus_count = user_input.count('+')
+            minus_count = user_input.count('-')
+            if plus_count + minus_count > 0:
+                current_intensity = current_intensity * (2 ** plus_count) / (2 ** minus_count)
+            else:
+                repeat = False  # Move to next molecule
 
 
 def save(model):
