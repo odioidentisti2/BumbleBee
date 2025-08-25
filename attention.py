@@ -97,7 +97,7 @@ class SelfAttention(nn.Module):
     def forward(self, X, mask=None, return_attention=False):
         if mask is not None:
             mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
-            mask = mask.expand(-1, self.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
+            mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
         return self.mha(X, X, mask, return_attention)
 
 
