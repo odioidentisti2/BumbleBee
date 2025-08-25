@@ -98,8 +98,8 @@ class SelfAttention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
-            print("SELF")
-            print(mask)
+            # print("SELF")
+            # print(mask)
         return self.mha(X, X, mask, return_attention)
 
 
@@ -120,6 +120,6 @@ class PMA(nn.Module):
         if mask is not None: 
             mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
-            print("PMA")
-            print(mask)
+            # print("PMA")
+            # print(mask)
         return self.mha(seeds, X, mask, return_attention)

@@ -45,9 +45,9 @@ class TransformerBlock(nn.Module):
         out = out + out_mlp  # Residual connection
 
         # Zero out output for padded queries
-        if pad_mask is not None:
+        if pad_mask is not None and self.layer_type != 'P':
             out = out * pad_mask.unsqueeze(-1)
-            
+
         return out
     
 
