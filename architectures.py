@@ -26,12 +26,16 @@ class TransformerBlock(nn.Module):
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
-        if self.layer_type == 'M':  # Masked layer
+        if self.layer_type == 'M':
             mask = adj_mask
             if pad_mask is not None:
-                mask = pad_mask & adj_mask
-        else:
-            mask = pad_mask
+                mask = mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
+        elif self.layer_type == 'S':
+            mask = None
+            if pad_mask is not None:
+                mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
+        else:  # 'P'
+            mask = pad_mask  # [batch, seq_len]
         # Attention
         out, self.attn_scores = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
