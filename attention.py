@@ -57,8 +57,8 @@ class MultiHeadAttention(nn.Module):
         V = V.transpose(1, 2)
 
         # Attention mask: add num_head dimension
-        if mask is not None:
-            mask = mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
+        # if mask is not None:
+        #     mask = mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
 
         if True:  # Manual attention computation to get attention weights
             scale = head_dim ** -0.5
@@ -95,6 +95,9 @@ class SelfAttention(nn.Module):
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
     def forward(self, X, mask=None, return_attention=False):
+        if mask is not None:
+            mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
+            mask = mask.expand(-1, self.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
         return self.mha(X, X, mask, return_attention)
 
 
@@ -111,7 +114,8 @@ class PMA(nn.Module):
 
     def forward(self, X, mask=None, return_attention=False):
         if mask is not None:
-            mask = mask.unsqueeze(1)  # [batch, 1, seq_len]
+            mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
+            mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
         # Repeat seeds across batch: use seeds as queries, X as keys/values
         seeds = self.S.repeat(X.size(0), 1, 1)
         return self.mha(seeds, X, mask, return_attention)
