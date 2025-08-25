@@ -43,6 +43,11 @@ class TransformerBlock(nn.Module):
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
+
+        # Zero out output for padded queries
+        if pad_mask is not None:
+            out = out * pad_mask.unsqueeze(-1)
+            
         return out
     
 
