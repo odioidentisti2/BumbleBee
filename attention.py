@@ -110,6 +110,8 @@ class PMA(nn.Module):
         self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
 
     def forward(self, X, mask=None, return_attention=False):
+        if mask is not None:
+            mask = mask.unsqueeze(2)  # [batch, seq_len, 1]
         # Repeat seeds across batch: use seeds as queries, X as keys/values
         seeds = self.S.repeat(X.size(0), 1, 1)
         return self.mha(seeds, X, mask, return_attention)
