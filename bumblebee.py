@@ -47,7 +47,7 @@ class MAGClassifier(nn.Module):
     def batch_forward(self, edge_features, edge_index, batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
-        max_edges = max([g.num_edges for g in batch.to_data_list()])  # batch_edges!
+        max_edges = max([g.num_edges for g in batch.to_data_list()])
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
         # if pad_mask is not None:
         #     print("pad_mask shape:", pad_mask.shape)
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     glob = {
-        "BATCH_SIZE": 1,  # I should try reducing waste since drop_last=True
+        "BATCH_SIZE": 64,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
         "NUM_EPOCHS": 20,
     }
