@@ -47,15 +47,14 @@ class MAGClassifier(nn.Module):
     def batch_forward(self, edge_features, edge_index, batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
-        max_edges = max([g.num_edges for g in batch.to_data_list()])
+        max_edges = max([g.num_edges for g in batch.to_data_list()])  # batch_edges!
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
         # if pad_mask is not None:
         #     print("pad_mask shape:", pad_mask.shape)
         #     print("pad_mask sum (per batch):", pad_mask.sum(dim=1))
         #     print("Any all-False rows in mask?", (~pad_mask.any(dim=-1)).any())
-        # padding_mask = mask.unsqueeze(1) & mask.unsqueeze(2)  # [batch_size, max_edges, max_edges]
         adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
-        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
+        out = self.esa(dense_batch_h, adj_mask)  # [batch_size, hidden_dim]
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
@@ -70,7 +69,7 @@ class MAGClassifier(nn.Module):
         """
         edge_feat = MAGClassifier.get_features(batch)
 
-        if True:  #edge_feat.device.type == 'cuda':  # GPU: batch Attention
+        if edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch)
         else:  # CPU: per-graph Attention
             return self.single_forward(edge_feat, batch.edge_index, batch, return_attention)
