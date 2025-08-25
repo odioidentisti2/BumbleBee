@@ -48,9 +48,10 @@ class MAGClassifier(nn.Module):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
         max_edges = max([g.num_edges for g in batch.to_data_list()])
-        dense_batch_h, _ = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+        dense_batch_h, mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+        padding_mask = mask.unsqueeze(1) & mask.unsqueeze(2)  # [batch_size, max_edges, max_edges]
         adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
-        out = self.esa(dense_batch_h, adj_mask,)  # [batch_size, hidden_dim]
+        out = self.esa(dense_batch_h, adj_mask, padding_mask)  # [batch_size, hidden_dim]
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
 
@@ -153,24 +154,24 @@ def main():
     criterion = nn.BCEWithLogitsLoss()
 
     ## Train
-    # print(f"\nTraining on: {DATASET_PATH}")
-    # trainingset = GraphDataset(DATASET_PATH, split='Training')
-    # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
-    # start_time = time.time()
-    # for epoch in range(1, glob['NUM_EPOCHS'] + 1):
-    #     loss = train(model, loader, optimizer, criterion, epoch)
-    #     print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
-    ## save(model)
-    ## loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
-    ## loss, acc  = test(model, loader, criterion)
-    ## print(f"Training Loss: {loss:.3f} Acc: {acc:.3f}")
+    print(f"\nTraining on: {DATASET_PATH}")
+    trainingset = GraphDataset(DATASET_PATH, split='Training')
+    loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    start_time = time.time()
+    for epoch in range(1, glob['NUM_EPOCHS'] + 1):
+        loss = train(model, loader, optimizer, criterion, epoch)
+        print(f"Epoch {epoch}: Loss {loss:.3f} Time {time.time() - start_time:.0f}s")
+    # save(model)
+    # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
+    # loss, acc  = test(model, loader, criterion)
+    # print(f"Training Loss: {loss:.3f} Acc: {acc:.3f}")
 
-    # Load saved model
-    model_path = 'model_20250822_210138.pt'
-    print(f"\nLoading model {model_path}")
-    model = load(model_path)
+    # # Load saved model
+    # model_path = 'model_20250822_210138.pt'
+    # print(f"\nLoading model {model_path}")
+    # model = load(model_path)
 
     # Test
     print(f"\nTesting on: {DATASET_PATH}")

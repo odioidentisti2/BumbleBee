@@ -25,11 +25,15 @@ class TransformerBlock(nn.Module):
         self.attn_scores = None
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
-    def forward(self, X, adj_mask=None):
-        if self.layer_type != 'M':  # Unmasked layer
-            adj_mask = None
+    def forward(self, X, adj_mask=None, pad_mask=None):
+        if self.layer_type == 'M':  # Masked layer
+            mask = adj_mask
+            if pad_mask is not None:
+                mask = pad_mask & adj_mask
+        else:
+            mask = pad_mask
         # Attention
-        out, self.attn_scores = self.attention(self.norm(X), adj_mask=adj_mask)
+        out, self.attn_scores = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
         # MLP
@@ -78,15 +82,15 @@ class ESA(nn.Module):
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask):
+    def forward(self, X, adj_mask, padding_mask=None):
         # Encoder
         enc = X
         for layer in self.encoder:
-            enc = layer(enc, adj_mask=adj_mask)
+            enc = layer(enc, adj_mask=adj_mask, pad_mask=padding_mask)
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
-                dec = layer(dec)
+                dec = layer(dec, pad_mask=padding_mask)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         return F.mish(out)  
         # return F.mish(self.decoder_linear(out))

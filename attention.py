@@ -33,7 +33,7 @@ class MultiHeadAttention(nn.Module):
         self.ln_q = nn.LayerNorm(dim_Q, eps=1e-8)
         self.ln_k = nn.LayerNorm(dim_K, eps=1e-8)
 
-    def forward(self, Q, K, adj_mask=None, return_attention=False):
+    def forward(self, Q, K, mask=None, return_attention=False):
         # Project Q, K, V
         Q = self.fc_q(Q)
         V = self.fc_v(K)
@@ -57,14 +57,14 @@ class MultiHeadAttention(nn.Module):
         V = V.transpose(1, 2)
 
         # Attention mask: add num_head dimension
-        if adj_mask is not None:
-            adj_mask = adj_mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
+        if mask is not None:
+            mask = mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
 
         if True:  # Manual attention computation to get attention weights
             scale = head_dim ** -0.5
             attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-            if adj_mask is not None:  # MASK: set masked positions to -inf before softmax
-                attn_scores = attn_scores.masked_fill(~adj_mask, float('-inf'))
+            if mask is not None:  # MASK: set masked positions to -inf before softmax
+                attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
             attn_weights = F.softmax(attn_scores, dim=-1)         
             # if self.training and self.dropout > 0:
             #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
@@ -94,8 +94,8 @@ class SelfAttention(nn.Module):
         super(SelfAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
-    def forward(self, X, adj_mask=None, return_attention=False):
-        return self.mha(X, X, adj_mask, return_attention)
+    def forward(self, X, mask=None, return_attention=False):
+        return self.mha(X, X, mask, return_attention)
 
 
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
@@ -109,7 +109,7 @@ class PMA(nn.Module):
         # MultiHeadAttention takes seeds as Q and the input set as K
         self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
 
-    def forward(self, X, adj_mask=None, return_attention=False):
+    def forward(self, X, mask=None, return_attention=False):
         # Repeat seeds across batch: use seeds as queries, X as keys/values
         seeds = self.S.repeat(X.size(0), 1, 1)
-        return self.mha(seeds, X, adj_mask, return_attention)
+        return self.mha(seeds, X, mask, return_attention)
