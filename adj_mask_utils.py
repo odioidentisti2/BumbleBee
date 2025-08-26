@@ -80,4 +80,4 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
         ei_to_original_index[eam_nonzero[:, 0]],
         ei_to_original_index[eam_nonzero[:, 1]],
     ] = True
-    return ~adj_mask
+    return adj_mask

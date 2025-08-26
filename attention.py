@@ -69,24 +69,25 @@ class MultiHeadAttention(nn.Module):
             # if self.training and self.dropout > 0:
             #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
             out = torch.matmul(attn_weights, V)
+            attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
         # else:
-        #     attn_scores = None
+        #     attn_weights = None
         #     try:    
         #         with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
         #             out = F.scaled_dot_product_attention(
-        #                 Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+        #                 Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
         #             )
         #         # print("Using efficient attention kernel")
         #     except RuntimeError as e:
         #         out = F.scaled_dot_product_attention(
-        #             Q, K, V, attn_mask=adj_mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+        #             Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
         #         )
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
-        return out, attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
+        return out, attn_weights
 
 # Same input for both Q and K
 class SelfAttention(nn.Module):

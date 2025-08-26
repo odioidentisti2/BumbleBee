@@ -43,7 +43,7 @@ class MAGClassifier(nn.Module):
             return attn_weights
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
-    
+
     def batch_forward(self, edge_features, edge_index, batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
@@ -89,7 +89,7 @@ class MAGClassifier(nn.Module):
 
 # trainer.fit
 def train(model, loader, optimizer, criterion, epoch):
-    model.train()  # set training mode
+    model.train()  #set training mode
     total_loss = 0
     total = 0
     batch_num = 0

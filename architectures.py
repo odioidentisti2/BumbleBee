@@ -22,7 +22,7 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.attn_scores = None
+        self.attn_weights = None
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
@@ -38,7 +38,7 @@ class TransformerBlock(nn.Module):
             # mask = pad_mask  # [batch, seq_len]
             mask = None
         # Attention
-        out, self.attn_scores = self.attention(self.norm(X), mask=mask)
+        out, self.attn_weights = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
         # MLP
