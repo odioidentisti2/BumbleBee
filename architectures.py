@@ -92,15 +92,15 @@ class ESA(nn.Module):
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask, padding_mask=None):
+    def forward(self, X, adj_mask, pad_mask=None):
         # Encoder
         enc = X
         for layer in self.encoder:
-            enc = layer(enc, adj_mask=adj_mask, pad_mask=padding_mask)
+            enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
-                dec = layer(dec, pad_mask=padding_mask)
+                dec = layer(dec, pad_mask=pad_mask)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         return F.mish(out)  
         # return F.mish(self.decoder_linear(out))

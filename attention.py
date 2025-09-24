@@ -56,11 +56,7 @@ class MultiHeadAttention(nn.Module):
         K = K.transpose(1, 2)
         V = V.transpose(1, 2)
 
-        # Attention mask: add num_head dimension
-        # if mask is not None:
-        #     mask = mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # [batch_size, num_heads, seq, seq]
-
-        if True:  # Manual attention computation to get attention weights
+        if False:  # Manual attention computation to get attention weights
             scale = head_dim ** -0.5
             attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
             if mask is not None:  # MASK: set masked positions to -inf before softmax
@@ -70,18 +66,19 @@ class MultiHeadAttention(nn.Module):
             #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
             out = torch.matmul(attn_weights, V)
             attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
-        # else:
-        #     attn_weights = None
-        #     try:    
-        #         with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
-        #             out = F.scaled_dot_product_attention(
-        #                 Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-        #             )
-        #         # print("Using efficient attention kernel")
-        #     except RuntimeError as e:
-        #         out = F.scaled_dot_product_attention(
-        #             Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
-        #         )
+        else:
+            attn_weights = None
+            try:    
+                with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+                    out = F.scaled_dot_product_attention(
+                        Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                    )
+                # print("Using efficient attention kernel")
+            except RuntimeError as e:
+                out = F.scaled_dot_product_attention(
+                    Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                )
+        out = torch.nan_to_num(out, nan=0.0)  # padding can result in NaNs due to -inf rows
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
