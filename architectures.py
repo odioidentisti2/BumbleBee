@@ -106,4 +106,4 @@ class ESA(nn.Module):
         # return F.mish(self.decoder_linear(out))
 
     def get_attn_weights(self):
-        return self.decoder[-1].attn_scores.mean(dim=1)  # Aggregate seeds by mean (sum?)
+        return self.decoder[-1].attn_weights.mean(dim=1)  # Aggregate seeds by mean (sum?)

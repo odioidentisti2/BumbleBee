@@ -69,7 +69,7 @@ class MAGClassifier(nn.Module):
         """
         edge_feat = MAGClassifier.get_features(batch)
 
-        if True:  #edge_feat.device.type == 'cuda':  # GPU: batch Attention
+        if False:  #edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch)
         else:  # CPU: per-graph Attention
             return self.single_forward(edge_feat, batch.edge_index, batch, return_attention)
@@ -184,8 +184,8 @@ def main():
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
 
     # Explain
-    single_loader = DataLoader(testset, batch_size=1)
-    explain(model, single_loader)
+    # single_loader = DataLoader(testset, batch_size=1)
+    # explain(model, single_loader)
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
@@ -195,16 +195,16 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     glob = {
-        "BATCH_SIZE": 64,  # I should try reducing waste since drop_last=True
+        "BATCH_SIZE": 1,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 20,
+        "NUM_EPOCHS": 1,
     }
     # Print time and model stamps
     print()
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    # import pprint
-    # pprint.pprint(glob)
+    import pprint
+    pprint.pprint(glob)
     main() 
 
     ## ESA repo
