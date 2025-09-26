@@ -102,8 +102,8 @@ def train(model, loader, optimizer, criterion, epoch):
         optimizer.zero_grad()  # zero gradients
         logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
-        print(f'Logits: {logits}')
-        print(f'loss: {loss.item():.3f} [{total}/{len(loader.dataset)}] (Batch {batch_num})')
+        # print(f'Logits: {logits}')
+        # print(f'loss: {loss.item():.3f} [{total}/{len(loader.dataset)}] (Batch {batch_num})')
         loss.backward()  # backward pass
         optimizer.step()  # update weights
         # calculate statistics
