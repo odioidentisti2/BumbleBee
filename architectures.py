@@ -34,7 +34,7 @@ class TransformerBlock(nn.Module):
         elif self.layer_type == 'S':
             if pad_mask is not None:
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
-                mask.diagonal(dim1=-2, dim2=-1).fill_(True)  # Fix: Allow self-attention to prevent NaNs 
+                # mask.diagonal(dim1=-2, dim2=-1).fill_(True)  # Fix: Allow self-attention to prevent NaNs 
         else:  # 'P'
             mask = pad_mask  # [batch, seq_len]
         # Attention
