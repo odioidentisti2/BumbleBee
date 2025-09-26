@@ -204,7 +204,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 1,
+        "NUM_EPOCHS": 20,
     }
     # Print time and model stamps
     print()
