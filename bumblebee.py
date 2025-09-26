@@ -49,7 +49,7 @@ class MAGClassifier(nn.Module):
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
         max_edges = max([g.num_edges for g in batch.to_data_list()])
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
-
+        pad_mask = None
         adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
 
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
