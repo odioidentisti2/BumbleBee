@@ -4,6 +4,8 @@ from torch.nn import functional as F
 from torch.nn.init import xavier_normal_, xavier_uniform_, constant_ 
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
+COUNTER = 0  # For debugging
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.0):
         super(MultiHeadAttention, self).__init__()
@@ -67,18 +69,20 @@ class MultiHeadAttention(nn.Module):
             out = torch.matmul(attn_weights, V)
             attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
         else:
-            attn_weights = None
+            attn_weights = None    
             try:    
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
                         Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
                     )
-                # print("Using efficient attention kernel")
+                if COUNTER == 0:
+                    COUNTER += 1
+                    print("Using efficient attention kernel")
             except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
                 )
-        out = torch.nan_to_num(out, nan=0.0)  # padding can result in NaNs due to -inf rows
+        # out = torch.nan_to_num(out, nan=0.0)  # padding can result in NaNs due to -inf rows
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
@@ -96,8 +100,6 @@ class SelfAttention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
-            # print("SELF")
-            # print(mask)
         return self.mha(X, X, mask, return_attention)
 
 
@@ -118,6 +120,4 @@ class PMA(nn.Module):
         if mask is not None: 
             mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
-            # print("PMA")
-            # print(mask)
         return self.mha(seeds, X, mask, return_attention)

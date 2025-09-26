@@ -49,12 +49,10 @@ class MAGClassifier(nn.Module):
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
         max_edges = max([g.num_edges for g in batch.to_data_list()])
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
-        # if pad_mask is not None:
-        #     print("pad_mask shape:", pad_mask.shape)
-        #     print("pad_mask sum (per batch):", pad_mask.sum(dim=1))
-        #     print("Any all-False rows in mask?", (~pad_mask.any(dim=-1)).any())
+
         adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
-        out = self.esa(dense_batch_h, adj_mask)  # [batch_size, hidden_dim]
+
+        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
@@ -74,6 +72,9 @@ class MAGClassifier(nn.Module):
             return self.batch_forward(edge_feat, batch.edge_index, batch)
         else:  # CPU: per-graph Attention
             return self.single_forward(edge_feat, batch.edge_index, batch, return_attention)
+        # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
+        #     print("WARNING: Batch and Single logits differ!")
+        # return batch_logits
         
     @staticmethod
     def get_features(batch):
@@ -101,11 +102,14 @@ def train(model, loader, optimizer, criterion, epoch):
         optimizer.zero_grad()  # zero gradients
         logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
+        # print(f'Logits: {logits}')
+        # print(f'loss: {loss.item():.3f} [{total}/{len(loader.dataset)}] (Batch {batch_num})')
         loss.backward()  # backward pass
         optimizer.step()  # update weights
         # calculate statistics
         total_loss += loss.item() * batch.num_graphs
         total += batch.num_graphs
+        # print(f'total_loss: {total_loss:.3f} total: {total}')
     return total_loss / total
 
 def test(model, loader, criterion):
@@ -195,9 +199,10 @@ if __name__ == "__main__":
     # GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
-    BATCH = False  # Use batch attention if True, else per-graph attention (CPU only)
+    BATCH = True  # Use batch attention if True, else per-graph attention (CPU only)
+    print(f'BATCH or SINGLE: {BATCH}')
     glob = {
-        "BATCH_SIZE": 1,  # I should try reducing waste since drop_last=True
+        "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
         "NUM_EPOCHS": 1,
     }

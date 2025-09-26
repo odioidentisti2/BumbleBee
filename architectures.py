@@ -26,26 +26,30 @@ class TransformerBlock(nn.Module):
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
+        mask = None
         if self.layer_type == 'M': 
             mask = adj_mask
             # if pad_mask is not None:
-            #     mask = mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
+                # assert torch.equal(mask, mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2))
         elif self.layer_type == 'S':
-            mask = None
-            # if pad_mask is not None:
-            #     mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
+            if pad_mask is not None:
+                mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
+                mask.diagonal(dim1=-2, dim2=-1).fill_(True)  # Fix: Allow self-attention to prevent NaNs 
         else:  # 'P'
-            # mask = pad_mask  # [batch, seq_len]
-            mask = None
+            mask = pad_mask  # [batch, seq_len]
         # Attention
         out, self.attn_weights = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
+            # Zero out output for padded positions after each layer
+            # if pad_mask is not None:
+            #     out = out * pad_mask.unsqueeze(-1)
+
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
 
-        # # Zero out output for padded queries
+        # Zero out output for padded positions after MLP
         # if pad_mask is not None and self.layer_type != 'P':
         #     out = out * pad_mask.unsqueeze(-1)
 
@@ -100,8 +104,10 @@ class ESA(nn.Module):
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
-                dec = layer(dec, pad_mask=pad_mask)
+            dec = layer(dec, pad_mask=pad_mask)
+            pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
+    
         return F.mish(out)  
         # return F.mish(self.decoder_linear(out))
 
