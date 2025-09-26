@@ -75,6 +75,7 @@ class MultiHeadAttention(nn.Module):
                     out = F.scaled_dot_product_attention(
                         Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
                     )
+                global COUNTER
                 if COUNTER == 0:
                     COUNTER += 1
                     print("Using efficient attention kernel")
