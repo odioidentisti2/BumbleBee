@@ -1,0 +1,15 @@
+name: pytorch_openblas_cpu
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch::cpuonly
+  - blas[build=openblas]
+  - pytorch
+  - pyg::pyg
+  - pandas
+  - rdkit
+  - seaborn
+  - pillow
+prefix: /home/thomas/miniconda3/envs/pytorch_openblas_cpu

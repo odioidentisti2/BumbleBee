@@ -51,16 +51,17 @@ def edge_adjacency(source, target):
 
 def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     """
-    Generates a boolean adjacency mask for edges in a batched graph.
+    Generates a boolean adjacency mask for edges across a batch of graph instances.
 
     Args:
-        b_edge_index (torch.Tensor): Edge indices of shape [2, num_edges].
-        b_map (torch.Tensor): Mapping from node indices to batch indices.
-        batch_size (int): Number of batches in the graph.
-        num_edges (int): Number of edges in the graph.
+        b_edge_index (torch.Tensor): Edge indices of shape [2, num_edges] (global indexing across the batch).
+        b_map (torch.Tensor): Mapping from node indices to batch indices (for each node, which graph instance it belongs to).
+        batch_size (int): Number of graph instances in the batch.
+        num_edges (int): Number of edges per graph in the padded output (adjacency mask width/height).
 
     Returns:
-        torch.Tensor: Boolean adjacency mask of shape [batch_size, num_edges, num_edges].
+        torch.Tensor: Boolean adjacency mask of shape [batch_size, num_edges, num_edges],
+                      where adj_mask[b, i, j] is True if edge i and edge j are adjacent within graph b.
     """
     adj_mask = torch.full(
         size=(batch_size, num_edges, num_edges),

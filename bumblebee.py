@@ -200,7 +200,7 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     BATCH = True  # Use batch attention if True, else per-graph attention (CPU only)
-    print(f'BATCH or SINGLE: {BATCH}')
+    print(f'BATCH attention: {BATCH}')
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
