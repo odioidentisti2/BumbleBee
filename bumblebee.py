@@ -45,13 +45,17 @@ class MAGClassifier(nn.Module):
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
 
-    def batch_forward(self, edge_features, edge_index, batch):
+    def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
-        edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
-        max_edges = max([g.num_edges for g in batch.to_data_list()])
+        edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
+
+        num_graphs = int(node_batch.max().item()) + 1
+        # counts = torch.bincount(edge_batch) #, minlength=num_graphs) if edge_batch.numel() > 0 else torch.tensor([], device=edge_features.device, dtype=torch.long)
+        # max_edges = int(counts.max().item()) #  if counts.numel() > 0 else 0
+        max_edges = int(torch.bincount(edge_batch).max().item())  # unsafe if some graphs have 0 edges
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
 
-        adj_mask = edge_mask(edge_index, batch.batch, batch.num_graphs, max_edges)
+        adj_mask = edge_mask(edge_index, node_batch, num_graphs, max_edges)
 
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
@@ -69,8 +73,8 @@ class MAGClassifier(nn.Module):
         """
         edge_feat = MAGClassifier.get_features(batch)
 
-        if edge_feat.device.type == 'cuda':  # GPU: batch Attention
-            return self.batch_forward(edge_feat, batch.edge_index, batch)
+        if BATCH_DEBUG or edge_feat.device.type == 'cuda':  # GPU: batch Attention
+            return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
             return self.single_forward(edge_feat, batch.edge_index, batch)
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
@@ -198,6 +202,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
     # GLOBALS
+    BATCH_DEBUG = True  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     glob = {
