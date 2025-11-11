@@ -81,14 +81,4 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
         ei_to_original_index[eam_nonzero[:, 1]],
     ] = True
 
-    # Allow padded positions to self-attend to avoid NaNs
-    edge_counts_per_graph = torch.bincount(edge_to_graph, minlength=batch_size)
-    
-    for b in range(batch_size):
-        real_edges = edge_counts_per_graph[b].item()
-        if real_edges < num_edges:
-            # Padded positions can self-attend (prevents NaN)
-            padded_indices = torch.arange(real_edges, num_edges, device=b_edge_index.device)
-            adj_mask[b, padded_indices, padded_indices] = True
-
     return adj_mask

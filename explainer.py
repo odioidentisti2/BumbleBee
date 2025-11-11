@@ -18,7 +18,12 @@ def explain_with_attention(model, single_batch, intensity=1):
     top = 7.77
     with torch.no_grad():
         graph = single_batch.to_data_list()[0]
-        weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
+        ## DEVI USARE SINGLE_FORWARD!!!
+        # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
+
+        edge_feat = model.get_features(single_batch)
+        weights = model.single_forward(edge_feat, single_batch.edge_index, single_batch, return_attention=True)[0]
+
         # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
         ratios = weights / weights.mean()  # Relative to this molecule
         norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)

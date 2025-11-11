@@ -22,6 +22,7 @@ class MAGClassifier(nn.Module):
         self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
 
     def single_forward(self, edge_features, edge_index, batch, return_attention=False):
+        self.esa.expose_attention(return_attention)
         # I shouldn't pass the batch here...
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
@@ -37,7 +38,7 @@ class MAGClassifier(nn.Module):
             out[i] = self.esa(h, adj_mask)  # [hidden_dim]
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
-                attn = self.esa.get_attn_weights().squeeze(0)  # Remove batch dimension
+                attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 attn_weights.append(attn.detach().cpu())
         if return_attention:
             return attn_weights
@@ -57,7 +58,7 @@ class MAGClassifier(nn.Module):
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
-    def forward(self, batch, return_attention=False):
+    def forward(self, batch):
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -68,10 +69,10 @@ class MAGClassifier(nn.Module):
         """
         edge_feat = MAGClassifier.get_features(batch)
 
-        if BATCH:  #edge_feat.device.type == 'cuda':  # GPU: batch Attention
+        if edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch)
-        else:  # CPU: per-graph Attention
-            return self.single_forward(edge_feat, batch.edge_index, batch, return_attention)
+        else:  # per-graph Attention (faster on CPU)
+            return self.single_forward(edge_feat, batch.edge_index, batch)
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
@@ -91,7 +92,7 @@ class MAGClassifier(nn.Module):
 
 # trainer.fit
 def train(model, loader, optimizer, criterion, epoch):
-    model.train()  #set training mode
+    model.train()  # set training mode
     total_loss = 0
     total = 0
     batch_num = 0
@@ -188,7 +189,7 @@ def main():
     test_loss, test_acc = test(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
 
-    # Explain
+    # # Explain
     # single_loader = DataLoader(testset, batch_size=1)
     # explain(model, single_loader)
 
@@ -199,8 +200,6 @@ if __name__ == "__main__":
     # GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
-    BATCH = True  # Use batch attention if True, else per-graph attention (CPU only)
-    print(f'BATCH or SINGLE: {BATCH}')
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,

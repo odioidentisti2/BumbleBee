@@ -6,6 +6,20 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 
 COUNTER = 0  # For debugging
 
+
+# Scaled Dot-Product Attention with returned attention weights
+def sdpa_with_weights(Q, K, V, mask):  
+    scale = Q.size(-1) ** -0.5
+    attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+    if mask is not None:  # MASK: set masked positions to -inf before softmax
+        attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
+    attn_weights = F.softmax(attn_scores, dim=-1)         
+    # if self.training and self.dropout > 0:
+    #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
+    out = torch.matmul(attn_weights, V)
+    attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
+    return out, attn_weights
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.0):
         super(MultiHeadAttention, self).__init__()
@@ -58,16 +72,8 @@ class MultiHeadAttention(nn.Module):
         K = K.transpose(1, 2)
         V = V.transpose(1, 2)
 
-        if False:  # Manual attention computation to get attention weights
-            scale = head_dim ** -0.5
-            attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-            if mask is not None:  # MASK: set masked positions to -inf before softmax
-                attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
-            attn_weights = F.softmax(attn_scores, dim=-1)         
-            # if self.training and self.dropout > 0:
-            #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
-            out = torch.matmul(attn_weights, V)
-            attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
+        if return_attention:
+            out, attn_weights = sdpa_with_weights(Q, K, V, mask)
         else:
             attn_weights = None    
             try:    
@@ -83,7 +89,6 @@ class MultiHeadAttention(nn.Module):
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
                 )
-        # out = torch.nan_to_num(out, nan=0.0)  # padding can result in NaNs due to -inf rows
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
