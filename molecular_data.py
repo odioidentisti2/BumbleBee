@@ -18,6 +18,7 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
+        # HybridizationType = UNSPECIFIED is the only "other"
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
         return [float(value == v) for v in allowed_values] + [0]
@@ -33,7 +34,7 @@ def atom_features(atom):  # 84
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1
         encoding(atom.GetChiralTag(), [
-            Chem.rdchem.CHI_UNSPECIFIED,
+            Chem.rdchem.CHI_UNSPECIFIED,  # do I need this?
             Chem.rdchem.CHI_TETRAHEDRAL_CW,
             Chem.rdchem.CHI_TETRAHEDRAL_CCW,
             # Chem.rdchem.CHI_OTHER,  # "other" is already added by the encoding function
