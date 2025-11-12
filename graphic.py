@@ -1,7 +1,13 @@
 from rdkit.Chem.Draw import rdMolDraw2D
-from rdkit.Geometry import Point2D
-from PIL import Image
-import io
+# from rdkit.Geometry import Point2D
+
+# Check if running in Google Colab
+import sys
+if 'google.colab' in sys.modules:
+    from IPython.display import Image, display
+else:
+    from PIL import Image
+    import io
 
 
 def red_or_green(weight):
@@ -99,6 +105,12 @@ def depict(data, weights, attention=True):
                         highlightBondColors=bond_colors,
                         legend=legend)
     drawer.FinishDrawing()
-    Image.open(io.BytesIO(drawer.GetDrawingText())).show()
+
+    # Check if running in Google Colab
+    if 'google.colab' in sys.modules:
+        image_bytes = drawer.GetDrawingText()
+        display(Image(data=image_bytes))
+    else:
+        Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
     print(f"Sum: {sum(bond_weights.values()):.2f}")
