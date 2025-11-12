@@ -1,3 +1,4 @@
+import torch
 from rdkit.Chem.Draw import rdMolDraw2D
 # from rdkit.Geometry import Point2D
 

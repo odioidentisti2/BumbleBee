@@ -126,13 +126,15 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
     pred_base = float(model(single_batch).detach().cpu().numpy())
     model.input_mlp.forward = orig_forward
 
+    weights = edge_importance.detach().cpu()
+
     print(f"Prediction (real): {pred_real:.2f}")
     print(f"Prediction (baseline): {pred_base:.2f}")
     print(f"Sum of attributions: {edge_importance.sum():.2f}")
     print(f"Difference: {pred_real - pred_base:.2f}")
 
     print("\nDEPICT MLP EDGE IMPORTANCE (Integrated Gradients, after input_mlp)")
-    depict(graph, edge_importance.numpy() * intensity/ 10, attention=False)
+    depict(graph, weights.numpy() * intensity/ 10, attention=False)
     return edge_importance
 
 
