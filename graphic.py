@@ -108,9 +108,11 @@ def depict(data, weights, attention=True):
 
     # Check if running in Google Colab
     if 'google.colab' in sys.modules:
+        print("IPython")
         image_bytes = drawer.GetDrawingText()
         display(Image(data=image_bytes))
     else:
+        print("PIL")
         Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
     print(f"Sum: {sum(bond_weights.values()):.2f}")

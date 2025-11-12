@@ -84,7 +84,6 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
     """
     Integrated gradients for the output of input_mlp (edge embeddings).
     """
-    single_batch = single_batch.cpu()
     graph = single_batch.to_data_list()[0]
 
     # Get edge features and baseline
