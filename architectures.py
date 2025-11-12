@@ -28,8 +28,6 @@ class TransformerBlock(nn.Module):
         mask = None
         if self.layer_type == 'M': 
             mask = adj_mask
-            # if pad_mask is not None:
-                # assert torch.equal(mask, mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2))
         elif self.layer_type == 'S':
             if pad_mask is not None:
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
@@ -49,11 +47,9 @@ class TransformerBlock(nn.Module):
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
-
         # Zero out output for padded positions after MLP
         # if pad_mask is not None and self.layer_type != 'P':
         #     out = out * pad_mask.unsqueeze(-1)
-
         return out
     
 
@@ -122,4 +118,4 @@ class ESA(nn.Module):
                     delattr(layer, 'attn_weights')
 
     def get_attention(self, index=-1):
-        return self.decoder[index].attn_weights.mean(dim=1)  # Aggregate seeds by mean (sum?)
+        return self.decoder[index].attn_weights.mean(dim=1)  # Aggregate seeds by mean (try sum?)
