@@ -37,7 +37,7 @@ class TransformerBlock(nn.Module):
         if hasattr(self, 'attn_weights'):
             out, self.attn_weights = self.attention(self.norm(X), mask=mask, return_attention=True)
         else:
-            out, _ = self.attention(self.norm(X), mask=mask)
+            out= self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
             # Zero out output for padded positions after each layer

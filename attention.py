@@ -8,8 +8,8 @@ COUNTER = 0  # For debugging
 
 
 # Scaled Dot-Product Attention with returned attention weights
-def sdpa_with_weights(Q, K, V, mask):  
-    scale = Q.size(-1) ** -0.5
+def _sdpa_with_weights(Q, K, V, mask):  
+    scale = Q.size(-1) ** -0.5  # head_dim = Q.size(-1)
     attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
     if mask is not None:  # MASK: set masked positions to -inf before softmax
         attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
@@ -73,9 +73,8 @@ class MultiHeadAttention(nn.Module):
         V = V.transpose(1, 2)
 
         if return_attention:
-            out, attn_weights = sdpa_with_weights(Q, K, V, mask)
+            out, attn_weights = _sdpa_with_weights(Q, K, V, mask)
         else:
-            attn_weights = None    
             try:    
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
@@ -94,7 +93,9 @@ class MultiHeadAttention(nn.Module):
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
-        return out, attn_weights
+        if return_attention:
+            return out, attn_weights
+        return out
 
 # Same input for both Q and K
 class SelfAttention(nn.Module):
