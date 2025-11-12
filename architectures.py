@@ -42,10 +42,17 @@ class TransformerBlock(nn.Module):
             out, _ = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
+            # Zero out output for padded positions after each layer
+            # if pad_mask is not None:
+            #     out = out * pad_mask.unsqueeze(-1)
 
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
+
+        # Zero out output for padded positions after MLP
+        # if pad_mask is not None and self.layer_type != 'P':
+        #     out = out * pad_mask.unsqueeze(-1)
 
         return out
     
