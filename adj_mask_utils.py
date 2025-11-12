@@ -54,10 +54,10 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     Generates a boolean adjacency mask for edges across a batch of graph instances.
 
     Args:
-        b_edge_index (torch.Tensor): Edge indices of shape [2, num_edges] (global indexing across the batch).
-        b_map (torch.Tensor): Mapping from node indices to batch indices (for each node, which graph instance it belongs to).
-        batch_size (int): Number of graph instances in the batch.
-        num_edges (int): Number of edges per graph in the padded output (adjacency mask width/height).
+        b_edge_index (torch.Tensor): Edge indices of shape [2, num_edges].
+        b_map (torch.Tensor): Mapping from node indices to batch indices.
+        batch_size (int): Number of graphs in the batch.
+        num_edges (int): Maximum edge count across graphs in the batch (i.e., the padded edge dimension).
 
     Returns:
         torch.Tensor: Boolean adjacency mask of shape [batch_size, num_edges, num_edges],
@@ -81,15 +81,5 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
         ei_to_original_index[eam_nonzero[:, 0]],
         ei_to_original_index[eam_nonzero[:, 1]],
     ] = True
-
-    # # Allow padded positions to self-attend to avoid NaNs
-    # edge_counts_per_graph = torch.bincount(edge_to_graph, minlength=batch_size)
-    
-    # for b in range(batch_size):
-    #     real_edges = edge_counts_per_graph[b].item()
-    #     if real_edges < num_edges:
-    #         # Padded positions can self-attend (prevents NaN)
-    #         padded_indices = torch.arange(real_edges, num_edges, device=b_edge_index.device)
-    #         adj_mask[b, padded_indices, padded_indices] = True
 
     return adj_mask

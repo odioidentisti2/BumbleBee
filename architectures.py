@@ -22,7 +22,6 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.attn_weights = None
         self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
@@ -33,25 +32,20 @@ class TransformerBlock(nn.Module):
                 # assert torch.equal(mask, mask & pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2))
         elif self.layer_type == 'S':
             if pad_mask is not None:
-                mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len]
-                # mask.diagonal(dim1=-2, dim2=-1).fill_(True)  # Fix: Allow self-attention to prevent NaNs 
+                mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
         else:  # 'P'
             mask = pad_mask  # [batch, seq_len]
         # Attention
-        out, self.attn_weights = self.attention(self.norm(X), mask=mask)
+        if hasattr(self, 'attn_weights'):
+            out, self.attn_weights = self.attention(self.norm(X), mask=mask, return_attention=True)
+        else:
+            out, _ = self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
-            # Zero out output for padded positions after each layer
-            # if pad_mask is not None:
-            #     out = out * pad_mask.unsqueeze(-1)
 
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
-
-        # Zero out output for padded positions after MLP
-        # if pad_mask is not None and self.layer_type != 'P':
-        #     out = out * pad_mask.unsqueeze(-1)
 
         return out
     
@@ -111,5 +105,14 @@ class ESA(nn.Module):
         return F.mish(out)  
         # return F.mish(self.decoder_linear(out))
 
-    def get_attn_weights(self):
-        return self.decoder[-1].attn_weights.mean(dim=1)  # Aggregate seeds by mean (sum?)
+    def expose_attention(self, expose=True):
+        if expose:
+            for layer in self.decoder:
+                layer.attn_weights = None           
+        else:
+            for layer in self.decoder:
+                if hasattr(layer, "attn_weights"):
+                    delattr(layer, 'attn_weights')
+
+    def get_attention(self, index=-1):
+        return self.decoder[index].attn_weights.mean(dim=1)  # Aggregate seeds by mean (sum?)

@@ -18,7 +18,11 @@ def explain_with_attention(model, single_batch, intensity=1):
     top = 7.77
     with torch.no_grad():
         graph = single_batch.to_data_list()[0]
-        weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
+        # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
+
+        edge_feat = model.get_features(single_batch)
+        weights = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch, return_attention=True)[0]
+
         # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
         ratios = weights / weights.mean()  # Relative to this molecule
         norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
@@ -34,8 +38,8 @@ def explain_with_gradients(model, single_batch, steps=5, intensity=1):
 
     # Get baseline and final predictions for verification
     with torch.no_grad():
-        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch)
-        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch)
+        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch.batch)
+        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch)
     print(f"\nBaseline prediction: {baseline_pred.item():.4f}")
     # print(f"Expected attribution sum: {(final_pred - baseline_pred).item():.4f}")
 
@@ -47,7 +51,7 @@ def explain_with_gradients(model, single_batch, steps=5, intensity=1):
         interp_feat.requires_grad_(True)
         
         # Forward pass
-        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch)
+        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch.batch)
 
         grad = torch.autograd.grad(
             outputs=prediction,
@@ -80,7 +84,6 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
     """
     Integrated gradients for the output of input_mlp (edge embeddings).
     """
-    single_batch = single_batch.cpu()
     graph = single_batch.to_data_list()[0]
 
     # Get edge features and baseline
@@ -123,13 +126,15 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
     pred_base = float(model(single_batch).detach().cpu().numpy())
     model.input_mlp.forward = orig_forward
 
+    weights = edge_importance.detach().cpu()
+
     print(f"Prediction (real): {pred_real:.2f}")
     print(f"Prediction (baseline): {pred_base:.2f}")
     print(f"Sum of attributions: {edge_importance.sum():.2f}")
     print(f"Difference: {pred_real - pred_base:.2f}")
 
     print("\nDEPICT MLP EDGE IMPORTANCE (Integrated Gradients, after input_mlp)")
-    depict(graph, edge_importance.numpy() * intensity/ 10, attention=False)
+    depict(graph, weights.numpy() * intensity/ 10, attention=False)
     return edge_importance
 
 

@@ -1,7 +1,20 @@
+import torch
 from rdkit.Chem.Draw import rdMolDraw2D
-from rdkit.Geometry import Point2D
-from PIL import Image
-import io
+# from rdkit.Geometry import Point2D
+
+# Check if running in Google Colab
+IN_COLAB = False
+try:
+    import google.colab # Try importing, if it succeeds, it's Colab
+    IN_COLAB = True
+except ImportError:
+    pass # Not in Colab
+
+if IN_COLAB:
+    from IPython.display import Image, display
+else:
+    from PIL import Image
+    import io
 
 
 def red_or_green(weight):
@@ -99,6 +112,12 @@ def depict(data, weights, attention=True):
                         highlightBondColors=bond_colors,
                         legend=legend)
     drawer.FinishDrawing()
-    Image.open(io.BytesIO(drawer.GetDrawingText())).show()
+
+    # Check if running in Google Colab
+    if IN_COLAB:
+        image_bytes = drawer.GetDrawingText()
+        display(Image(data=image_bytes))
+    else:
+        Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
     print(f"Sum: {sum(bond_weights.values()):.2f}")
