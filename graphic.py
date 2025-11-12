@@ -2,8 +2,14 @@ from rdkit.Chem.Draw import rdMolDraw2D
 # from rdkit.Geometry import Point2D
 
 # Check if running in Google Colab
-import sys
-if 'google.colab' in sys.modules:
+IN_COLAB = False
+try:
+    import google.colab # Try importing, if it succeeds, it's Colab
+    IN_COLAB = True
+except ImportError:
+    pass # Not in Colab
+
+if IN_COLAB:
     from IPython.display import Image, display
 else:
     from PIL import Image
@@ -107,7 +113,7 @@ def depict(data, weights, attention=True):
     drawer.FinishDrawing()
 
     # Check if running in Google Colab
-    if 'google.colab' in sys.modules:
+    if IN_COLAB:
         print("IPython")
         image_bytes = drawer.GetDrawingText()
         display(Image(data=image_bytes))
