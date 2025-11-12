@@ -21,14 +21,26 @@ class MAGClassifier(nn.Module):
         # Classifier
         self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
 
+    def batch_forward(self, edge_features, edge_index, node_batch):
+        batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
+        edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
+        max_edges = torch.bincount(edge_batch).max().item()
+        dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+        batch_size = node_batch.max().item() + 1
+        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)
+        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
+        # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
+        logits = self.output_mlp(out)    # [batch_size, output_dim]
+        return torch.flatten(logits)     # [batch_size] 
+
     def single_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
         batch_size = node_batch.max().item() + 1
-        out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         src, dst = edge_index
         attn_weights = []
+        out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         for i in range(batch_size):
             graph_mask = (edge_batch == i)
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
@@ -40,26 +52,13 @@ class MAGClassifier(nn.Module):
             if return_attention:
                 attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 attn_weights.append(attn.detach().cpu())
-                # if i == batch_size -1:
+                # if i == batch_size - 1:
                 #     return attn_weights
         if return_attention:
             return attn_weights
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
-
-    def batch_forward(self, edge_features, edge_index, node_batch):
-        batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
-        edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
-        # max_edges = max([g.num_edges for g in batch.to_data_list()])
-        batch_size = node_batch.max().item() + 1
-        max_edges = torch.bincount(edge_batch).max().item()
-        dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
-        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)
-        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
-        # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
-        logits = self.output_mlp(out)    # [batch_size, output_dim]
-        return torch.flatten(logits)     # [batch_size] 
-
+    
     def forward(self, batch):
         """
         Args:
@@ -97,22 +96,17 @@ def train(model, loader, optimizer, criterion, epoch):
     model.train()  # set training mode
     total_loss = 0
     total = 0
-    batch_num = 0
     for batch in loader:
-        batch_num += 1
         batch = batch.to(DEVICE)
         targets = batch.y.view(-1).to(DEVICE)
         optimizer.zero_grad()  # zero gradients
         logits = model(batch)  # forward pass
         loss = criterion(logits, targets)  # calculate loss
-        # print(f'Logits: {logits}')
-        # print(f'loss: {loss.item():.3f} [{total}/{len(loader.dataset)}] (Batch {batch_num})')
         loss.backward()  # backward pass
         optimizer.step()  # update weights
         # calculate statistics
         total_loss += loss.item() * batch.num_graphs
         total += batch.num_graphs
-        # print(f'total_loss: {total_loss:.3f} total: {total}')
     return total_loss / total
 
 def test(model, loader, criterion):
@@ -201,7 +195,8 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
     # GLOBALS
-    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG = None
+    # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     glob = {
