@@ -135,12 +135,13 @@ def test(model, loader, criterion):
 def explain(model, single_loader):
     model.eval()
     current_intensity = 1
-    for molecule in single_loader:
+    for batched_molecule in single_loader:
+        batched_molecule = batched_molecule.to(DEVICE)
         repeat = True
         while repeat:
-            explain_with_attention(model, molecule, intensity=current_intensity)
-            explain_with_gradients(model, molecule, steps=100, intensity=current_intensity)
-            explain_with_mlp_integrated_gradients(model, molecule, intensity=current_intensity)
+            explain_with_attention(model, batched_molecule, intensity=current_intensity)
+            explain_with_gradients(model, batched_molecule, steps=100, intensity=current_intensity)
+            explain_with_mlp_integrated_gradients(model, batched_molecule, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
