@@ -18,11 +18,10 @@ def explain_with_attention(model, single_batch, intensity=1):
     top = 7.77
     with torch.no_grad():
         graph = single_batch.to_data_list()[0]
-        ## DEVI USARE SINGLE_FORWARD!!!
         # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
 
         edge_feat = model.get_features(single_batch)
-        weights = model.single_forward(edge_feat, single_batch.edge_index, single_batch, return_attention=True)[0]
+        weights = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch, return_attention=True)[0]
 
         # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
         ratios = weights / weights.mean()  # Relative to this molecule
@@ -39,8 +38,8 @@ def explain_with_gradients(model, single_batch, steps=5, intensity=1):
 
     # Get baseline and final predictions for verification
     with torch.no_grad():
-        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch)
-        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch)
+        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch.batch)
+        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch)
     print(f"\nBaseline prediction: {baseline_pred.item():.4f}")
     # print(f"Expected attribution sum: {(final_pred - baseline_pred).item():.4f}")
 
@@ -52,7 +51,7 @@ def explain_with_gradients(model, single_batch, steps=5, intensity=1):
         interp_feat.requires_grad_(True)
         
         # Forward pass
-        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch)
+        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch.batch)
 
         grad = torch.autograd.grad(
             outputs=prediction,

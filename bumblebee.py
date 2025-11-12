@@ -5,7 +5,7 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.utils import to_dense_batch
 from architectures import ESA, mlp
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
-from adj_mask_utils import *
+from adj_mask_utils import edge_adjacency, edge_mask
 from explainer import *
 
 
@@ -21,15 +21,15 @@ class MAGClassifier(nn.Module):
         # Classifier
         self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
 
-    def single_forward(self, edge_features, edge_index, batch, return_attention=False):
+    def single_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
-        # I shouldn't pass the batch here...
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
-        edge_batch = self._edge_batch(edge_index, batch.batch)  # [batch_edges]
-        out = torch.zeros((batch.num_graphs, self.hidden_dim), device=edge_features.device)
+        edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
+        batch_size = node_batch.max().item() + 1
+        out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         src, dst = edge_index
         attn_weights = []
-        for i in range(batch.num_graphs):
+        for i in range(batch_size):
             graph_mask = (edge_batch == i)
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
             adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
@@ -40,6 +40,8 @@ class MAGClassifier(nn.Module):
             if return_attention:
                 attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 attn_weights.append(attn.detach().cpu())
+                # if i == batch_size -1:
+                #     return attn_weights
         if return_attention:
             return attn_weights
         logits = self.output_mlp(out)    # [batch_size, output_dim]
@@ -48,15 +50,11 @@ class MAGClassifier(nn.Module):
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
-
-        num_graphs = int(node_batch.max().item()) + 1
-        # counts = torch.bincount(edge_batch) #, minlength=num_graphs) if edge_batch.numel() > 0 else torch.tensor([], device=edge_features.device, dtype=torch.long)
-        # max_edges = int(counts.max().item()) #  if counts.numel() > 0 else 0
-        max_edges = int(torch.bincount(edge_batch).max().item())  # unsafe if some graphs have 0 edges
+        # max_edges = max([g.num_edges for g in batch.to_data_list()])
+        batch_size = node_batch.max().item() + 1
+        max_edges = torch.bincount(edge_batch).max().item()
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
-
-        adj_mask = edge_mask(edge_index, node_batch, num_graphs, max_edges)
-
+        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
@@ -76,7 +74,7 @@ class MAGClassifier(nn.Module):
         if BATCH_DEBUG or edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
-            return self.single_forward(edge_feat, batch.edge_index, batch)
+            return self.single_forward(edge_feat, batch.edge_index, batch.batch)
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
@@ -193,16 +191,16 @@ def main():
     test_loss, test_acc = test(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
 
-    # # Explain
-    # single_loader = DataLoader(testset, batch_size=1)
-    # explain(model, single_loader)
+    # Explain
+    single_loader = DataLoader(testset, batch_size=1)
+    explain(model, single_loader)
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
     torch.manual_seed(42)
     torch.cuda.manual_seed_all(42)
     # GLOBALS
-    BATCH_DEBUG = True  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     glob = {

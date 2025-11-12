@@ -56,8 +56,8 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     Args:
         b_edge_index (torch.Tensor): Edge indices of shape [2, num_edges].
         b_map (torch.Tensor): Mapping from node indices to batch indices.
-        batch_size (int): Number of batches in the graph.
-        num_edges (int): Number of edges in the graph.
+        batch_size (int): Number of graphs in the batch.
+        num_edges (int): Maximum edge count across graphs in the batch (i.e., the padded edge dimension).
 
     Returns:
         torch.Tensor: Boolean adjacency mask of shape [batch_size, num_edges, num_edges].
