@@ -186,9 +186,9 @@ def main():
     test_loss, test_acc = test(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.3f} Test Acc: {test_acc:.3f}")
 
-    # Explain
-    single_loader = DataLoader(testset, batch_size=1)
-    explain(model, single_loader)
+    # # Explain
+    # single_loader = DataLoader(testset, batch_size=1)
+    # explain(model, single_loader)
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 20,
+        "NUM_EPOCHS": 1,
     }
     # Print time and model stamps
     print()
