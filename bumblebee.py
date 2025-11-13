@@ -111,6 +111,7 @@ def crossvalidation(model, optimizer, criterion):
 
         print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
         print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
+        model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
         training_loop(model, train_loader, optimizer, criterion)
         loss, acc = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
         fold_results['test_losses'].append(loss)
@@ -130,18 +131,18 @@ def crossvalidation(model, optimizer, criterion):
 
 
 def main():
-    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
     optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     criterion = torch.nn.BCEWithLogitsLoss()
 
     if CROSS_VALIDATION:
-        crossvalidation(model, optimizer, criterion)
+        crossvalidation(optimizer, criterion)
         return
         
     ## Train
     print(f"\nTraining set: {DATASET_PATH} ('Training')")
     trainingset = GraphDataset(DATASET_PATH, split='Training')
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
     training_loop(model, train_loader, optimizer, criterion)
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
