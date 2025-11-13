@@ -61,7 +61,7 @@ def explain(model, single_loader):
 
 def training_loop(loader, criterion):
     print("\nTraining...")
-    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
     optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
@@ -82,7 +82,7 @@ def save(model):
 
 def load(model_path):
     print(f"\nLoading model {model_path}")
-    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
     return model
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     ## DEBUG
     BATCH_DEBUG = None
     # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
-    CROSS_VALIDATION = True
+    CROSS_VALIDATION = False
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
@@ -179,7 +179,8 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 1,
+        "NUM_EPOCHS": 15,
+        "LAYER_TYPES": 'MSMSMP',  # 'MMSP'
     }
     ## Print time and model stamps
     print()
