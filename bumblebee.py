@@ -59,12 +59,15 @@ def explain(model, single_loader):
             else:
                 repeat = False  # Move to next molecule
 
-def training_loop(model, loader, optimizer, criterion):
+def training_loop(loader, criterion):
     print("\nTraining...")
+    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
+    return model
 
 def evaluate(model, loader, criterion, flag):
     print("\nEvaluating...")
@@ -84,7 +87,7 @@ def load(model_path):
     model.eval()
     return model
 
-def crossvalidation(model, optimizer, criterion):
+def crossvalidation(criterion):
     num_folds = 5
     print(f"\nCross-Validation on: ", DATASET_PATH)
     dataset = GraphDataset(DATASET_PATH)
@@ -111,8 +114,7 @@ def crossvalidation(model, optimizer, criterion):
 
         print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
         print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
-        model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
-        training_loop(model, train_loader, optimizer, criterion)
+        model = training_loop(train_loader, criterion)
         loss, acc = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
         fold_results['test_losses'].append(loss)
         fold_results['test_accs'].append(acc)    
@@ -131,19 +133,17 @@ def crossvalidation(model, optimizer, criterion):
 
 
 def main():
-    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     criterion = torch.nn.BCEWithLogitsLoss()
 
     if CROSS_VALIDATION:
-        crossvalidation(optimizer, criterion)
+        crossvalidation(criterion)
         return
         
     ## Train
     print(f"\nTraining set: {DATASET_PATH} ('Training')")
     trainingset = GraphDataset(DATASET_PATH, split='Training')
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = MAGClassifier(ATOM_DIM, BOND_DIM).to(DEVICE)
-    training_loop(model, train_loader, optimizer, criterion)
+    model = training_loop(train_loader, criterion)
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # statistics(model, loader, criterion, flag="Train")
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     ## DEBUG
     BATCH_DEBUG = None
     # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
-    CROSS_VALIDATION = False
+    CROSS_VALIDATION = True
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 20,
+        "NUM_EPOCHS": 1,
     }
     ## Print time and model stamps
     print()
