@@ -39,8 +39,8 @@ def atom_features(atom):
         # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
         encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
         # TotalDegree and TotalValence can't be 0 because the mol would be rejected (atom with no bonds)
-        encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
-        # encoding(atom.GetTotalValence(), [1, 2, 3, 4, 5, 6]) +  # 6 + 1
+        # encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
+        encoding(atom.GetTotalValence(), [1, 2, 3, 4, 5, 6]) +  # 6 + 1
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1
         encoding(atom.GetChiralTag(), [
