@@ -56,6 +56,7 @@ class MultiHeadAttention(nn.Module):
         K = self.fc_k(K)
 
         # Additional normalisation for queries/keys. See above
+        # IS THIS STLILL NEEDED? TRY without, INCREASING LEARNING RATE
         Q = self.ln_q(Q)
         K = self.ln_k(K)
 

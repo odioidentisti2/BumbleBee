@@ -5,11 +5,9 @@ import numpy as np
 import csv
 
 # These param are hardcoded 
-ATOM_DIM = 84
-BOND_DIM = 7
-# TEST: atomic number ancoding with reduced dimension
-ATOM_DIM = 56
 ATOMIC_NUMBERS = [1, 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 19, 20, 24, 26, 27, 28, 29, 30, 34, 35, 50, 53]
+ATOM_DIM = 57
+BOND_DIM = 7
 # DEBUG: muta dataset
 smiles_header = 'SMILES'
 label_header = 'Experimental_value'
@@ -23,11 +21,10 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
-        if allowed_values is ATOMIC_NUMBERS:
-            print("\n\n\n\n\n")
-            print(value)
-            print("\n\n\n\n\n")
-        # HybridizationType = UNSPECIFIED is the only "other"
+        print("\n\n\n\n\n##########################################################")
+        print(value)  # 
+        print("\n\n\n\n\n###########################################################")
+        # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
         return [float(value == v) for v in allowed_values] + [0]
@@ -36,7 +33,8 @@ def encoding(value, allowed_values):
     # for "formal_charge": [-1, -2, 1, 2, 0] any other charge (like -3 or +3) is mapped 
     # the same way as 0 charge.... ASK the developers!
 
-def atom_features(atom):  # 84
+def atom_features(atom):  # 56
+    # print(atom.GetHybridization())  # DEBUG
     return (
         # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
         encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
@@ -50,11 +48,13 @@ def atom_features(atom):  # 84
             # Chem.rdchem.CHI_OTHER,  # "other" is already added by the encoding function
             ]) +  # 3 + 1
         encoding(atom.GetHybridization(), [
+            Chem.rdchem.HybridizationType.UNSPECIFIED,
             Chem.rdchem.HybridizationType.SP,
             Chem.rdchem.HybridizationType.SP2,
             Chem.rdchem.HybridizationType.SP3,
-            Chem.rdchem.HybridizationType.SP3D,
-            Chem.rdchem.HybridizationType.SP3D2,
+            Chem.rdchem.HybridizationType.SP3D,  # rare
+            Chem.rdchem.HybridizationType.SP3D2,  # rare
+            # OTHER: S, SP2D
             ]) +  # 5 + 1
         [float(atom.GetIsAromatic())]  # 1
     )
