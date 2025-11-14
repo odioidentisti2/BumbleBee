@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.data import Data, Dataset
 from rdkit import Chem
-import numpy as np
+from rdkit.Chem.SaltRemover import SaltRemover
 import csv
 
 # These param are hardcoded 
@@ -22,7 +22,7 @@ def encoding(value, allowed_values):
     """
     if value not in allowed_values:
         print("\n\n\n\n\n##########################################################")
-        print(value)  # 
+        print(value)  # DEBUG
         print("\n\n\n\n\n###########################################################")
         # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
@@ -33,19 +33,20 @@ def encoding(value, allowed_values):
     # for "formal_charge": [-1, -2, 1, 2, 0] any other charge (like -3 or +3) is mapped 
     # the same way as 0 charge.... ASK the developers!
 
-def atom_features(atom):  # 56
+def atom_features(atom):
     # print(atom.GetHybridization())  # DEBUG
     return (
         # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
         encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
+        # TotalDegree and TotalValence can't be 0 because the mol would be rejected (atom with no bonds)
         encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
+        # encoding(atom.GetTotalValence(), [1, 2, 3, 4, 5, 6]) +  # 6 + 1
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1
         encoding(atom.GetChiralTag(), [
-            Chem.rdchem.CHI_UNSPECIFIED,  # do I need this?
+            Chem.rdchem.CHI_UNSPECIFIED,
             Chem.rdchem.CHI_TETRAHEDRAL_CW,
             Chem.rdchem.CHI_TETRAHEDRAL_CCW,
-            # Chem.rdchem.CHI_OTHER,  # "other" is already added by the encoding function
             ]) +  # 3 + 1
         encoding(atom.GetHybridization(), [
             Chem.rdchem.HybridizationType.UNSPECIFIED,
@@ -55,11 +56,11 @@ def atom_features(atom):  # 56
             Chem.rdchem.HybridizationType.SP3D,  # rare
             Chem.rdchem.HybridizationType.SP3D2,  # rare
             # OTHER: S, SP2D
-            ]) +  # 5 + 1
+            ]) +  # 6 + 1
         [float(atom.GetIsAromatic())]  # 1
     )
 
-def bond_features(bond):  # 7
+def bond_features(bond):
     return (
         encoding(bond.GetBondType(), [
             Chem.rdchem.BondType.SINGLE,
@@ -76,16 +77,25 @@ def smiles2graph(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
+
+    # Salt removal
+    if '.' in smiles:
+        mol = SaltRemover().StripMol(mol)
+        if len(Chem.GetMolFrags(mol)) > 1:  # Disconnected
+            return None
+        else:
+            print(f"Removed salts from: {smiles}")    
+
     mol = Chem.AddHs(mol)
 
     adj_matrix = Chem.rdmolops.GetAdjacencyMatrix(mol)
-    node_feat = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
+    node_attr = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)
     edge_index = torch.nonzero(torch.from_numpy(adj_matrix)).T  # Symmetric edge index src/dst [2, num_edges]    
-    edge_feat = torch.tensor([
+    edge_attr = torch.tensor([
         bond_features(mol.GetBondBetweenAtoms(src.item(), dst.item()))
         for src, dst in edge_index.T
     ], dtype=torch.float)
-    return Data(x=node_feat, edge_index=edge_index, edge_attr=edge_feat, mol=mol, smiles=smiles)
+    return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
 
 class GraphDataset(Dataset):
     def __init__(self, csv_path, split=None):
@@ -99,7 +109,9 @@ class GraphDataset(Dataset):
                 smiles = row[smiles_header]
                 label = row[label_header]
                 data = smiles2graph(smiles)
-                if data is not None:
+                if (data
+                        and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
+                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
                     target = TOX_MAP[label]
                     data.y = torch.tensor([target], dtype=torch.float)
                     self.graphs.append(data)
@@ -107,10 +119,7 @@ class GraphDataset(Dataset):
                     print(f"Invalid SMILES: {smiles}")
         print(f"Loaded {len(self.graphs)} molecules")
         
-        if self.graphs:
-            assert self.graphs[0].x.shape[1] == ATOM_DIM  # DEBUG
-            assert self.graphs[0].edge_attr.shape[1] == BOND_DIM  # DEBUG
-        else:
+        if not self.graphs:
             raise ValueError(f"No data")
 
     def len(self):
