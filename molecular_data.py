@@ -23,6 +23,10 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
+        if allowed_values is ATOMIC_NUMBERS:
+            print("\n\n\n\n\n")
+            print(value)
+            print("\n\n\n\n\n")
         # HybridizationType = UNSPECIFIED is the only "other"
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
