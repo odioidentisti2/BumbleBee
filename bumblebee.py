@@ -82,7 +82,7 @@ def save(model):
 
 def load(model_path):
     print(f"\nLoading model {model_path}")
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)  # WARNING:layer_types must be saved in the model
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
     return model
@@ -135,6 +135,10 @@ def crossvalidation(criterion):
 def main():
     criterion = torch.nn.BCEWithLogitsLoss()
 
+    ## Print model stamp
+    import pprint
+    pprint.pprint(glob)    
+
     if CROSS_VALIDATION:
         crossvalidation(criterion)
         return
@@ -171,7 +175,7 @@ if __name__ == "__main__":
     ## DEBUG
     BATCH_DEBUG = None
     # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
-    CROSS_VALIDATION = False
+    CROSS_VALIDATION = True
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
@@ -180,15 +184,13 @@ if __name__ == "__main__":
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
         "NUM_EPOCHS": 15,
-        "LAYER_TYPES": 'MSMSMP',  # 'MMSP'
+        "LAYER_TYPES": 'SSMP',  # 'MMSP'
     }
-    ## Print time and model stamps
     print()
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    import pprint
-    pprint.pprint(glob)
-    main() 
+    for glob['LAYER_TYPES'] in ["SSP", "SMP"]:
+        main() 
 
     ## ESA repo
     # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
