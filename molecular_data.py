@@ -4,8 +4,13 @@ from rdkit import Chem
 import numpy as np
 import csv
 
+# These param are hardcoded 
 ATOM_DIM = 84
 BOND_DIM = 7
+# TEST: atomic number ancoding with reduced dimension
+ATOM_DIM = 56
+ATOMIC_NUMBERS = [1, 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 19, 20, 24, 26, 27, 28, 29, 30, 34, 35, 50, 53]
+# DEBUG: muta dataset
 smiles_header = 'SMILES'
 label_header = 'Experimental_value'
 split_header = 'Status'
@@ -29,7 +34,8 @@ def encoding(value, allowed_values):
 
 def atom_features(atom):  # 84
     return (
-        encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
+        # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
+        encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
         encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1

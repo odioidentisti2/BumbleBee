@@ -184,13 +184,12 @@ if __name__ == "__main__":
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
         "NUM_EPOCHS": 15,
-        "LAYER_TYPES": 'SSMP',  # 'MMSP'
+        "LAYER_TYPES": 'MMSP',  # 'MMSP'
     }
     print()
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    for glob['LAYER_TYPES'] in ["SSP", "SMP"]:
-        main() 
+    main() 
 
     ## ESA repo
     # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
