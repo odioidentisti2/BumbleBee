@@ -7,9 +7,10 @@ from adj_mask_utils import edge_adjacency, edge_mask
 
 class MAGClassifier(nn.Module):
     
-    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=128, mlp_hidden_dim=128, num_heads=8, output_dim=1):
+    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=128, mlp_hidden_dim=256, num_heads=8, output_dim=1):
         super(MAGClassifier, self).__init__()
         self.hidden_dim = hidden_dim
+        print("MLP hidden dim:", mlp_hidden_dim)
         # Edge feature encoder (node-edge MLP)
         self.input_mlp = mlp(2 * node_dim + edge_dim, mlp_hidden_dim, hidden_dim)
         # ESA block
