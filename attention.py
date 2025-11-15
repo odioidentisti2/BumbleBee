@@ -110,11 +110,11 @@ class SelfAttention(nn.Module):
             mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
         return self.mha(X, X, mask, return_attention)
 
-print("seeds K = 16")
+
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
-    def __init__(self, dim, num_heads, num_seeds=16, dropout=0.0):
+    def __init__(self, dim, num_heads, num_seeds=32, dropout=0.0):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
