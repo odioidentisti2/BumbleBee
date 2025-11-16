@@ -103,7 +103,7 @@ def crossvalidation(dataset_path, criterion):
     fold_size = dataset_size // num_folds
     fold_results = {
         'test_losses': [],
-        'test_accs': [],
+        'test_metrics': [],
     }
 
     start_time = time.time()   
@@ -134,7 +134,7 @@ def crossvalidation(dataset_path, criterion):
     std_metric = (sum((x - mean_metric)**2 for x in fold_results['test_metrics']) / num_folds) ** 0.5    
     print(f"Test Loss:  {mean_loss:.3f} ± {std_loss:.3f}")
     print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
-    print(f"\nIndividual fold metrics: {[f'{acc:.3f}' for acc in fold_results['test_accs']]}")
+    print(f"\nIndividual fold metrics: {[f'{metric:.3f}' for metric in fold_results['test_metrics']]}")
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 

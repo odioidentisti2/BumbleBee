@@ -6,10 +6,12 @@ import csv
 
 import logp_dataset as dataset_info
 
-# These param are hardcoded 
-ATOMIC_NUMBERS = [1, 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 19, 20, 24, 26, 27, 28, 29, 30, 34, 35, 50, 53]
+# These param are hardcoded
 ATOM_DIM = 57
 BOND_DIM = 7
+ELEMENTS = ['H', 'Li', 'B', 'C', 'N', 'O', 'F', 'Na', 'Mg', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Cr', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Se', 'Br', 'Sn', 'I']
+ATOMIC_NUMBERS = [Chem.GetPeriodicTable().GetAtomicNumber(element) for element in ELEMENTS]
+# Ge, As, Pb, Hg ?
 
 
 def encoding(value, allowed_values):
