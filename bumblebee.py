@@ -1,7 +1,7 @@
 import time
 import torch
 from torch_geometric.loader import DataLoader
-from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM, dataset_info
+from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
 from explainer import *
 
@@ -24,14 +24,6 @@ def train(model, loader, optimizer, criterion):
         total += batch.num_graphs
     return total_loss / total
 
-def get_metric(logits, targets):
-    if TASK == 'binary_classification':
-        preds = (torch.sigmoid(logits) > 0.5)
-        return (preds == targets).sum().item()
-    else:  # Regression
-        # sum of squared errors and count (there are other options!)
-        return torch.sum((logits - targets) ** 2).item()
-
 def test(model, loader, criterion):
     model.eval()  # set evaluation mode
     total_loss = 0
@@ -45,7 +37,11 @@ def test(model, loader, criterion):
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
-            metric += get_metric(logits, targets)
+            if criterion.task == 'binary_classification':
+                preds = (torch.sigmoid(logits) > 0.5)
+                metric += (preds == targets).sum().item()  # to compute Accuracy
+            else:  # Regression
+                metric += torch.sum(torch.abs(logits - targets)).item()  # to compute MAE
     return total_loss / total, metric / total
 
 def explain(model, single_loader):
@@ -94,10 +90,8 @@ def load(model_path):
     model.eval()
     return model
 
-def crossvalidation(dataset_path, criterion):
+def crossvalidation(dataset, criterion):
     num_folds = 5
-    print(f"\nCross-Validation on: ", dataset_path)
-    dataset = GraphDataset(dataset_path)
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     fold_size = dataset_size // num_folds
@@ -139,24 +133,30 @@ def crossvalidation(dataset_path, criterion):
     print(f"{'='*50}\n")
 
 
-def main():
-    if TASK == 'binary_classification':     
+def main(dataset_dict, cv=False):
+    ## Print model stamp
+    import pprint
+    pprint.pprint(glob)
+
+    path = dataset_dict['path']
+    task = dataset_dict['task']
+    if task == 'binary_classification':     
         # Default: reduction='mean', return mean loss over batch
         criterion = torch.nn.BCEWithLogitsLoss()
     else:
         criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # criterion = torch.nn.L1Loss()  # Mean Absolute Error
-    ## Print model stamp
-    import pprint
-    pprint.pprint(glob)    
+    criterion.task = task
 
-    if CROSS_VALIDATION:
-        crossvalidation(DATASET_PATH, criterion)
+    if cv:
+        print(f"\nCross-Validation on: ", path)
+        dataset = GraphDataset(dataset_dict)
+        crossvalidation(dataset, criterion)
         return
         
     ## Train
-    print(f"\nTraining set: {DATASET_PATH} ('Training')")
-    trainingset = GraphDataset(DATASET_PATH, split='train')
+    print(f"\nTraining set: {path} ('Training')")
+    trainingset = GraphDataset(dataset_dict, split='train')
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
     model = training_loop(train_loader, criterion)
     ## Statistics on Training set
@@ -170,8 +170,8 @@ def main():
     # model = load(MODEL_PATH)
 
     ## Test
-    print(f"\nTest set: {DATASET_PATH} ('Test')")
-    testset = GraphDataset(DATASET_PATH, split='test')
+    print(f"\nTest set: {path} ('Test')")
+    testset = GraphDataset(dataset_dict, split='test')
     test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
     evaluate(model, test_loader, criterion, flag="Test")
 
@@ -186,10 +186,8 @@ if __name__ == "__main__":
     ## DEBUG
     BATCH_DEBUG = None
     # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
-    CROSS_VALIDATION = True
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
     # MODEL_PATH = 'model_20250822_210138.pt'
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
@@ -197,11 +195,11 @@ if __name__ == "__main__":
         "NUM_EPOCHS": 15,
         "LAYER_TYPES": 'MMSP',  # 'MMSP'
     }
-    DATASET_PATH = dataset_info.dataset_path
-    TASK = dataset_info.type
+    import datasets
     print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    main() 
+    # main()
+    main(datasets.logp, cv=True)  # cross-validation
 
     ## ESA repo
     # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
