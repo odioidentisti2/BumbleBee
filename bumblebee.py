@@ -133,8 +133,8 @@ def crossvalidation(criterion):
 
 
 def main():
+     # Default: reduction='mean', return mean loss over batch
     criterion = torch.nn.BCEWithLogitsLoss()
-
     ## Print model stamp
     import pprint
     pprint.pprint(glob)    

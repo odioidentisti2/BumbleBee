@@ -5,13 +5,16 @@ from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
 
+HIDDEN_DIM = 128  # ESA & MLP hidden dimension
+HEADS = 8
+print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS)
+
+
 class MAGClassifier(nn.Module):
     
-    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=512, mlp_hidden_dim=128, num_heads=8, output_dim=1):
+    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=HIDDEN_DIM, mlp_hidden_dim=HIDDEN_DIM, num_heads=HEADS, output_dim=1):
         super(MAGClassifier, self).__init__()
         self.hidden_dim = hidden_dim
-        print("hidden dim:", hidden_dim)
-        print("MLP hidden dim:", mlp_hidden_dim)
         # Edge feature encoder (node-edge MLP)
         self.input_mlp = mlp(2 * node_dim + edge_dim, mlp_hidden_dim, hidden_dim)
         # ESA block
