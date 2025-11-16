@@ -4,7 +4,6 @@ from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 import csv
 
-import logp_dataset as dataset_info
 
 # These param are hardcoded
 ATOM_DIM = 57
@@ -20,9 +19,7 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
-        print("\n\n\n\n\n##########################################################")
-        print(f"{value} not in {allowed_values}")  # DEBUG
-        print("\n\n\n\n\n###########################################################")
+        print(f"WARNING: {value} not in {allowed_values}")  # DEBUG
         # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
@@ -97,19 +94,19 @@ def smiles2graph(smiles):
     return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
 
 class GraphDataset(Dataset):
-    def __init__(self, csv_path, split=None):
+    def __init__(self, dataset_info, split=None):
         super().__init__()
         self.graphs = []
-        with open(csv_path, 'r') as f:
+        with open(dataset_info['path'], 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if split and row[dataset_info.split_header] != dataset_info.split_map[split]:
+                if split and row[dataset_info['split_header']] != dataset_info['split_map'][split]:
                     continue                    
-                smiles = row[dataset_info.smiles_header]
-                target = row[dataset_info.target_header]
-                if dataset_info.type == 'binary_classification':
-                    target = dataset_info.tox_map[target]
-                elif dataset_info.type == 'regression':
+                smiles = row[dataset_info['smiles_header']]
+                target = row[dataset_info['target_header']]
+                if dataset_info['task'] == 'binary_classification':
+                    target = dataset_info['tox_map'][target]
+                elif dataset_info['task'] == 'regression':
                     target = float(target)
                 data = smiles2graph(smiles)
                 if (data
