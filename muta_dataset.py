@@ -1,0 +1,9 @@
+type = 'binary_classification'
+dataset_path = 'DATASETS/MUTA_SARPY_4204.csv'
+smiles_header = 'SMILES'
+target_header = 'Experimental_value'
+split_header = 'Status'
+train_split = 'Training'
+test_split = 'Test'
+tox_map = {'Mutagenic': 1, 'NON-Mutagenic': 0}
+split_map = {'train': 'Training', 'test': 'Test'}

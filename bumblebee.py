@@ -1,7 +1,7 @@
 import time
 import torch
 from torch_geometric.loader import DataLoader
-from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
+from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM, dataset_info
 from model import MAGClassifier
 from explainer import *
 
@@ -24,10 +24,18 @@ def train(model, loader, optimizer, criterion):
         total += batch.num_graphs
     return total_loss / total
 
+def get_metric(logits, targets):
+    if TASK == 'binary_classification':
+        preds = (torch.sigmoid(logits) > 0.5)
+        return (preds == targets).sum().item()
+    else:  # Regression
+        # sum of squared errors and count (there are other options!)
+        return torch.sum((logits - targets) ** 2).item()
+
 def test(model, loader, criterion):
     model.eval()  # set evaluation mode
     total_loss = 0
-    correct = 0
+    metric = 0
     total = 0
     for batch in loader:
         batch = batch.to(DEVICE)
@@ -37,9 +45,8 @@ def test(model, loader, criterion):
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
-            preds = (torch.sigmoid(logits) > 0.5).float()
-            correct += (preds == targets).sum().item()
-    return total_loss / total, correct / total
+            metric += get_metric(logits, targets)
+    return total_loss / total, metric / total
 
 def explain(model, single_loader):
     model.eval()
@@ -71,9 +78,9 @@ def training_loop(loader, criterion):
 
 def evaluate(model, loader, criterion, flag):
     print("\nEvaluating...")
-    loss, acc = test(model, loader, criterion)
-    print(f"{flag}: Loss {loss:.3f}  Acc {acc:.3f}")
-    return loss, acc
+    loss, metric = test(model, loader, criterion)
+    print(f"{flag}: Loss {loss:.3f}  Metric {metric:.3f}")
+    return loss, metric
 
 def save(model):
     model_path = f"model_{time.strftime('%Y%m%d_%H%M')}_{glob['BATCH_SIZE']}_{glob['LR']}_{glob['NUM_EPOCHS']}.pt"
@@ -87,10 +94,10 @@ def load(model_path):
     model.eval()
     return model
 
-def crossvalidation(criterion):
+def crossvalidation(dataset_path, criterion):
     num_folds = 5
-    print(f"\nCross-Validation on: ", DATASET_PATH)
-    dataset = GraphDataset(DATASET_PATH)
+    print(f"\nCross-Validation on: ", dataset_path)
+    dataset = GraphDataset(dataset_path)
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     fold_size = dataset_size // num_folds
@@ -115,37 +122,41 @@ def crossvalidation(criterion):
         print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
         print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
         model = training_loop(train_loader, criterion)
-        loss, acc = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
+        loss, metric = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
         fold_results['test_losses'].append(loss)
-        fold_results['test_accs'].append(acc)    
+        fold_results['test_metrics'].append(metric)    
 
     # Print composite statistics
     print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS\n{'='*50}")    
     mean_loss = sum(fold_results['test_losses']) / num_folds
     std_loss = (sum((x - mean_loss)**2 for x in fold_results['test_losses']) / num_folds) ** 0.5    
-    mean_acc = sum(fold_results['test_accs']) / num_folds
-    std_acc = (sum((x - mean_acc)**2 for x in fold_results['test_accs']) / num_folds) ** 0.5    
+    mean_metric = sum(fold_results['test_metrics']) / num_folds
+    std_metric = (sum((x - mean_metric)**2 for x in fold_results['test_metrics']) / num_folds) ** 0.5    
     print(f"Test Loss:  {mean_loss:.3f} ± {std_loss:.3f}")
-    print(f"Test Acc:   {mean_acc:.3f} ± {std_acc:.3f}")
-    print(f"\nIndividual fold accuracies: {[f'{acc:.3f}' for acc in fold_results['test_accs']]}")
+    print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
+    print(f"\nIndividual fold metrics: {[f'{acc:.3f}' for acc in fold_results['test_accs']]}")
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
 
 def main():
-     # Default: reduction='mean', return mean loss over batch
-    criterion = torch.nn.BCEWithLogitsLoss()
+    if TASK == 'binary_classification':     
+        # Default: reduction='mean', return mean loss over batch
+        criterion = torch.nn.BCEWithLogitsLoss()
+    else:
+        criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+        # criterion = torch.nn.L1Loss()  # Mean Absolute Error
     ## Print model stamp
     import pprint
     pprint.pprint(glob)    
 
     if CROSS_VALIDATION:
-        crossvalidation(criterion)
+        crossvalidation(DATASET_PATH, criterion)
         return
         
     ## Train
     print(f"\nTraining set: {DATASET_PATH} ('Training')")
-    trainingset = GraphDataset(DATASET_PATH, split='Training')
+    trainingset = GraphDataset(DATASET_PATH, split='train')
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
     model = training_loop(train_loader, criterion)
     ## Statistics on Training set
@@ -160,7 +171,7 @@ def main():
 
     ## Test
     print(f"\nTest set: {DATASET_PATH} ('Test')")
-    testset = GraphDataset(DATASET_PATH, split='Test')
+    testset = GraphDataset(DATASET_PATH, split='test')
     test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
     evaluate(model, test_loader, criterion, flag="Test")
 
@@ -178,16 +189,17 @@ if __name__ == "__main__":
     CROSS_VALIDATION = True
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
-    MODEL_PATH = 'model_20250822_210138.pt'
+    # DATASET_PATH = 'DATASETS/MUTA_SARPY_4204.csv'
+    # MODEL_PATH = 'model_20250822_210138.pt'
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
         "NUM_EPOCHS": 15,
         "LAYER_TYPES": 'MMSP',  # 'MMSP'
     }
-    print()
-    print(time.strftime("%Y-%m-%d %H:%M:%S"))
+    DATASET_PATH = dataset_info.dataset_path
+    TASK = dataset_info.type
+    print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
     main() 
 

@@ -4,15 +4,12 @@ from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 import csv
 
+import logp_dataset as dataset_info
+
 # These param are hardcoded 
 ATOMIC_NUMBERS = [1, 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 19, 20, 24, 26, 27, 28, 29, 30, 34, 35, 50, 53]
 ATOM_DIM = 57
 BOND_DIM = 7
-# DEBUG: muta dataset
-smiles_header = 'SMILES'
-label_header = 'Experimental_value'
-split_header = 'Status'
-TOX_MAP = {'Mutagenic': 1, 'NON-Mutagenic': 0}
 
 
 def encoding(value, allowed_values):
@@ -22,7 +19,7 @@ def encoding(value, allowed_values):
     """
     if value not in allowed_values:
         print("\n\n\n\n\n##########################################################")
-        print(value)  # DEBUG
+        print(f"{value} not in {allowed_values}")  # DEBUG
         print("\n\n\n\n\n###########################################################")
         # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
@@ -104,15 +101,18 @@ class GraphDataset(Dataset):
         with open(csv_path, 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if split is not None and row[split_header] != split:
+                if split and row[dataset_info.split_header] != dataset_info.split_map[split]:
                     continue                    
-                smiles = row[smiles_header]
-                label = row[label_header]
+                smiles = row[dataset_info.smiles_header]
+                target = row[dataset_info.target_header]
+                if dataset_info.type == 'binary_classification':
+                    target = dataset_info.tox_map[target]
+                elif dataset_info.type == 'regression':
+                    target = float(target)
                 data = smiles2graph(smiles)
                 if (data
                         and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
-                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
-                    target = TOX_MAP[label]
+                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):                    
                     data.y = torch.tensor([target], dtype=torch.float)
                     self.graphs.append(data)
                 else:
