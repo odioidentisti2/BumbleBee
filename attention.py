@@ -5,11 +5,12 @@ from torch.nn.init import xavier_normal_, xavier_uniform_, constant_
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
 COUNTER = 0  # For debugging
-
+SAB_DROPOUT = 0.0
+PMA_DROPOUT = 0.2
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.4):
+    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.dropout = dropout  # rate of train elements randomly set to zero in each forward pass (prevent overfitting)
@@ -88,6 +89,7 @@ class MultiHeadAttention(nn.Module):
                     COUNTER += 1
                     print("Using efficient attention kernel")
             except RuntimeError as e:
+                print(self.dropout)
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                 )
@@ -109,7 +111,7 @@ class MultiHeadAttention(nn.Module):
 
 # Same input for both Q and K
 class SelfAttention(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, dropout=0.0):
+    def __init__(self, dim_in, dim_out, num_heads, dropout=SAB_DROPOUT):
         super(SelfAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
@@ -123,7 +125,7 @@ class SelfAttention(nn.Module):
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
-    def __init__(self, dim, num_heads, num_seeds=32, dropout=0.0):
+    def __init__(self, dim, num_heads, num_seeds=32, dropout=PMA_DROPOUT):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
