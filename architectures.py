@@ -4,7 +4,7 @@ from attention import *
 
 
 MLP_EXPANSION_FACTOR = 2
-ESA_DROPOUT = 0.2
+ESA_DROPOUT = 0.0
 
 print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR, "\nESA_DROPOUT:", ESA_DROPOUT)
 
@@ -92,14 +92,14 @@ class ESA(nn.Module):
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, 0.0))
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', 0.0))
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', ESA_DROPOUT))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, 0.0))
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):
