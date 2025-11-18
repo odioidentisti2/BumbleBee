@@ -6,7 +6,7 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 
 COUNTER = 0  # For debugging
 SAB_DROPOUT = 0.0
-PMA_DROPOUT = 0.2
+PMA_DROPOUT = 0.0
 
 print("SAB_DROPOUT:", SAB_DROPOUT, "\nPMA_DROPOUT:", PMA_DROPOUT)
 

@@ -4,8 +4,9 @@ from attention import *
 
 
 MLP_EXPANSION_FACTOR = 2
+ESA_DROPOUT = 0.0
 
-print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR)
+print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR, "\nESA_MLP_DROPOUT:", ESA_DROPOUT)
 
 
 # Multilayer Perceptron
@@ -20,16 +21,16 @@ def mlp(in_dim, inter_dim, out_dim, dropout=0.0):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, hidden_dim, num_heads, layer_type):
+    def __init__(self, hidden_dim, num_heads, layer_type, dropout):
         super(TransformerBlock, self).__init__()
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
         self.norm_mlp = nn.LayerNorm(hidden_dim, eps=1e-8)
+        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim, dropout)
         if layer_type == 'P':
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
@@ -85,19 +86,20 @@ class ESA(nn.Module):
     def __init__(self, hidden_dim, num_heads, layer_types):
         super(ESA, self).__init__()
         assert layer_types.count('P') == 1
+        self.output_dropout = nn.Dropout(ESA_DROPOUT) 
         # Encoder
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P'))
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', ESA_DROPOUT))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):
@@ -111,8 +113,8 @@ class ESA(nn.Module):
             dec = layer(dec, pad_mask=pad_mask)
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
-    
-        return F.mish(out)  
+        out = F.mish(out)
+        return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
 
     def expose_attention(self, expose=True):
