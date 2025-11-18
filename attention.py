@@ -88,8 +88,8 @@ class MultiHeadAttention(nn.Module):
                 if COUNTER == 0:
                     COUNTER += 1
                     print("Using efficient attention kernel")
+                    print(self.dropout)
             except RuntimeError as e:
-                print(self.dropout)
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                 )
