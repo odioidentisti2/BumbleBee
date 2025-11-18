@@ -199,12 +199,18 @@ if __name__ == "__main__":
     print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
     # main()
-    main(datasets.logp, cv=True)  # cross-validation
+    main(datasets.muta, cv=True)  # cross-validation
 
-    ## ESA repo
-    # weight_decay = 1e-10 nel README, 1e-3 come default (AdamW)
-    # HIDDEN_DIM = 256  # = MLP_hidden = graph_dim
+    ## ESA: README
+    # lr = 0.0001
     # BATCH_SIZE = 128
-    # NUM_HEADS = 16
-    # LAYER_TYPES = ['MSMSMP']
-    # DROPOUT = 0
+    # HIDDEN_DIM = 256  (= graph_dim)
+    # MLP_hidden_dim = 256 (graph-level) or 512 (node-level)
+    # NUM_HEADS = 16  (= 4 in the template)
+    # LAYER_TYPES = 'MMSP' default; 'MSMSMP' graph-level
+    # DROPOUT = 0 !!!!!!!!!
+    # weight_decay = 1e-10 nel README (useless)
+    ## ESA (hardcoded)
+    # PMA seeds = 32
+    # model's MLP hidden dimension = 128
+    # model's MLP dropout = 0

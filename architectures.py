@@ -3,17 +3,22 @@ import torch.nn.functional as F
 from attention import *
 
 
+MLP_EXPANSION_FACTOR = 2
+
+
 # Multilayer Perceptron
-def mlp(in_dim, inter_dim, out_dim):
+def mlp(in_dim, inter_dim, out_dim, dropout=0.2):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
+            nn.Dropout(dropout),  # automatic check for training mode (identity function in eval mode)
             nn.Linear(inter_dim, out_dim),
+            # nn.Dropout(dropout)
         )
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, hidden_dim, num_heads, layer_type, mlp_hidden_dim=256):
+    def __init__(self, hidden_dim, num_heads, layer_type):
         super(TransformerBlock, self).__init__()
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
@@ -22,7 +27,7 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = mlp(hidden_dim, mlp_hidden_dim, hidden_dim)
+        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None

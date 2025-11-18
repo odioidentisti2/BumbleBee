@@ -7,18 +7,6 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 COUNTER = 0  # For debugging
 
 
-# Scaled Dot-Product Attention with returned attention weights
-def _sdpa_with_weights(Q, K, V, mask):  
-    scale = Q.size(-1) ** -0.5  # head_dim = Q.size(-1)
-    attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-    if mask is not None:  # MASK: set masked positions to -inf before softmax
-        attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
-    attn_weights = F.softmax(attn_scores, dim=-1)         
-    # if self.training and self.dropout > 0:
-    #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
-    out = torch.matmul(attn_weights, V)
-    attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
-    return out, attn_weights
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.0):
@@ -49,6 +37,20 @@ class MultiHeadAttention(nn.Module):
         self.ln_q = nn.LayerNorm(dim_Q, eps=1e-8)
         self.ln_k = nn.LayerNorm(dim_K, eps=1e-8)
 
+    # Scaled Dot-Product Attention with returned attention weights
+    def _sdpa_with_weights(self, Q, K, V, mask):  
+        scale = Q.size(-1) ** -0.5  # head_dim = Q.size(-1)
+        attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        if mask is not None:  # MASK: set masked positions to -inf before softmax
+            attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
+        attn_weights = F.softmax(attn_scores, dim=-1)
+        # DROPOUT for debug only, this method is used in eval mode only!!!     
+        if self.training and self.dropout > 0:
+            attn_weights = F.dropout(attn_weights, p=self.dropout)            
+        out = torch.matmul(attn_weights, V)
+        attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
+        return out, attn_weights
+
     def forward(self, Q, K, mask=None, return_attention=False):
         # Project Q, K, V
         Q = self.fc_q(Q)
@@ -74,12 +76,12 @@ class MultiHeadAttention(nn.Module):
         V = V.transpose(1, 2)
 
         if return_attention:
-            out, attn_weights = _sdpa_with_weights(Q, K, V, mask)
+            out, attn_weights = self._sdpa_with_weights(Q, K, V, mask)
         else:
             try:    
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
-                        Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                        Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                     )
                 global COUNTER
                 if COUNTER == 0:
@@ -87,8 +89,15 @@ class MultiHeadAttention(nn.Module):
                     print("Using efficient attention kernel")
             except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
-                    Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0, is_causal=False
+                    Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                 )
+                # # DEBUG
+                # out2, _ = self._sdpa_with_weights(Q, K, V, mask)
+                # if not torch.allclose(out, out2, rtol=1e-3, atol=1e-6):
+                #     diff = (out - out2).abs()
+                #     print(f"⚠️  Attention outputs differ:")
+                #     print(f"   Max diff: {diff.max():.2e} | Mean diff: {diff.mean():.2e}")
+
         
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)

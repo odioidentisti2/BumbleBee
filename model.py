@@ -5,22 +5,24 @@ from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
 
-HIDDEN_DIM = 128  # ESA & MLP hidden dimension
+HIDDEN_DIM = 128  # ESA hidden dimension
 HEADS = 8
 print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS)
 
 
 class MAGClassifier(nn.Module):
+
+    IN_OUT_MLP_HIDDEN_DIM = 128  # MLP hidden dimension for input/output layers
     
-    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=HIDDEN_DIM, mlp_hidden_dim=HIDDEN_DIM, num_heads=HEADS, output_dim=1):
+    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=HIDDEN_DIM, num_heads=HEADS, output_dim=1):
         super(MAGClassifier, self).__init__()
         self.hidden_dim = hidden_dim
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = mlp(2 * node_dim + edge_dim, mlp_hidden_dim, hidden_dim)
+        self.input_mlp = mlp(2 * node_dim + edge_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, hidden_dim)
         # ESA block
         self.esa = ESA(hidden_dim, num_heads, layer_types)
         # Classifier
-        self.output_mlp = mlp(hidden_dim, mlp_hidden_dim, output_dim)
+        self.output_mlp = mlp(hidden_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, output_dim)
 
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
@@ -31,6 +33,7 @@ class MAGClassifier(nn.Module):
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
+        # DROPOUT?
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
@@ -57,6 +60,7 @@ class MAGClassifier(nn.Module):
                 #     return attn_weights
         if return_attention:
             return attn_weights
+        # DROPOUT?
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size]
     
