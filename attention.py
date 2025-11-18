@@ -9,7 +9,7 @@ COUNTER = 0  # For debugging
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.0):
+    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.2):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.dropout = dropout  # rate of train elements randomly set to zero in each forward pass (prevent overfitting)

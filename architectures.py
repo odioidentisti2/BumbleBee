@@ -7,7 +7,7 @@ MLP_EXPANSION_FACTOR = 2
 
 
 # Multilayer Perceptron
-def mlp(in_dim, inter_dim, out_dim, dropout=0.2):
+def mlp(in_dim, inter_dim, out_dim, dropout=0.0):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
