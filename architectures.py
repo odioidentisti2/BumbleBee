@@ -26,11 +26,11 @@ class TransformerBlock(nn.Module):
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
         self.norm_mlp = nn.LayerNorm(hidden_dim, eps=1e-8)
-        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim, dropout)
         if layer_type == 'P':
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
+        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim, dropout)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
