@@ -9,7 +9,7 @@ COUNTER = 0  # For debugging
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.2):
+    def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout=0.4):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.dropout = dropout  # rate of train elements randomly set to zero in each forward pass (prevent overfitting)
@@ -44,9 +44,9 @@ class MultiHeadAttention(nn.Module):
         if mask is not None:  # MASK: set masked positions to -inf before softmax
             attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
         attn_weights = F.softmax(attn_scores, dim=-1)
-        # DROPOUT for debug only, this method is used in eval mode only!!!     
-        if self.training and self.dropout > 0:
-            attn_weights = F.dropout(attn_weights, p=self.dropout)            
+        # # DROPOUT for debug only, this method is used in eval mode only!!!     
+        # if self.training and self.dropout > 0:
+        #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
         out = torch.matmul(attn_weights, V)
         attn_weights = attn_weights.mean(dim=1)  # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
         return out, attn_weights
