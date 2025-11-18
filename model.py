@@ -33,8 +33,6 @@ class MAGClassifier(nn.Module):
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
-        # DROPOUT?
-        out = F.dropout(out, p=0.3, training=self.training)  # Pre-output dropout
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
