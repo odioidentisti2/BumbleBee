@@ -5,6 +5,8 @@ from attention import *
 
 MLP_EXPANSION_FACTOR = 2
 
+print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR)
+
 
 # Multilayer Perceptron
 def mlp(in_dim, inter_dim, out_dim, dropout=0.0):

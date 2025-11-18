@@ -8,6 +8,8 @@ COUNTER = 0  # For debugging
 SAB_DROPOUT = 0.0
 PMA_DROPOUT = 0.2
 
+print("SAB_DROPOUT:", SAB_DROPOUT, "\nPMA_DROPOUT:", PMA_DROPOUT)
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout):
@@ -88,7 +90,7 @@ class MultiHeadAttention(nn.Module):
                 if COUNTER == 0:
                     COUNTER += 1
                     print("Using efficient attention kernel")
-                    print(self.dropout)
+                print(self.dropout)
             except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
