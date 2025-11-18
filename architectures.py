@@ -6,7 +6,7 @@ from attention import *
 MLP_EXPANSION_FACTOR = 2
 ESA_DROPOUT = 0.2
 
-print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR, "\nESA_MLP_DROPOUT:", ESA_DROPOUT)
+print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR, "\nESA_DROPOUT:", ESA_DROPOUT)
 
 
 # Multilayer Perceptron
@@ -92,14 +92,14 @@ class ESA(nn.Module):
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, 0.0))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', ESA_DROPOUT))
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', 0.0))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, 0.0))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):
@@ -114,8 +114,7 @@ class ESA(nn.Module):
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         out = F.mish(out)
-        return out
-        # return self.output_dropout(out)  # Pre-activation dropout
+        return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
 
     def expose_attention(self, expose=True):
