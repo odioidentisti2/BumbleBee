@@ -48,7 +48,7 @@ def edge_adjacency(source, target):
     adj_mask = src_adj | dst_adj  # [num_edges, num_edges]
     return adj_mask.fill_diagonal_(False)  # # Mask out self-adjacency
 
-def proximity_masks(source, target, hops=3):
+def proximity_masks(source, target, hops):
     """
     blablabla
     
@@ -81,7 +81,7 @@ def proximity_masks(source, target, hops=3):
 
     return masks
 
-def edge_mask(b_edge_index, b_map, batch_size, num_edges, hops=3):
+def edge_mask(b_edge_index, b_map, batch_size, num_edges, hops):
     """
     Generates a boolean adjacency mask for edges across a batch of graph instances.
 

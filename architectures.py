@@ -36,7 +36,7 @@ class TransformerBlock(nn.Module):
         mask = None
         if self.layer_type[0] == 'M':
             hop = int(self.layer_type[1])
-            mask = adj_mask[hop - 1]  # [batch, seq_len, seq_len]
+            mask = adj_mask[hop]  # [batch, seq_len, seq_len]
             # print(len(adj_mask))
             # print(self.layer_type, hop)
             # print(mask)
@@ -106,11 +106,11 @@ class ESA(nn.Module):
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask, pad_mask=None):
+    def forward(self, X, prox_masks, pad_mask=None):
         # Encoder
         enc = X
         for layer in self.encoder:
-            enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
+            enc = layer(enc, adj_mask=prox_masks, pad_mask=pad_mask)
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
