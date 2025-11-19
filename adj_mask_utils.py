@@ -83,3 +83,36 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     ] = True
 
     return adj_mask
+
+def proximity_masks(source, target, hops=3):
+    """
+    Simplest version: just takes 1-hop mask and returns list of cumulative masks.
+    
+    Args:
+        edge_adj_mask: [num_edges, num_edges] boolean or float tensor
+        max_hops: number of hops to compute
+    
+    Returns:
+        list of [num_edges, num_edges] boolean masks
+    """
+
+    adj_mask = edge_adjacency(source, target)
+    masks = [adj_mask]
+    A = adj_mask.float()  # Convert to float for matmul
+    cumulative = A.clone()
+    current = A.clone()
+    
+    for _ in range(hops - 1):        
+        current = torch.matmul(current, A)
+        cumulative = cumulative + current
+        mask = (cumulative > 0).fill_diagonal_(0).bool()  # Binarize, remove diagonal, convert to bool
+        masks.append(mask)
+    
+    # Verify cumulative property
+    assert (masks[0] <= masks[1]).all(), "Mask 1 should include mask 0"
+    assert (masks[1] <= masks[2]).all(), "Mask 2 should include mask 1"
+    # Verify no self-loops
+    for i, mask in enumerate(masks):
+        assert not mask.diag().any(), f"Mask {i} has self-loops!"
+
+    return masks

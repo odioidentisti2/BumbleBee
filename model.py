@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.utils import to_dense_batch
 from architectures import ESA, mlp
-from adj_mask_utils import edge_adjacency, edge_mask
+from adj_mask_utils import edge_adjacency, edge_mask, proximity_masks
 
 
 HIDDEN_DIM = 128  # ESA hidden dimension
@@ -45,12 +45,21 @@ class MAGClassifier(nn.Module):
         attn_weights = []
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         for i in range(batch_size):
-            graph_mask = (edge_batch == i)
+            graph_mask = (edge_batch == i)  # mask for graph i
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
-            adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
+
+            # adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
+            masks = proximity_masks(src[graph_mask], dst[graph_mask], hops=3)
+
+            # Add batch dimension
+            # adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension
+            for j in range(len(masks)):
+                masks[j] = masks[j].unsqueeze(0)  # Add batch dimension
             h = h.unsqueeze(0)  # Add batch dimension
-            adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension
-            out[i] = self.esa(h, adj_mask)  # [hidden_dim]
+
+            # out[i] = self.esa(h, adj_mask)  # [hidden_dim]
+            out[i] = self.esa(h, masks)  # [hidden_dim]
+            
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
                 attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension

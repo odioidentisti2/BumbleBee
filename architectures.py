@@ -34,8 +34,8 @@ class TransformerBlock(nn.Module):
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
-        if self.layer_type == 'M': 
-            mask = adj_mask
+        if self.layer_type[0] == 'M': 
+            mask = adj_mask[0]
         elif self.layer_type == 'S':
             if pad_mask is not None:
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
@@ -91,7 +91,7 @@ class ESA(nn.Module):
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
-            assert layer_type in ['M', 'S']
+            assert layer_type[0] in ['M', 'S']
             self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
