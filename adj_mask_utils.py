@@ -71,6 +71,7 @@ def proximity_masks(source, target, hops):
         cumulative = cumulative + current
         mask = (cumulative > 0).fill_diagonal_(0).bool()  # Binarize, remove diagonal, convert to bool
         masks.append(mask)
+    # print(f"Generated {len(masks)} proximity masks for hops 0 to {hops}")
     
     # Verify cumulative property
     for i in range(len(masks) - 1):
@@ -104,7 +105,7 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges, hops):
     # edge_adj_matrix = edge_adjacency(b_edge_index[0], b_edge_index[1])
     prox_masks = proximity_masks(b_edge_index[0], b_edge_index[1], hops=hops)
 
-    for hop in range(hops):
+    for hop in range(hops + 1):
         edge_adj_matrix = prox_masks[hop]
         eam_nonzero = edge_adj_matrix.nonzero()
         adj_mask = torch.full(
