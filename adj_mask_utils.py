@@ -66,7 +66,7 @@ def proximity_masks(source, target, hops):
     cumulative = A.clone()
     current = A.clone()
     
-    for _ in range(hops - 1):        
+    for _ in range(hops):        
         current = torch.matmul(current, A)
         cumulative = cumulative + current
         mask = (cumulative > 0).fill_diagonal_(0).bool()  # Binarize, remove diagonal, convert to bool
