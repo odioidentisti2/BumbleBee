@@ -199,7 +199,18 @@ if __name__ == "__main__":
     print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
     # main()
-    main(datasets.muta, cv=True)  # cross-validation
+    for glob['LAYER_TYPES'] in (['M0','M0','M0','M0','P'],
+                                ['M0','M0','M0','S','P'],
+                                ['M0','M0','S','M0','P'],
+                                ['M0','M0','S','S','P'],
+                                ['M0','S','M0','M0','P'],
+                                ['M0','S','M0','S','P'],
+                                ['M0','S','S','M0','P'],
+                                ['M0','S','S','S','P'],
+                                ['M0', 'M1', 'M2', 'S', 'P'],
+                            ):
+        main(datasets.muta, cv=True)
+    # main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
     # lr = 0.0001
