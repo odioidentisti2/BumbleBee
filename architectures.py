@@ -34,8 +34,12 @@ class TransformerBlock(nn.Module):
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
-        if self.layer_type[0] == 'M': 
-            mask = adj_mask[0]
+        if self.layer_type[0] == 'M':
+            hop = int(self.layer_type[1])
+            mask = adj_mask[hop - 1]  # [batch, seq_len, seq_len]
+            # print(len(adj_mask))
+            # print(self.layer_type, hop)
+            # print(mask)
         elif self.layer_type == 'S':
             if pad_mask is not None:
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
