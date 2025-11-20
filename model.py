@@ -4,10 +4,9 @@ from torch_geometric.utils import to_dense_batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask, proximity_masks
 
-HOPS = 2
 HIDDEN_DIM = 128  # ESA hidden dimension
 HEADS = 8
-print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS, "\nHOPS:", HOPS)
+print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS)
 
 
 class MAGClassifier(nn.Module):
@@ -23,6 +22,7 @@ class MAGClassifier(nn.Module):
         self.esa = ESA(hidden_dim, num_heads, layer_types)
         # Classifier
         self.output_mlp = mlp(hidden_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, output_dim)
+        self.hops = max(int(layer[1]) for layer in layer_types if layer[0] == 'M')
 
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
@@ -30,7 +30,7 @@ class MAGClassifier(nn.Module):
         max_edges = torch.bincount(edge_batch).max().item()
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
         batch_size = node_batch.max().item() + 1
-        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges, hops=HOPS)  # [batch_size, max_edges, max_edges]
+        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges, hops=self.hops)  # [batch_size, max_edges, max_edges]
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
@@ -49,7 +49,7 @@ class MAGClassifier(nn.Module):
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
 
             # adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
-            masks = proximity_masks(src[graph_mask], dst[graph_mask], hops=HOPS)
+            masks = proximity_masks(src[graph_mask], dst[graph_mask], hops=self.hops)
 
             # Add batch dimension
             # adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension

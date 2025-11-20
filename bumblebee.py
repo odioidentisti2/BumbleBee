@@ -207,13 +207,12 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 15,
-        "LAYER_TYPES": ['M0', 'M1', 'S', 'P'],  # 'MMSP'
+        "NUM_EPOCHS": 30,
+        "LAYER_TYPES": ['M0', 'M1', 'M2', 'S', 'P'],  # 'MMSP'
     }
     import datasets
     print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    # main()
     # for glob['LAYER_TYPES'] in (['M0','M0','M0','M0','P'],
     #                             ['M0','M0','M0','S','P'],
     #                             ['M0','M0','S','M0','P'],
@@ -223,9 +222,18 @@ if __name__ == "__main__":
     #                             ['M0','S','S','M0','P'],
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
-    #                         ):
-    #     main(datasets.muta, cv=True)
-    main(datasets.muta, cv=True)  # cross-validation
+    #                         ): 
+    for glob['LAYER_TYPES'] in (['M0','S','P'],
+                                ['M0','S','P','S'],
+                                ['M0','M1','S','P'],
+                                ['M0','M1','S','P','S'],
+                                ['M0','M1','M2','S','P'],
+                                ['M0','M1','M2','S','P', 'S'],
+                                ['M0', 'M0', 'M1', 'S', 'P'],
+                                ['M0', 'M0', 'M1', 'S', 'P', 'S'],
+                            ):
+        main(datasets.muta, cv=True)
+    # main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
     # lr = 0.0001
