@@ -84,6 +84,7 @@ def training_loop(loader, criterion):
     optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
+        print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
     return model
 
 def evaluate(model, loader, criterion, flag):
