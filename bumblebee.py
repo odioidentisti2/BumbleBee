@@ -68,8 +68,10 @@ def training_loop_validation(loader, criterion, val_loader=None):
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
     optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     val_stats = []
+    start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
+        print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
         if val_loader is not None and epoch % 5 == 0:
             val_loss, val_metric = test(model, val_loader, criterion)
             print(f" VALIDATION  Val Loss: {val_loss:.3f}  Val Metric: {val_metric:.3f}")
@@ -82,6 +84,7 @@ def training_loop(loader, criterion):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
     optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
