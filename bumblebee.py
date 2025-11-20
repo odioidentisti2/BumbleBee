@@ -223,6 +223,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ): 
+    print('a')
     for glob['LAYER_TYPES'] in (['M0','S','P'],
                                 ['M0','S','P','S'],
                                 ['M0','M1','S','P'],
