@@ -1,4 +1,4 @@
-def cv_statistics(fold_results):
+def cv_statistics(fold_results, task):
     num_epochs = len(fold_results[0])
 
     # Compute mean per epoch index
@@ -7,7 +7,10 @@ def cv_statistics(fold_results):
         vals = [v[i] for v in fold_results]
         mean_metrics.append(sum(vals) / len(vals))
 
-    # Find best epoch (assume lower is better, like loss/MAE)
+    if task == 'regression':
+        best_idx = min(range(len(mean_metrics)), key=lambda i: mean_metrics[i])
+    else:  # classification - higher is better
+        best_idx = max(range(len(mean_metrics)), key=lambda i: mean_metrics[i])
     best_idx = min(range(len(mean_metrics)), key=lambda i: mean_metrics[i])
     best_epoch = (best_idx + 1) * 5
 

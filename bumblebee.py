@@ -74,7 +74,7 @@ def training_loop_validation(loader, criterion, val_loader=None):
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
         if val_loader is not None and epoch % 5 == 0:
             val_loss, val_metric = test(model, val_loader, criterion)
-            print(f" VALIDATION  Val Loss: {val_loss:.3f}  Val Metric: {val_metric:.3f}")
+            print(f"> VALIDATION  Loss: {val_loss:.3f}  Metric: {val_metric:.3f}")
             val_stats.append(val_metric)
     if val_loader:
         return model, val_stats
@@ -134,7 +134,7 @@ def crossvalidation(dataset, criterion):
         # loss, metric = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
         fold_results.append(val_stats)
 
-    cv_statistics(fold_results)
+    cv_statistics(fold_results, criterion.task)
     # # Print composite statistics
     # print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS\n{'='*50}")    
     # mean_loss = sum(fold_results['test_losses']) / num_folds
