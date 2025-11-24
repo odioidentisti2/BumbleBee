@@ -3,6 +3,7 @@ import torch
 from torch_geometric.loader import DataLoader
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
+from output import cv_statistics
 from explainer import *
 
 
@@ -62,6 +63,23 @@ def explain(model, single_loader):
             else:
                 repeat = False  # Move to next molecule
 
+def training_loop_validation(loader, criterion, val_loader=None):
+    print("\nTraining...")
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    val_stats = []
+    start_time = time.time()
+    for epoch in range(1, glob['NUM_EPOCHS'] + 1):
+        loss = train(model, loader, optimizer, criterion)
+        print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
+        if val_loader is not None and epoch % 5 == 0:
+            val_loss, val_metric = test(model, val_loader, criterion)
+            print(f"> VALIDATION  Loss: {val_loss:.3f}  Metric: {val_metric:.3f}")
+            val_stats.append(val_metric)
+    if val_loader:
+        return model, val_stats
+    return model
+
 def training_loop(loader, criterion):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
@@ -95,10 +113,7 @@ def crossvalidation(dataset, criterion):
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     fold_size = dataset_size // num_folds
-    fold_results = {
-        'test_losses': [],
-        'test_metrics': [],
-    }
+    fold_results = []
 
     start_time = time.time()   
     for fold in range(num_folds):        
@@ -115,20 +130,11 @@ def crossvalidation(dataset, criterion):
 
         print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
         print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
-        model = training_loop(train_loader, criterion)
-        loss, metric = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
-        fold_results['test_losses'].append(loss)
-        fold_results['test_metrics'].append(metric)    
+        _, val_stats = training_loop_validation(train_loader, criterion, test_loader)
+        # loss, metric = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
+        fold_results.append(val_stats)
 
-    # Print composite statistics
-    print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS\n{'='*50}")    
-    mean_loss = sum(fold_results['test_losses']) / num_folds
-    std_loss = (sum((x - mean_loss)**2 for x in fold_results['test_losses']) / num_folds) ** 0.5    
-    mean_metric = sum(fold_results['test_metrics']) / num_folds
-    std_metric = (sum((x - mean_metric)**2 for x in fold_results['test_metrics']) / num_folds) ** 0.5    
-    print(f"Test Loss:  {mean_loss:.3f} ± {std_loss:.3f}")
-    print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
-    print(f"\nIndividual fold metrics: {[f'{metric:.3f}' for metric in fold_results['test_metrics']]}")
+    cv_statistics(fold_results, criterion.task)
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
@@ -180,26 +186,36 @@ def main(dataset_dict, cv=False):
     # explain(model, single_loader)
 
 if __name__ == "__main__":
-    ## Set seeds for reproducibility
-    torch.manual_seed(42)
-    torch.cuda.manual_seed_all(42)
     ## DEBUG
     BATCH_DEBUG = None
-    # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # MODEL_PATH = 'model_20250822_210138.pt'
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 15,
-        "LAYER_TYPES": 'MMSP',  # 'MMSP'
+        "NUM_EPOCHS": 20,
+        "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
     print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
     print(f"DEVICE: {DEVICE}")
-    # main()
-    main(datasets.muta, cv=True)  # cross-validation
+    # for glob['LAYER_TYPES'] in (['M0','M0','M0','M0','P'],
+    #                             ['M0','M0','M0','S','P'],
+    #                             ['M0','M0','S','M0','P'],
+    #                             ['M0','M0','S','S','P'],
+    #                             ['M0','S','M0','M0','P'],
+    #                             ['M0','S','M0','S','P'],
+    #                             ['M0','S','S','M0','P'],
+    #                             ['M0','S','S','S','P'],
+    #                             ['M0', 'M1', 'M2', 'S', 'P'],
+    #                         ): 
+    ## Set seeds for reproducibility
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+    main(datasets.muta, cv=True)
+    # main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
     # lr = 0.0001

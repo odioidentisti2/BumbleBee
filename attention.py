@@ -112,9 +112,9 @@ class MultiHeadAttention(nn.Module):
         return out
 
 # Same input for both Q and K
-class SelfAttention(nn.Module):
+class SetAttention(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, dropout=SAB_DROPOUT):
-        super(SelfAttention, self).__init__()
+        super(SetAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
     def forward(self, X, mask=None, return_attention=False):
@@ -142,3 +142,9 @@ class PMA(nn.Module):
             mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
         return self.mha(seeds, X, mask, return_attention)
+
+
+
+    # mask = torch.stack([mask[0]] + mask, dim=1)
+    # assert self.mha.num_heads % mask.size(1) == 0
+    # mask = torch.repeat_interleave(mask, self.mha.num_heads // mask.size(1), dim=1)

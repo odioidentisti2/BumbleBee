@@ -29,12 +29,12 @@ class TransformerBlock(nn.Module):
         if layer_type == 'P':
             self.attention = PMA(hidden_dim, num_heads)
         else:
-            self.attention = SelfAttention(hidden_dim, hidden_dim, num_heads)
+            self.attention = SetAttention(hidden_dim, hidden_dim, num_heads)
         self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim, dropout)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
-        if self.layer_type == 'M': 
+        if self.layer_type == 'M':
             mask = adj_mask
         elif self.layer_type == 'S':
             if pad_mask is not None:
@@ -91,7 +91,7 @@ class ESA(nn.Module):
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
-            assert layer_type in ['M', 'S']
+            assert layer_type[0] in ['M', 'S']
             self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
