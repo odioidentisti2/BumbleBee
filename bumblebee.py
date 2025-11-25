@@ -221,7 +221,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    for glob['LR'] in (1e-3, 5e-4, 1e-4):
+    for glob['LR'] in (5e-5, 1e-5):
         main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
