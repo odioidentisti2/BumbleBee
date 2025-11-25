@@ -108,18 +108,24 @@ def load(model_path):
     model.eval()
     return model
 
+def set_random_seed(seed=42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 def crossvalidation(dataset, criterion):
     num_folds = 5
     dataset_size = len(dataset)
     indices = torch.randperm(dataset_size).tolist()
     fold_size = dataset_size // num_folds
     fold_results = []
-    # Reproducibility
-    g = torch.Generator()
-    g.manual_seed(42)
 
     start_time = time.time()   
-    for fold in range(num_folds):        
+    for fold in range(num_folds):
+        # Reproducibility
+        set_random_seed()
+        _ = torch.randperm(dataset_size).tolist()
+        g = torch.Generator()
+        g.manual_seed(42) 
         # Create indices
         test_start = fold * fold_size
         test_end = (fold + 1) * fold_size if fold < num_folds - 1 else dataset_size
@@ -143,6 +149,8 @@ def crossvalidation(dataset, criterion):
 
 
 def main(dataset_dict, cv=False):
+    ## Reproducibility
+    set_random_seed()
     ## Print model stamp
     import pprint
     pprint.pprint(glob)
@@ -215,8 +223,6 @@ if __name__ == "__main__":
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
 
-    torch.manual_seed(42)
-    torch.cuda.manual_seed_all(42)
     main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
