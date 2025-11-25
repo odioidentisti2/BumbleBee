@@ -188,7 +188,7 @@ def main(dataset_dict, cv=False):
 if __name__ == "__main__":
     ## DEBUG
     BATCH_DEBUG = None
-    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
+    # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # MODEL_PATH = 'model_20250822_210138.pt'
@@ -210,11 +210,13 @@ if __name__ == "__main__":
     #                             ['M0','S','S','M0','P'],
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
-    #                         ): 
-    ## Set seeds for reproducibility
-    torch.manual_seed(42)
-    torch.cuda.manual_seed_all(42)
-    main(datasets.muta, cv=True)
+    #                         ):
+    for i in range(5):
+        ## Set seeds for reproducibility
+        print(i)
+        torch.manual_seed(42+i)
+        torch.cuda.manual_seed_all(42+i)
+        main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
