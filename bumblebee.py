@@ -66,7 +66,7 @@ def explain(model, single_loader):
 def training_loop_validation(loader, criterion, val_loader=None):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=glob['LR'])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     val_stats = []
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
@@ -83,7 +83,7 @@ def training_loop_validation(loader, criterion, val_loader=None):
 def training_loop(loader, criterion):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=glob['LR'])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
@@ -221,10 +221,8 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    for glob['LR'] in (1e-4, 1e-3):
-        print("NO WEIGHT DECAY")
-        main(datasets.muta, cv=True)
-    # main(datasets.muta, cv=True)  # cross-validation
+        # main(datasets.muta, cv=True)
+    main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
     # lr = 0.0001
