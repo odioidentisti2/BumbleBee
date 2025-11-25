@@ -214,12 +214,10 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    for i in range(5):
-        ## Set seeds for reproducibility
-        print(i)
-        torch.manual_seed(42+i)
-        torch.cuda.manual_seed_all(42+i)
-        main(datasets.muta, cv=True)
+
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+    main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
