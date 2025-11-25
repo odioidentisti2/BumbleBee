@@ -66,7 +66,7 @@ def explain(model, single_loader):
 def training_loop_validation(loader, criterion, val_loader=None):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    optimizer = torch.optim.Adam(model.parameters(), lr=glob['LR'])
     val_stats = []
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
