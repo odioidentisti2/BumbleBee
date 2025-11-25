@@ -123,7 +123,6 @@ def crossvalidation(dataset, criterion):
     for fold in range(num_folds):
         # Reproducibility
         set_random_seed()
-        _ = torch.randperm(dataset_size).tolist()
         g = torch.Generator()
         g.manual_seed(42) 
         # Create indices
@@ -206,7 +205,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 5,
+        "NUM_EPOCHS": 20,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
