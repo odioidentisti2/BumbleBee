@@ -30,10 +30,10 @@ def test(model, loader, criterion):
     total_loss = 0
     metric = 0
     total = 0
-    for batch in loader:
-        batch = batch.to(DEVICE)
-        targets = batch.y.view(-1).to(DEVICE)
-        with torch.no_grad():
+    with torch.no_grad():
+        for batch in loader:
+            batch = batch.to(DEVICE)
+            targets = batch.y.view(-1).to(DEVICE)
             logits = model(batch, BATCH_DEBUG)  # forward pass
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
