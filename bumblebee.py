@@ -72,20 +72,10 @@ def training_loop_validation(loader, criterion, val_loader=None):
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader, optimizer, criterion)
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
-        if val_loader is not None and epoch % 5 == 0:
-            # Save RNG state before validation
-            rng_state = torch.get_rng_state()
-            if torch.cuda.is_available():
-                cuda_rng_state = torch.cuda.get_rng_state()
-            
+        if val_loader is not None and epoch % 5 == 0:            
             val_loss, val_metric = test(model, val_loader, criterion)
             print(f"> VALIDATION  Loss: {val_loss:.3f}  Metric: {val_metric:.3f}")
             val_stats.append(val_metric)
-            
-            # Restore RNG state after validation
-            torch.set_rng_state(rng_state)
-            if torch.cuda.is_available():
-                torch.cuda.set_rng_state(cuda_rng_state)
     if val_loader:
         return model, val_stats
     return model
@@ -124,6 +114,9 @@ def crossvalidation(dataset, criterion):
     indices = torch.randperm(dataset_size).tolist()
     fold_size = dataset_size // num_folds
     fold_results = []
+    # Reproducibility
+    g = torch.Generator()
+    g.manual_seed(42)
 
     start_time = time.time()   
     for fold in range(num_folds):        
@@ -136,7 +129,7 @@ def crossvalidation(dataset, criterion):
         train_subset = torch.utils.data.Subset(dataset, train_indices)
         test_subset = torch.utils.data.Subset(dataset, test_indices)
         train_loader = DataLoader(train_subset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=glob['BATCH_SIZE'])
+        test_loader = DataLoader(test_subset, batch_size=glob['BATCH_SIZE'], generator=g)
 
         print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
         print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
