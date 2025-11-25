@@ -30,12 +30,18 @@ def test(model, loader, criterion):
     total_loss = 0
     metric = 0
     total = 0
-    rng_before = torch.get_rng_state()
+    rng_before_loop = torch.get_rng_state()
+    print(f"Before loop: {hash(rng_before_loop.numpy().tobytes()) % 1000000}")
     with torch.no_grad():
         for batch in loader:
+            rng_after_batch_load = torch.get_rng_state()
+            print(f"After loading batch {i}: {hash(rng_after_batch_load.numpy().tobytes()) % 1000000}")
+
             batch = batch.to(DEVICE)
             targets = batch.y.view(-1).to(DEVICE)
             logits = model(batch, BATCH_DEBUG)  # forward pass
+            rng_after_forward = torch.get_rng_state()
+            print(f"After forward pass: {hash(rng_after_forward.numpy().tobytes()) % 1000000}")
             loss = criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
