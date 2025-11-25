@@ -30,6 +30,7 @@ def test(model, loader, criterion):
     total_loss = 0
     metric = 0
     total = 0
+    rng_before = torch.get_rng_state()
     with torch.no_grad():
         for batch in loader:
             batch = batch.to(DEVICE)
@@ -43,6 +44,9 @@ def test(model, loader, criterion):
                 metric += (preds == targets).sum().item()  # to compute Accuracy
             else:  # Regression
                 metric += torch.sum(torch.abs(logits - targets)).item()  # to compute MAE
+    
+    rng_after = torch.get_rng_state()
+    print(f"RNG changed: {not torch.equal(rng_before, rng_after)}")
     return total_loss / total, metric / total
 
 def explain(model, single_loader):
