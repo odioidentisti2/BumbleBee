@@ -206,7 +206,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 30,
+        "NUM_EPOCHS": 20,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -222,11 +222,11 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    import architectures
-    for architectures.ESA_DROPOUT in (0.2, 0.4, 0.0):
-        print(f"\n=== ESA_DROPOUT: {architectures.ESA_DROPOUT} ===")
-        main(datasets.muta, cv=True)
-    # main(datasets.muta, cv=True)  # cross-validation
+    # import architectures
+    # for architectures.ESA_DROPOUT in (0.2, 0.4, 0.0):
+    #     print(f"\n=== ESA_DROPOUT: {architectures.ESA_DROPOUT} ===")
+    #     main(datasets.muta, cv=True)
+    main(datasets.muta, cv=True)  # cross-validation
 
     ## ESA: README
     # lr = 0.0001
