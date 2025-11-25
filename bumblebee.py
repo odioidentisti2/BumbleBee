@@ -73,9 +73,19 @@ def training_loop_validation(loader, criterion, val_loader=None):
         loss = train(model, loader, optimizer, criterion)
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
         if val_loader is not None and epoch % 5 == 0:
+            # Save RNG state before validation
+            rng_state = torch.get_rng_state()
+            if torch.cuda.is_available():
+                cuda_rng_state = torch.cuda.get_rng_state()
+            
             val_loss, val_metric = test(model, val_loader, criterion)
             print(f"> VALIDATION  Loss: {val_loss:.3f}  Metric: {val_metric:.3f}")
             val_stats.append(val_metric)
+            
+            # Restore RNG state after validation
+            torch.set_rng_state(rng_state)
+            if torch.cuda.is_available():
+                torch.cuda.set_rng_state(cuda_rng_state)
     if val_loader:
         return model, val_stats
     return model
