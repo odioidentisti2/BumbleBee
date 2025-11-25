@@ -222,7 +222,7 @@ if __name__ == "__main__":
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
     for glob['LR'] in (1e-4, 1e-3):
-        print("NO WEIGHT DECAY)"
+        print("NO WEIGHT DECAY")
         main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
