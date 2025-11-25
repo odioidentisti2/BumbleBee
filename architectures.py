@@ -114,7 +114,7 @@ class ESA(nn.Module):
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         out = F.mish(out)
-        return out # self.output_dropout(out)  # Pre-activation dropout
+        return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
 
     def expose_attention(self, expose=True):
