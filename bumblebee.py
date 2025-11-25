@@ -224,7 +224,7 @@ if __name__ == "__main__":
     #                         ):
     import architectures
     for architectures.ESA_DROPOUT in (0.2, 0.4, 0.0):
-        print(f"\n=== ESA_DROPOUT: {model.architectures.ESA_DROPOUT} ===")
+        print(f"\n=== ESA_DROPOUT: {architectures.ESA_DROPOUT} ===")
         main(datasets.muta, cv=True)
     # main(datasets.muta, cv=True)  # cross-validation
 
