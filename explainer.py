@@ -20,7 +20,7 @@ from graphic import *
 def print_weights(weights, average=False):
     print("\nWEIGHTS:")
     print(weights)
-    print(f"\nWeights range: {weights.min():.4f} - {weights.max():.4f}")
+    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
     if average: print("Weights Average: ", weights.mean().item())
     print(f"Weight sum: {weights.sum():.2f}")
 
@@ -43,7 +43,7 @@ def explain_with_attention(model, graph, intensity=1):
     depict(graph, norm_weights.numpy()*intensity)
 
 
-def explain_with_gradients(model, graph, steps=5, intensity=1):
+def explain_with_IG(model, graph, steps=100, intensity=1):
     """Integrated gradients explanation for edge features"""
     batched_graph = Batch.from_data_list([graph])
     edge_feat = model.get_features(batched_graph)   
@@ -89,7 +89,7 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
     # depict(graph, weights.numpy() / (0.5 - baseline_pred.item()), attention=False)
 
 
-def explain_with_mlp_integrated_gradients(model, graph, steps=50, intensity=1.0):
+def explain_with_mlp_IG(model, graph, steps=50, intensity=1.0):
     """
     Integrated gradients for the output of input_mlp (edge embeddings).
     """

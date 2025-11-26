@@ -46,24 +46,6 @@ def test(model, loader, criterion):
                 metric += torch.sum(torch.abs(logits - targets)).item()  # to compute MAE
     return total_loss / total, metric / total
 
-def explain(model, single_loader):
-    model.eval()
-    current_intensity = 1
-    for batched_molecule in single_loader:
-        batched_molecule = batched_molecule.to(DEVICE)
-        repeat = True
-        while repeat:
-            explain_with_attention(model, batched_molecule, intensity=current_intensity)
-            explain_with_gradients(model, batched_molecule, steps=100, intensity=current_intensity)
-            explain_with_mlp_integrated_gradients(model, batched_molecule, intensity=current_intensity)
-            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-            plus_count = user_input.count('+')
-            minus_count = user_input.count('-')
-            if plus_count + minus_count > 0:
-                current_intensity = current_intensity * (2 ** plus_count) / (2 ** minus_count)
-            else:
-                repeat = False  # Move to next molecule
-
 def training_loop_validation(loader, criterion, val_loader=None):
     print("\nTraining...")
     model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
@@ -139,8 +121,8 @@ def explain(model, dataset):
         repeat = True
         while repeat:
             explain_with_attention(model, graph.clone(), intensity=current_intensity)
-            explain_with_gradients(model, graph.clone(), steps=100, intensity=current_intensity)
-            explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
+            explain_with_IG(model, graph.clone(), intensity=current_intensity)
+            # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
