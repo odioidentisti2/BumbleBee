@@ -68,7 +68,7 @@ def depict(graph, weights, attention=True):
             bond_weights[bond_idx] = directional_weight
             continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
         weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
-        print(f"Bond {bond_idx}: {weight:.2f}\t({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+        print(f"Bond {bond_idx}: {weight:.2f} \t({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
         bond_weights[bond_idx] = weight
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 

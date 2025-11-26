@@ -27,17 +27,15 @@ def explain_with_attention(model, graph, intensity=1):
     print("\nDEPICT ATTENTION")
     top = 7.77  # if w > average weight above amount of times,  then clip to 1
     batched_graph = Batch.from_data_list([graph])
-    print('2', batched_graph.edge_index.device)
     edge_feat = model.get_features(batched_graph)
-    print('3', edge_feat.device)
     with torch.no_grad():
         weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
     print_weights(weights)
     print("Weights Average: ", weights.mean().item())
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
     # weights come after softmax (they add up to 1): 
-    # - weight > mean means "increased attention"
-    # - weight < mean means "decreased attention" => clip
+    # - weight * len(weights) > 1  means "increased attention"
+    # - weight * len(weights) < 1  means "decreased attention" => clip
     ratios = weights * len(weights) # / weights.mean()  # Relative to this molecule
     norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
     # norm_weights = torch.clip(ratios / top, 0, 1)  # Scale by training threshold
@@ -46,26 +44,17 @@ def explain_with_attention(model, graph, intensity=1):
 
 def explain_with_gradients(model, graph, steps=5, intensity=1):
     """Integrated gradients explanation for edge features"""
-    print('1', graph.edge_index.device)
     batched_graph = Batch.from_data_list([graph])
-    print('2', batched_graph.edge_index.device)
     edge_feat = model.get_features(batched_graph)   
-    print('3', edge_feat.device)
     baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
-    print('4', baseline.device)
     integrated_grads = torch.zeros_like(edge_feat)
-    print('5')
 
     for alpha in torch.linspace(0, 1, steps):  # alpha on cpu by default
-        print('6', alpha.device)
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
-        print('7', interp_feat.device)
         interp_feat.requires_grad_(True)
-        print('8')
         # Forward pass
         prediction = model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
-        print('9')
         integrated_grads += torch.autograd.grad(
                             outputs=prediction,
                             inputs=interp_feat,
