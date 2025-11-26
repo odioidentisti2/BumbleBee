@@ -41,7 +41,7 @@ def explain_with_attention(model, graph, intensity=1):
     ratios = weights * len(weights) # / weights.mean()  # Relative to this molecule
     norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
     # norm_weights = torch.clip(ratios / top, 0, 1)  # Scale by training threshold
-    depict(graph, norm_weights.numpy()*intensity)
+    depict(graph.to('cpu'), norm_weights.numpy()*intensity)
 
 
 def explain_with_gradients(model, graph, steps=5, intensity=1):
