@@ -135,7 +135,7 @@ def explain(model, dataset):
     model.eval()
     current_intensity = 1
     for graph in dataset:
-        # batched_molecule = batched_molecule.to(DEVICE)
+        graph = graph.to(DEVICE)
         repeat = True
         while repeat:
             explain_with_attention(model, graph, intensity=current_intensity)

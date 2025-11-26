@@ -30,7 +30,6 @@ def explain_with_attention(model, graph, intensity=1):
     edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
         weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
-    weights = weights.detach().cpu()
     print_weights(weights)
     print("Weights Average: ", weights.mean().item())
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
