@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch_geometric.utils import to_dense_batch
+from torch_geometric.data import Batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
@@ -94,3 +95,14 @@ class MAGClassifier(nn.Module):
         # return edge_batch [num_edges] where each edge takes the batch idx of its src node
         # (assumes all edges within a graph)
         return node_batch[edge_index[0]]
+    
+
+    @staticmethod
+    def get_features(batch_or_graph):
+        if not isinstance(batch_or_graph, Batch):  # single graph
+            batch = Batch.from_data_list([batch_or_graph])
+        else:
+            batch = batch_or_graph
+        # Concatenate node (src and dst) and edge features
+        src, dst = batch.edge_index
+        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)

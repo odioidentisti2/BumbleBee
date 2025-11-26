@@ -138,8 +138,8 @@ def explain(model, dataset):
         # batched_molecule = batched_molecule.to(DEVICE)
         repeat = True
         while repeat:
-            # explain_with_attention(model, graph, intensity=current_intensity)
-            explain_with_gradients(model, graph, steps=100, intensity=current_intensity)
+            explain_with_attention(model, graph, intensity=current_intensity)
+            # explain_with_gradients(model, graph, steps=100, intensity=current_intensity)
             # explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
@@ -190,8 +190,8 @@ def main(dataset_dict, cv=False):
     ## Test
     print(f"\nTest set: {path} ('Test')")
     testset = GraphDataset(dataset_dict, split='test')
-    test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
-    evaluate(model, test_loader, criterion, flag="Test")
+    # test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
+    # evaluate(model, test_loader, criterion, flag="Test")
 
     # # Explain
     explain(model, testset)
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 1,
+        "NUM_EPOCHS": 15,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets

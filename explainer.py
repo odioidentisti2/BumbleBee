@@ -24,20 +24,22 @@ def print_weights(weights):
 
 
 def explain_with_attention(model, graph, intensity=1):
-    top = 7.77
+    print("\nDEPICT ATTENTION")
+    top = 7.77  # if w > average weight above amount of times,  then clip to 1
     batched_graph = Batch.from_data_list([graph])
     edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
-        # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin) 
-        weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]
-        print_weights(weights)
-
-        # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
-        ratios = weights / weights.mean()  # Relative to this molecule
-        norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
-        # norm_weights = torch.clip(ratios / top, 0, 1)  # Scale by training threshold
-        print("\nDEPICT ATTENTION")
-        depict(graph, norm_weights.numpy()*intensity)
+        weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
+    print_weights(weights)
+    print("Weights Average: ", weights.mean().item())
+    # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
+    # weights come after softmax (they add up to 1): 
+    # - weight > mean means "increased attention"
+    # - weight < mean means "decreased attention" => clip
+    ratios = weights / weights.mean()  # Relative to this molecule
+    norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
+    # norm_weights = torch.clip(ratios / top, 0, 1)  # Scale by training threshold
+    depict(graph, norm_weights.numpy()*intensity)
 
 
 def explain_with_gradients(model, graph, steps=5, intensity=1):
