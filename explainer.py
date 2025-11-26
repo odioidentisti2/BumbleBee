@@ -27,7 +27,9 @@ def explain_with_attention(model, graph, intensity=1):
     print("\nDEPICT ATTENTION")
     top = 7.77  # if w > average weight above amount of times,  then clip to 1
     batched_graph = Batch.from_data_list([graph])
+    print('2', batched_graph.edge_index.device)
     edge_feat = model.get_features(batched_graph)
+    print('3', edge_feat.device)
     with torch.no_grad():
         weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
     print_weights(weights)
