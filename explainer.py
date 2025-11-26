@@ -58,9 +58,12 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
         print('6')
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
-        interp_feat.requires_grad_(True)        
+        print('7')
+        interp_feat.requires_grad_(True)
+        print('8')
         # Forward pass
         prediction = model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
+        print('9')
         integrated_grads += torch.autograd.grad(
                             outputs=prediction,
                             inputs=interp_feat,
