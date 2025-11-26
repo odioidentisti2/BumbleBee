@@ -139,7 +139,7 @@ def explain(model, dataset):
         repeat = True
         while repeat:
             explain_with_attention(model, graph, intensity=current_intensity)
-            # explain_with_gradients(model, graph, steps=100, intensity=current_intensity)
+            explain_with_gradients(model, graph, steps=100, intensity=current_intensity)
             # explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')

@@ -30,6 +30,7 @@ def explain_with_attention(model, graph, intensity=1):
     edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
         weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
+    weights = weights.detach().cpu()
     print_weights(weights)
     print("Weights Average: ", weights.mean().item())
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
@@ -65,7 +66,6 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
     integrated_grads /= steps
     attributions = (edge_feat - baseline) * integrated_grads
     edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
-    weights = edge_importance.detach().cpu()
 
     print("\n\nDEPICT INTEGRATED GRADIENTS")
     print(int(graph.y.item()), graph.smiles)
@@ -81,6 +81,7 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
     print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
     print(f"PREDICTION: {final_pred.item():.2f}")
 
+    weights = edge_importance.detach().cpu()
     print_weights(weights)
 
     # Before depict I should normalize edge_importance by 0.5 - baseline
