@@ -36,7 +36,7 @@ def explain_with_attention(model, graph, intensity=1):
     # weights come after softmax (they add up to 1): 
     # - weight > mean means "increased attention"
     # - weight < mean means "decreased attention" => clip
-    ratios = weights / weights.mean()  # Relative to this molecule
+    ratios = weights * len(weights) # / weights.mean()  # Relative to this molecule
     norm_weights = (torch.clip(ratios, 1, top) - 1) / (top - 1)  # clipping upper and lower (no need threshold)
     # norm_weights = torch.clip(ratios / top, 0, 1)  # Scale by training threshold
     depict(graph, norm_weights.numpy()*intensity)
@@ -44,12 +44,18 @@ def explain_with_attention(model, graph, intensity=1):
 
 def explain_with_gradients(model, graph, steps=5, intensity=1):
     """Integrated gradients explanation for edge features"""
+    print('1')
     batched_graph = Batch.from_data_list([graph])
+    print('2')
     edge_feat = model.get_features(batched_graph)   
+    print('3')
     baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
+    print('4')
     integrated_grads = torch.zeros_like(edge_feat)
+    print('5')
 
     for alpha in torch.linspace(0, 1, steps):
+    print('6')
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
         interp_feat.requires_grad_(True)        
