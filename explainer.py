@@ -17,9 +17,11 @@ from graphic import *
 #     return bond_keys, summed_weights
 
 # DEBUG
-def print_weights(weights):
-    print(f"\nWeights range: {weights.min()} - {weights.max()}")
+def print_weights(weights, average=False):
+    print("\nWEIGHTS:")
     print(weights)
+    print(f"\nWeights range: {weights.min():.4f} - {weights.max():.4f}")
+    if average: print("Weights Average: ", weights.mean().item())
     print(f"Weight sum: {weights.sum():.2f}")
 
 
@@ -30,8 +32,7 @@ def explain_with_attention(model, graph, intensity=1):
     edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
         weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
-    print_weights(weights)
-    print("Weights Average: ", weights.mean().item())
+    print_weights(weights, average=True)
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
     # weights come after softmax (they add up to 1): 
     # - weight * len(weights) > 1  means "increased attention"

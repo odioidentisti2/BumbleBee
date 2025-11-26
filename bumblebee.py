@@ -140,7 +140,7 @@ def explain(model, dataset):
         while repeat:
             explain_with_attention(model, graph.clone(), intensity=current_intensity)
             explain_with_gradients(model, graph.clone(), steps=100, intensity=current_intensity)
-            # explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
+            explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 15,
+        "NUM_EPOCHS": 1,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets

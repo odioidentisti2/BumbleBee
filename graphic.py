@@ -45,11 +45,11 @@ def depict(graph, weights, attention=True):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.astype(float)
     edge_index = graph.edge_index
+
     threshold = 0
     # if attention:
     #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
-
-    print(f"\nThreshold: {threshold:.2f}")
+    # print(f"\nThreshold: {threshold:.2f}")
 
     if (mol := graph.mol) is None:
         print("Invalid molecule object")
