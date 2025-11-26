@@ -46,7 +46,7 @@ def explain_with_attention(model, graph, intensity=1):
 
 def explain_with_gradients(model, graph, steps=5, intensity=1):
     """Integrated gradients explanation for edge features"""
-    print('1')
+    print('1', graph.edge_index.device)
     batched_graph = Batch.from_data_list([graph])
     print('2', batched_graph.edge_index.device)
     edge_feat = model.get_features(batched_graph)   
@@ -56,7 +56,7 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
     integrated_grads = torch.zeros_like(edge_feat)
     print('5')
 
-    for alpha in torch.linspace(0, 1, steps):
+    for alpha in torch.linspace(0, 1, steps):  # alpha on cpu by default
         print('6', alpha.device)
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
