@@ -46,19 +46,19 @@ def explain_with_gradients(model, graph, steps=5, intensity=1):
     """Integrated gradients explanation for edge features"""
     print('1')
     batched_graph = Batch.from_data_list([graph])
-    print('2')
+    print('2', batched_graph.edge_index.device)
     edge_feat = model.get_features(batched_graph)   
-    print('3')
+    print('3', edge_feat.device)
     baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
-    print('4')
+    print('4', baseline.device)
     integrated_grads = torch.zeros_like(edge_feat)
     print('5')
 
     for alpha in torch.linspace(0, 1, steps):
-        print('6')
+        print('6', alpha.device)
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
-        print('7')
+        print('7', interp_feat.device)
         interp_feat.requires_grad_(True)
         print('8')
         # Forward pass
