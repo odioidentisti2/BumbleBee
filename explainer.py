@@ -1,5 +1,7 @@
 import torch
+from torch_geometric.data import Batch
 from graphic import *
+
 
 # def sum_bond_weights(edge_index, weights):
 #     # edge_index: shape [2, num_edges]
@@ -14,14 +16,21 @@ from graphic import *
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def explain_with_attention(model, single_batch, intensity=1):
-    top = 7.77
-    with torch.no_grad():
-        graph = single_batch.to_data_list()[0]
-        # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin)
+# DEBUG
+def print_weights(weights):
+    print(f"\nWeights range: {weights.min()} - {weights.max()}")
+    print(weights)
+    print(f"Weight sum: {weights.sum():.2f}")
 
-        edge_feat = model.get_features(single_batch)
-        weights = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch, return_attention=True)[0]
+
+def explain_with_attention(model, graph, intensity=1):
+    top = 7.77
+    batched_graph = Batch.from_data_list([graph])
+    edge_feat = model.get_features(batched_graph)
+    with torch.no_grad():
+        # weights = model(single_batch, return_attention=True)[0]  # single_batch! (I should fix it at the origin) 
+        weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]
+        print_weights(weights)
 
         # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
         ratios = weights / weights.mean()  # Relative to this molecule
@@ -30,64 +39,61 @@ def explain_with_attention(model, single_batch, intensity=1):
         print("\nDEPICT ATTENTION")
         depict(graph, norm_weights.numpy()*intensity)
 
-def explain_with_gradients(model, single_batch, steps=5, intensity=1):
+
+def explain_with_gradients(model, graph, steps=5, intensity=1):
     """Integrated gradients explanation for edge features"""
-    edge_feat = model.get_features(single_batch)   
-    baseline = torch.zeros_like(edge_feat)    
+    batched_graph = Batch.from_data_list([graph])
+    edge_feat = model.get_features(batched_graph)   
+    baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
     integrated_grads = torch.zeros_like(edge_feat)
 
-    # Get baseline and final predictions for verification
-    with torch.no_grad():
-        baseline_pred = model.single_forward(baseline, single_batch.edge_index, single_batch.batch)
-        final_pred = model.single_forward(edge_feat, single_batch.edge_index, single_batch.batch)
-    print(f"\nBaseline prediction: {baseline_pred.item():.4f}")
-    # print(f"Expected attribution sum: {(final_pred - baseline_pred).item():.4f}")
-
-
-    for i, alpha in enumerate(torch.linspace(0, 1, steps)):
-        # print(f"  Step {i+1}/{steps}: alpha={alpha:.2f}")
+    for alpha in torch.linspace(0, 1, steps):
         # Interpolate between baseline and input
         interp_feat = baseline + alpha * (edge_feat - baseline)
-        interp_feat.requires_grad_(True)
-        
+        interp_feat.requires_grad_(True)        
         # Forward pass
-        prediction = model.single_forward(interp_feat, single_batch.edge_index, single_batch.batch)
-
-        grad = torch.autograd.grad(
-            outputs=prediction,
-            inputs=interp_feat,
-            create_graph=False
-        )[0]
-        integrated_grads += grad
+        prediction = model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
+        integrated_grads += torch.autograd.grad(
+                            outputs=prediction,
+                            inputs=interp_feat,
+                            create_graph=False
+                        )[0]
     
     # Average gradients and scale by input difference
     integrated_grads /= steps
     attributions = (edge_feat - baseline) * integrated_grads
     edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
-    
+    weights = edge_importance.detach().cpu()
+
+    print("\n\nDEPICT INTEGRATED GRADIENTS")
+    print(int(graph.y.item()), graph.smiles)
+    # Get baseline and final predictions for verification
+    with torch.no_grad():
+        baseline_pred = model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
+        final_pred = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch)
     # Verify the sum property (CRITICAL for IG correctness)
     attribution_sum = edge_importance.sum().item()
-    expected_sum = (final_pred - baseline_pred).item()
-    
+    # expected_sum = (final_pred - baseline_pred).item()    
+    print(f"\nBaseline prediction: {baseline_pred.item():.2f}")
     print(f"Attribution sum: {attribution_sum:.2f}")
     print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
     print(f"PREDICTION: {final_pred.item():.2f}")
 
-    graph = single_batch.to_data_list()[0]
-    weights = edge_importance.detach().cpu()
+    print_weights(weights)
+
     # Before depict I should normalize edge_importance by 0.5 - baseline
-    print("\nDEPICT EDGE IMPORTANCE")
     depict(graph, weights.numpy() * intensity, attention=False)
     # depict(graph, weights.numpy() / (0.5 - baseline_pred.item()), attention=False)
 
-def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensity=1.0):
+
+def explain_with_mlp_integrated_gradients(model, graph, steps=50, intensity=1.0):
     """
     Integrated gradients for the output of input_mlp (edge embeddings).
     """
-    graph = single_batch.to_data_list()[0]
 
     # Get edge features and baseline
-    edge_feat = model.get_features(single_batch)
+    batched_graph = Batch.from_data_list([graph])
+    edge_feat = model.get_features(batched_graph)
     baseline_emb = torch.zeros_like(model.input_mlp(edge_feat))
     edge_emb = model.input_mlp(edge_feat).detach()
 
@@ -102,7 +108,7 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
         model.input_mlp.forward = lambda *_: interp_emb
 
         # Forward pass
-        pred = model(single_batch)
+        pred = model(batched_graph)
         pred = torch.flatten(pred)[0]
 
         # Backward pass
@@ -119,21 +125,22 @@ def explain_with_mlp_integrated_gradients(model, single_batch, steps=50, intensi
     edge_importance = attributions.sum(dim=1)  # Sum across embedding dimensions
 
     # After computing attributions
-    pred_real = float(model(single_batch).detach().cpu().numpy())
+    pred_real = float(model(batched_graph).detach().cpu().numpy())
     # Temporarily override input_mlp to always return baseline_emb
     orig_forward = model.input_mlp.forward
     model.input_mlp.forward = lambda *_: baseline_emb
-    pred_base = float(model(single_batch).detach().cpu().numpy())
+    pred_base = float(model(batched_graph).detach().cpu().numpy())
     model.input_mlp.forward = orig_forward
 
     weights = edge_importance.detach().cpu()
 
+
+    print("\nDEPICT MLP INTEGRATED GRADIENTS")
     print(f"Prediction (real): {pred_real:.2f}")
     print(f"Prediction (baseline): {pred_base:.2f}")
     print(f"Sum of attributions: {edge_importance.sum():.2f}")
     print(f"Difference: {pred_real - pred_base:.2f}")
-
-    print("\nDEPICT MLP EDGE IMPORTANCE (Integrated Gradients, after input_mlp)")
+    print_weights(weights)
     depict(graph, weights.numpy() * intensity/ 10, attention=False)
     return edge_importance
 

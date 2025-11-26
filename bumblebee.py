@@ -1,10 +1,10 @@
 import time
 import torch
 from torch_geometric.loader import DataLoader
-import model
+from utils import set_random_seed
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
-from output import cv_statistics
+from crossvalidation import *
 from explainer import *
 
 
@@ -109,44 +109,45 @@ def load(model_path):
     model.eval()
     return model
 
-def set_random_seed(seed=42):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-def crossvalidation(dataset, criterion):
-    num_folds = 5
-    dataset_size = len(dataset)
-    indices = torch.randperm(dataset_size).tolist()
-    fold_size = dataset_size // num_folds
+def crossvalidation(dataset, criterion, folds=5):
+    fold = 1
     fold_results = []
-
-    start_time = time.time()   
-    for fold in range(num_folds):
+    start_time = time.time()  
+    for train_subset, test_subset in cv_subsets(dataset, folds):
         # Reproducibility
         set_random_seed()
         g = torch.Generator()
-        g.manual_seed(42) 
-        # Create indices
-        test_start = fold * fold_size
-        test_end = (fold + 1) * fold_size if fold < num_folds - 1 else dataset_size
-        test_indices = indices[test_start:test_end]
-        train_indices = indices[:test_start] + indices[test_end:]        
-        # Create subsets
-        train_subset = torch.utils.data.Subset(dataset, train_indices)
-        test_subset = torch.utils.data.Subset(dataset, test_indices)
+        g.manual_seed(42)
         train_loader = DataLoader(train_subset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=glob['BATCH_SIZE'], generator=g)
 
-        print(f"\n{'='*50}\nFold {fold+1}/{num_folds}\n{'='*50}")
-        print(f"Train size: {len(train_indices)}, Test size: {len(test_indices)}")
+        print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
+        print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         _, val_stats = training_loop_validation(train_loader, criterion, test_loader)
         # loss, metric = evaluate(model, test_loader, criterion, flag=f"Fold {fold+1}")        
         fold_results.append(val_stats)
-
+        fold += 1
     cv_statistics(fold_results, criterion.task)
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
+def explain(model, dataset):
+    model.eval()
+    current_intensity = 1
+    for graph in dataset:
+        # batched_molecule = batched_molecule.to(DEVICE)
+        repeat = True
+        while repeat:
+            # explain_with_attention(model, graph, intensity=current_intensity)
+            explain_with_gradients(model, graph, steps=100, intensity=current_intensity)
+            # explain_with_mlp_integrated_gradients(model, graph, intensity=current_intensity)
+            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+            plus_count = user_input.count('+')
+            minus_count = user_input.count('-')
+            if plus_count + minus_count > 0:
+                current_intensity = current_intensity * (2 ** plus_count) / (2 ** minus_count)
+            else:
+                repeat = False  # Move to next molecule
 
 def main(dataset_dict, cv=False):
     ## Reproducibility
@@ -193,6 +194,7 @@ def main(dataset_dict, cv=False):
     evaluate(model, test_loader, criterion, flag="Test")
 
     # # Explain
+    explain(model, testset)
     # single_loader = DataLoader(testset, batch_size=1)
     # explain(model, single_loader)
 
@@ -206,7 +208,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 20,
+        "NUM_EPOCHS": 1,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -222,11 +224,8 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    # import architectures
-    # for architectures.ESA_DROPOUT in (0.2, 0.4, 0.0):
-    #     print(f"\n=== ESA_DROPOUT: {architectures.ESA_DROPOUT} ===")
-    #     main(datasets.muta, cv=True)
-    main(datasets.muta, cv=True)  # cross-validation
+    main(datasets.muta, cv=False)
+
 
     ## ESA: README
     # lr = 0.0001
