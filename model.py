@@ -16,6 +16,7 @@ class MAGClassifier(nn.Module):
     
     def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=HIDDEN_DIM, num_heads=HEADS, output_dim=1):
         super(MAGClassifier, self).__init__()
+        self.layer_types = layer_types
         self.hidden_dim = hidden_dim
         # Edge feature encoder (node-edge MLP)
         self.input_mlp = mlp(2 * node_dim + edge_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, hidden_dim)

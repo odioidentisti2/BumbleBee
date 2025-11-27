@@ -79,16 +79,26 @@ def evaluate(model, loader, criterion, flag):
     print(f"{flag}: Loss {loss:.3f}  Metric {metric:.3f}")
     return loss, metric
 
-def save(model):
-    model_path = f"model_{time.strftime('%Y%m%d_%H%M')}_{glob['BATCH_SIZE']}_{glob['LR']}_{glob['NUM_EPOCHS']}.pt"
-    torch.save(model.state_dict(), model_path)
-    print(f"Model saved to: {model_path}")
+
+
+def save(model, path=None):
+    if not path:
+        path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
+    ckpt = {
+        'state_dict': model.state_dict(),
+        'layer_types': getattr(model, 'layer_types', None),
+    }
+    torch.save(ckpt, path)
+    print(f"Model checkpoint saved to: {path}")
 
 def load(model_path):
     print(f"\nLoading model {model_path}")
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)  # WARNING:layer_types must be saved in the model
-    model.load_state_dict(torch.load(model_path, weights_only=True))
+    ckpt = torch.load(model_path, map_location=DEVICE)
+    layer_types = ckpt.get('layer_types')
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
+    model.load_state_dict(ckpt['state_dict'])
     model.eval()
+    print(f"Loaded layer_types: {layer_types}")
     return model
 
 def crossvalidation(dataset, criterion, folds=5):
@@ -164,16 +174,16 @@ def main(dataset_dict, cv=False):
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    # save(model)
+    save(model, "LOAD_SAVE.pt")
 
     ## Load saved model
-    # model = load(MODEL_PATH)
+    model = load("LOAD_SAVE.pt")
 
     ## Test
     print(f"\nTest set: {path} ('Test')")
     testset = GraphDataset(dataset_dict, split='test')
-    # test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
-    # evaluate(model, test_loader, criterion, flag="Test")
+    test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
+    evaluate(model, test_loader, criterion, flag="Test")
 
     # # Explain
     explain(model, testset)
@@ -186,7 +196,6 @@ if __name__ == "__main__":
     # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     ## GLOBALS
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # MODEL_PATH = 'model_20250822_210138.pt'
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
