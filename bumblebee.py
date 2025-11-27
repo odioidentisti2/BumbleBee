@@ -162,7 +162,7 @@ def explain(model, dataset, calibration_loader=None):
         graph = graph.to(DEVICE)
         repeat = True
         while repeat:
-            # explain_with_attention(model, graph.clone(), intensity=att_intensity)
+            explain_with_attention(model, graph.clone(), intensity=att_intensity)
             explain_with_IG(model, graph.clone(), intensity=ig_intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
