@@ -39,3 +39,15 @@ def cv_subsets(dataset, num_folds):
         train_subset = torch.utils.data.Subset(dataset, train_indices)
         test_subset = torch.utils.data.Subset(dataset, test_indices)
         yield train_subset, test_subset
+
+def random_subsets(dataset, test_fraction=0.2):
+    dataset_size = len(dataset)
+    indices = torch.randperm(dataset_size).tolist()
+    test_size = int(dataset_size * test_fraction)
+    # Create indices
+    test_indices = indices[0:test_size]
+    train_indices = indices[test_size:]        
+    # Create subsets
+    train_subset = torch.utils.data.Subset(dataset, train_indices)
+    test_subset = torch.utils.data.Subset(dataset, test_indices)
+    return train_subset, test_subset

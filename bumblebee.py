@@ -1,4 +1,5 @@
 import time
+from unittest import loader
 import torch
 from torch_geometric.loader import DataLoader
 from utils import set_random_seed
@@ -79,8 +80,6 @@ def evaluate(model, loader, criterion, flag):
     print(f"{flag}: Loss {loss:.3f}  Metric {metric:.3f}")
     return loss, metric
 
-
-
 def save(model, path=None):
     if not path:
         path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
@@ -123,8 +122,18 @@ def crossvalidation(dataset, criterion, folds=5):
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
-def explain(model, dataset):
+def explain(model, dataset, calibration_loader=None):
     model.eval()
+    import numpy as np
+    if calibration_loader:
+        predictions = []
+        with torch.no_grad():
+            for batch in calibration_loader:
+                batch = batch.to(DEVICE)
+                predictions.extend(model(batch))
+        dist = np.array(predictions)
+        iqr = np.percentile(dist, 75) - np.percentile(dist, 25)
+        print("\nIQR = ", iqr)
     current_intensity = 1
     for graph in dataset:
         graph = graph.to(DEVICE)
@@ -141,15 +150,15 @@ def explain(model, dataset):
             else:
                 repeat = False  # Move to next molecule
 
-def main(dataset_dict, cv=False):
+def main(dataset_info, cv=False):
     ## Reproducibility
     set_random_seed()
     ## Print model stamp
     import pprint
     pprint.pprint(glob)
 
-    path = dataset_dict['path']
-    task = dataset_dict['task']
+    path = dataset_info['path']
+    task = dataset_info['task']
     if task == 'binary_classification':     
         # Default: reduction='mean', return mean loss over batch
         criterion = torch.nn.BCEWithLogitsLoss()
@@ -160,13 +169,18 @@ def main(dataset_dict, cv=False):
 
     if cv:
         print(f"\nCross-Validation on: ", path)
-        dataset = GraphDataset(dataset_dict)
+        dataset = GraphDataset(dataset_info)
         crossvalidation(dataset, criterion)
         return
-        
+  
     ## Train
-    print(f"\nTraining set: {path} ('Training')")
-    trainingset = GraphDataset(dataset_dict, split='train')
+    if 'split_header' in dataset_info:
+        print(f"\nTraining set: {path} ('Training')")
+        trainingset = GraphDataset(dataset_info, split='train')
+        testset = None
+    else:
+        trainingset, testset = random_subsets(GraphDataset(dataset_info))
+        print(f"\nTraining set: {path} ({len(trainingset)} samples)")
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
     model = training_loop(train_loader, criterion)
     ## Statistics on Training set
@@ -174,19 +188,22 @@ def main(dataset_dict, cv=False):
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    save(model, "LOAD_SAVE.pt")
+    # save(model, "LOAD_SAVE.pt")
 
     ## Load saved model
-    model = load("LOAD_SAVE.pt")
+    # model = load("LOAD_SAVE.pt")
 
-    ## Test
-    print(f"\nTest set: {path} ('Test')")
-    testset = GraphDataset(dataset_dict, split='test')
+    ## Test)
+    if testset is None:
+         print(f"\nTest set: {path} ('Test')"
+        testset = GraphDataset(dataset_info, split='test')
+    else:
+        print(f"\nTest set: {path} ({len(testset)} samples)")
     test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
     evaluate(model, test_loader, criterion, flag="Test")
 
     # # Explain
-    explain(model, testset)
+    explain(model, testset, train_loader)
     # single_loader = DataLoader(testset, batch_size=1)
     # explain(model, single_loader)
 
@@ -199,7 +216,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 1,
+        "NUM_EPOCHS": 15,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -215,7 +232,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.muta, cv=False)
+    main(datasets.logp, cv=False)
 
 
     ## ESA: README
