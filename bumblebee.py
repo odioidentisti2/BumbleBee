@@ -195,7 +195,7 @@ def main(dataset_info, cv=False):
 
     ## Test)
     if testset is None:
-         print(f"\nTest set: {path} ('Test')"
+         print(f"\nTest set: {path} ('Test')")
         testset = GraphDataset(dataset_info, split='test')
     else:
         print(f"\nTest set: {path} ({len(testset)} samples)")
