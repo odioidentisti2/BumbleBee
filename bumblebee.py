@@ -160,7 +160,7 @@ def explain(model, dataset, calibration_loader=None):
         ig_intensity = 1 / max_ig_intensity
         att_intensity = 1 / max_att_intensity
     for graph in dataset:
-        graph = graph.to(DEVICE)
+        graph = graph.to('cpu')
         repeat = True
         while repeat:
             explain_with_attention(model, graph.clone(), intensity=att_intensity)
