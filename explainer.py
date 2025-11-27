@@ -31,7 +31,8 @@ def explain_with_attention(model, graph, intensity=1):
     batched_graph = Batch.from_data_list([graph])
     edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
-        weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
+        _, weights = model(batched_graph, return_attention=True)
+        # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
     print_weights(weights, average=True)
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
     # weights come after softmax (they add up to 1): 

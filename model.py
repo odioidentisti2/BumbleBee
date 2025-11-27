@@ -57,15 +57,14 @@ class MAGClassifier(nn.Module):
             if return_attention:
                 attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 attn_weights.append(attn.detach().cpu())
-                # if i == batch_size - 1:
-                #     return attn_weights
-        if return_attention:
-            return attn_weights
         # DROPOUT?
-        logits = self.output_mlp(out)    # [batch_size, output_dim]
-        return torch.flatten(logits)     # [batch_size]
+        out = self.output_mlp(out)    # [batch_size, output_dim]
+        logits = torch.flatten(out)    # [batch_size]
+        if return_attention:
+            return logits, attn_weights
+        return logits 
     
-    def forward(self, batch, BATCH_DEBUG=False):
+    def forward(self, batch, return_attention=False, BATCH_DEBUG=False):
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -79,7 +78,7 @@ class MAGClassifier(nn.Module):
         if BATCH_DEBUG or edge_feat.device.type == 'cuda':  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
-            return self.single_forward(edge_feat, batch.edge_index, batch.batch)
+            return self.single_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
