@@ -124,6 +124,7 @@ def crossvalidation(dataset, criterion, folds=5):
 
 def explain(model, dataset, calibration_loader=None):
     model.eval()
+    model.to('cpu')
     max_ig_intensity = 1
     max_att_intensity = 1
     import numpy as np
@@ -148,7 +149,7 @@ def explain(model, dataset, calibration_loader=None):
         print(f"Max IG intensity to: {max_ig_intensity:.4f}")
 
         # Att
-        att_dist = np.array([aw.max() / len(aw) for aw in train_attn_weights])
+        att_dist = np.array([aw.max() * len(aw) for aw in train_attn_weights])
         max_att_intensity = att_dist.mean() + att_dist.std()
         att_iqr = np.percentile(att_dist, 75) - np.percentile(att_dist, 25)
         print("\nAttention Intensity calibration:")
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 15,
+        "NUM_EPOCHS": 1,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    main(datasets.muta, cv=False)
 
 
     ## ESA: README
