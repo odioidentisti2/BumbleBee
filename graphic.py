@@ -97,7 +97,7 @@ def depict(graph, weights, attention=True):
     opts.annotationFontScale = 0.8  # Adjust font size for bond labels
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
-    target_label = 'Toxic' if graph.y.item() == 1 else 'Non-toxic'
+    target_label = graph.label if hasattr(graph, 'label') else graph.y.item()
     legend = f"{graph.smiles}\n{target_label}\n\n{'Attention' if attention else 'Gradients'}"
 
     # Draw molecule with highlighting

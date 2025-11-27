@@ -130,23 +130,27 @@ def explain(model, dataset, calibration_loader=None):
         with torch.no_grad():
             for batch in calibration_loader:
                 batch = batch.to(DEVICE)
-                predictions.extend(model(batch))
+                preds = model(batch).detach().cpu()
+                predictions.extend(preds)
         dist = np.array(predictions)
         iqr = np.percentile(dist, 75) - np.percentile(dist, 25)
         print("\nIQR = ", iqr)
-    current_intensity = 1
+        print(f"dist range: {dist.min()} - {dist.max()}")
+    ig_intensity = 1 / iqr if calibration_loader else 1
+    att_intensity = 1
     for graph in dataset:
         graph = graph.to(DEVICE)
         repeat = True
         while repeat:
-            explain_with_attention(model, graph.clone(), intensity=current_intensity)
-            explain_with_IG(model, graph.clone(), intensity=current_intensity)
+            explain_with_attention(model, graph.clone(), intensity=att_intensity)
+            explain_with_IG(model, graph.clone(), intensity=ig_intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
-                current_intensity = current_intensity * (2 ** plus_count) / (2 ** minus_count)
+                att_intensity = att_intensity * (2 ** plus_count) / (2 ** minus_count)
+                ig_intensity = ig_intensity * (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
 
@@ -232,7 +236,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    main(datasets.muta, cv=False)
 
 
     ## ESA: README

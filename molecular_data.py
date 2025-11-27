@@ -103,19 +103,20 @@ class GraphDataset(Dataset):
                 if split and row[dataset_info['split_header']] != dataset_info['split_map'][split]:
                     continue                    
                 smiles = row[dataset_info['smiles_header']]
+                data = smiles2graph(smiles)
+                if not (data
+                        and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
+                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
+                    print(f"Invalid SMILES: {smiles}")
+                    continue
                 target = row[dataset_info['target_header']]
                 if dataset_info['task'] == 'binary_classification':
+                    data.label = target
                     target = dataset_info['tox_map'][target]
                 elif dataset_info['task'] == 'regression':
-                    target = float(target)
-                data = smiles2graph(smiles)
-                if (data
-                        and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
-                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):                    
-                    data.y = torch.tensor([target], dtype=torch.float)
-                    self.graphs.append(data)
-                else:
-                    print(f"Invalid SMILES: {smiles}")
+                    target = float(target)                  
+                data.y = torch.tensor([target], dtype=torch.float)
+                self.graphs.append(data)
         print(f"Loaded {len(self.graphs)} molecules")
         
         if not self.graphs:
