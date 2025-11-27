@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch_geometric.data import Batch
 from graphic import *
@@ -25,14 +26,47 @@ def print_weights(weights, average=False):
     print(f"Weight sum: {weights.sum():.2f}")
 
 
+def get_upper_limits(model, calibration_loader):
+    predictions = []
+    train_attn_weights = []
+    with torch.no_grad():
+        for batch in calibration_loader:
+            batch = batch.to('cpu')
+            preds, attn_weights = model(batch, return_attention=True)
+            predictions.extend(preds)
+            train_attn_weights.extend(attn_weights)
+
+    # IG
+    ig_dist = np.array(predictions)
+    ig_iqr = np.percentile(ig_dist, 75) - np.percentile(ig_dist, 25)
+    max_ig_intensity = ig_iqr / 4
+    print("\nIG Intensity calibration:")
+    print("\nIQR = ", ig_iqr)
+    print("STD =", ig_dist.std())
+    print(f"dist range: {ig_dist.min()} - {ig_dist.max()}")
+    print(f"Max IG intensity to: {max_ig_intensity:.4f}")
+
+    # Att
+    att_dist = np.array([aw.max() * len(aw) for aw in train_attn_weights])
+    max_att_intensity = att_dist.mean() + att_dist.std()
+    att_iqr = np.percentile(att_dist, 75) - np.percentile(att_dist, 25)
+    print("\nAttention Intensity calibration:")
+    print("IGR =", att_iqr)
+    print("STD =", att_dist.std())
+    print(f"dist range: {att_dist.min():.2f} - {att_dist.max():.2f}")
+    print(f"Max Attention intensity to: {max_att_intensity:.4f}")
+    return 1 / max_att_intensity, 1 / max_ig_intensity
+
+
 def explain_with_attention(model, graph, intensity=1):
     print("\nDEPICT ATTENTION")
     top = 7.77  # if w > average weight above amount of times,  then clip to 1
     batched_graph = Batch.from_data_list([graph])
-    edge_feat = model.get_features(batched_graph)
+    # edge_feat = model.get_features(batched_graph)
     with torch.no_grad():
         _, weights = model(batched_graph, return_attention=True)
         # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
+    weights = weights[0]  # remove batch
     print_weights(weights, average=True)
     # depict(graph, weights.numpy() * len(weights) / 10, attention=True)
     # weights come after softmax (they add up to 1): 

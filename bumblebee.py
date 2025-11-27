@@ -125,40 +125,9 @@ def crossvalidation(dataset, criterion, folds=5):
 def explain(model, dataset, calibration_loader=None):
     model.eval()
     model.to('cpu')
-    max_ig_intensity = 1
-    max_att_intensity = 1
-    import numpy as np
+    att_intensity = ig_intensity = 1
     if calibration_loader:
-        predictions = []
-        train_attn_weights = []
-        with torch.no_grad():
-            for batch in calibration_loader:
-                batch = batch.to('cpu')
-                preds, attn_weights = model(batch, return_attention=True)
-                predictions.extend(preds)
-                train_attn_weights.extend(attn_weights)
-
-        # IG
-        ig_dist = np.array(predictions)
-        ig_iqr = np.percentile(ig_dist, 75) - np.percentile(ig_dist, 25)
-        max_ig_intensity = ig_iqr / 4
-        print("\nIG Intensity calibration:")
-        print("\nIQR = ", ig_iqr)
-        print("STD =", ig_dist.std())
-        print(f"dist range: {ig_dist.min()} - {ig_dist.max()}")
-        print(f"Max IG intensity to: {max_ig_intensity:.4f}")
-
-        # Att
-        att_dist = np.array([aw.max() * len(aw) for aw in train_attn_weights])
-        max_att_intensity = att_dist.mean() + att_dist.std()
-        att_iqr = np.percentile(att_dist, 75) - np.percentile(att_dist, 25)
-        print("\nAttention Intensity calibration:")
-        print("IGR =", att_iqr)
-        print("STD =", att_dist.std())
-        print(f"dist range: {att_dist.min():.2f} - {att_dist.max():.2f}")
-        print(f"Max Attention intensity to: {max_att_intensity:.4f}")
-        ig_intensity = 1 / max_ig_intensity
-        att_intensity = 1 / max_att_intensity
+        att_intensity, ig_intensity = get_upper_limits(model, calibration_loader)
     for graph in dataset:
         graph = graph.to('cpu')
         repeat = True
@@ -170,8 +139,8 @@ def explain(model, dataset, calibration_loader=None):
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
-                max_att_intensity = att_intensity * (2 ** plus_count) / (2 ** minus_count)
-                max_ig_intensity = ig_intensity * (2 ** plus_count) / (2 ** minus_count)
+                att_intensity = att_intensity * (2 ** plus_count) / (2 ** minus_count)
+                ig_intensity = ig_intensity * (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
 
@@ -241,7 +210,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 1,
+        "NUM_EPOCHS": 15,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -257,7 +226,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.muta, cv=False)
+    main(datasets.logp, cv=False)
 
 
     ## ESA: README
