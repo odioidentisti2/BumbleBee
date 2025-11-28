@@ -68,7 +68,6 @@ class Explainer:
     def calibrate(self, calibration_loader):
         self.att_factor_top, self.ig_top = get_upper_limits(self.model, calibration_loader)
 
-
     def attention(self, graph, intensity=1):
         graph = graph.to('cpu')
         batched_graph = Batch.from_data_list([graph])

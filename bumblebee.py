@@ -181,7 +181,7 @@ def main(dataset_info, cv=False):
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    # save(model, "LOAD_SAVE.pt")
+    save(model, "LOAD_SAVE.pt")
 
     ## Load saved model
     # model = load("LOAD_SAVE.pt")
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.muta, cv=False)
+    main(datasets.logp, cv=False)
 
 
     ## ESA: README
