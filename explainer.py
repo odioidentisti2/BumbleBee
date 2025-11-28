@@ -97,7 +97,7 @@ class Explainer:
         """Integrated gradients explanation for edge features"""
         graph = graph.to('cpu')
         batched_graph = Batch.from_data_list([graph])
-        edge_feat = slef.model.get_features(batched_graph)   
+        edge_feat = self.model.get_features(batched_graph)   
         baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
         integrated_grads = torch.zeros_like(edge_feat)
 
