@@ -46,7 +46,7 @@ def depict(graph, weights, attention=True):
     weights = weights.astype(float)
     edge_index = graph.edge_index
 
-    threshold = 0
+    threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
     #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
     # print(f"\nThreshold: {threshold:.2f}")

@@ -56,7 +56,7 @@ class MAGClassifier(nn.Module):
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
                 attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
-                attn_weights.append(attn.detach().cpu())
+                attn_weights.append(attn)
         # DROPOUT?
         out = self.output_mlp(out)    # [batch_size, output_dim]
         logits = torch.flatten(out)    # [batch_size]

@@ -6,7 +6,7 @@ from utils import set_random_seed
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
 from crossvalidation import *
-from explainer import *
+from explainer import Explainer
 
 
 # Trainer.fit from pytorch_lightning does the same job
@@ -124,23 +124,22 @@ def crossvalidation(dataset, criterion, folds=5):
 
 def explain(model, dataset, calibration_loader=None):
     model.eval()
-    model.to('cpu')
-    att_intensity = ig_intensity = 1
+    explainer = Explainer(model)
     if calibration_loader:
-        att_intensity, ig_intensity = get_upper_limits(model, calibration_loader)
+        explainer.calibrate(calibration_loader)
+    intensity = 1
     for graph in dataset:
-        graph = graph.to('cpu')
         repeat = True
         while repeat:
-            explain_with_attention(model, graph.clone(), intensity=att_intensity)
-            explain_with_IG(model, graph.clone(), intensity=ig_intensity)
+            explainer.attention(model, graph.clone(), intensity=intensity)  # why clone()?
+            explainer.integrated_gradients(model, graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
-                att_intensity = att_intensity * (2 ** plus_count) / (2 ** minus_count)
-                ig_intensity = ig_intensity * (2 ** plus_count) / (2 ** minus_count)
+                intensity = intensity * (2 ** plus_count) / (2 ** minus_count)
+                intensity = intensity * (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
 
@@ -226,7 +225,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    main(datasets.muta, cv=False)
 
 
     ## ESA: README
