@@ -131,8 +131,8 @@ def explain(model, dataset, calibration_loader=None):
     for graph in dataset:
         repeat = True
         while repeat:
-            explainer.attention(model, graph.clone(), intensity=intensity)  # why clone()?
-            explainer.integrated_gradients(model, graph.clone(), intensity=intensity)
+            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
+            explainer.integrated_gradients(graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
@@ -213,7 +213,7 @@ if __name__ == "__main__":
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
-    print('\n', time.strftime("%Y-%m-%d %H:%M:%S"))
+    print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}")
     # for glob['LAYER_TYPES'] in (['M0','M0','M0','M0','P'],
     #                             ['M0','M0','M0','S','P'],
