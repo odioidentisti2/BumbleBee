@@ -12,6 +12,7 @@ from explainer import Explainer
 # Trainer.fit from pytorch_lightning does the same job
 def train(model, loader, optimizer, criterion):
     model.train()  # set training mode
+    model = model.to(DEVICE)
     total_loss = 0
     total = 0
     for batch in loader:
@@ -29,6 +30,7 @@ def train(model, loader, optimizer, criterion):
 
 def test(model, loader, criterion):
     model.eval()  # set evaluation mode
+    model = model.to(DEVICE)
     total_loss = 0
     metric = 0
     total = 0
@@ -75,11 +77,12 @@ def training_loop(loader, criterion):
     return model
 
 def calc_stats(model, calibration_loader):
+    model = model.to('cpu')
     predictions = []
     train_attn_weights = []
     with torch.no_grad():
         for batch in calibration_loader:
-            # batch = batch.to('cpu')
+            batch = batch.to('cpu')
             preds, attn_weights = model(batch, return_attention=True)
             predictions.extend(preds)
             train_attn_weights.extend(attn_weights)

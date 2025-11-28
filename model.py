@@ -75,7 +75,7 @@ class MAGClassifier(nn.Module):
         """
         edge_feat = MAGClassifier.get_features(batch)
 
-        if BATCH_DEBUG or edge_feat.device.type == 'cuda':  # GPU: batch Attention
+        if BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
             return self.single_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
