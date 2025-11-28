@@ -74,6 +74,28 @@ def training_loop(loader, criterion):
         print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
     return model
 
+def calc_stats(model, calibration_loader):
+    predictions = []
+    train_attn_weights = []
+    with torch.no_grad():
+        for batch in calibration_loader:
+            batch = batch.to('cpu')
+            preds, attn_weights = model(batch, return_attention=True)
+            predictions.extend(preds)
+            train_attn_weights.extend(attn_weights)
+            
+    import numpy as np
+    model.stats = {}
+    # IG
+    targets = np.array(predictions)
+    model.stats['target_mean'] = float(targets.mean())
+    model.stats['target_std'] = float(targets.std())
+    # Attention
+    att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
+    model.stats['attention_factor_mean'] = float(att_factor.mean())
+    model.stats['attention_factor_std'] = float(att_factor.std())
+
+
 def evaluate(model, loader, criterion, flag):
     print("\nEvaluating...")
     loss, metric = test(model, loader, criterion)
@@ -85,16 +107,18 @@ def save(model, path=None):
         path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'state_dict': model.state_dict(),
-        'layer_types': getattr(model, 'layer_types', None),
+        'layer_types': getattr(model, 'layer_types'),
+        'model_stats': getattr(model, 'stats', None),
     }
     torch.save(ckpt, path)
-    print(f"Model checkpoint saved to: {path}")
+    print(f"\nModel checkpoint saved to: {path}")
 
 def load(model_path):
     print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=DEVICE)
     layer_types = ckpt.get('layer_types')
     model = MAGClassifier(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
+    model.stats = ckpt.get('model_stats', None)
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
     print(f"Loaded layer_types: {layer_types}")
@@ -122,11 +146,12 @@ def crossvalidation(dataset, criterion, folds=5):
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
-def explain(model, dataset, calibration_loader=None):
+def explain(model, dataset):
     model.eval()
     explainer = Explainer(model)
-    if calibration_loader:
-        explainer.calibrate(calibration_loader)
+    print("\nCALIBRATION")
+    print(f"INTEGRATED GRADIENT: {explainer.ig_top:.2f}")
+    print(f"ATTENTION FACTOR: {explainer.att_factor_top:.2f}")
     intensity = 1
     for graph in dataset:
         repeat = True
@@ -176,13 +201,14 @@ def main(dataset_info, cv=False):
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = training_loop(train_loader, criterion)
+    model = training_loop(train_loader, criterion)
+    calc_stats(model, train_loader)
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    # save(model, "LOAD_SAVE.pt")
+    save(model, "MODEL_logp.pt")
 
     ## Load saved model
     model = load("MODEL_logp.pt")
@@ -197,7 +223,7 @@ def main(dataset_info, cv=False):
     evaluate(model, test_loader, criterion, flag="Test")
 
     # # Explain
-    explain(model, testset, train_loader)
+    explain(model, testset)
     # single_loader = DataLoader(testset, batch_size=1)
     # explain(model, single_loader)
 

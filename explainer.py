@@ -17,36 +17,6 @@ from graphic import *
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def get_upper_limits(model, calibration_loader):
-    predictions = []
-    train_attn_weights = []
-    with torch.no_grad():
-        for batch in calibration_loader:
-            batch = batch.to('cpu')
-            preds, attn_weights = model(batch, return_attention=True)
-            predictions.extend(preds)
-            train_attn_weights.extend(attn_weights)
-
-    # IG
-    ig_dist = np.array(predictions)
-    ig_iqr = np.percentile(ig_dist, 75) - np.percentile(ig_dist, 25)
-    max_abs_ig = ig_dist.std()
-    print("\nIG Intensity calibration:")
-    print("IQR = ", ig_iqr)
-    print("STD =", ig_dist.std())
-    print(f"dist range: {ig_dist.min()} - {ig_dist.max()}")
-    print(f"Max IG intensity to: {max_abs_ig:.4f}")
-
-    # Att
-    att_factor_dist = np.array([aw.max() * len(aw) for aw in train_attn_weights])
-    max_att_factor = att_factor_dist.mean() + att_factor_dist.std()
-    att_iqr = np.percentile(att_factor_dist, 75) - np.percentile(att_factor_dist, 25)
-    print("\nAttention Intensity calibration:")
-    print("IGR =", att_iqr)
-    print("STD =", att_factor_dist.std())
-    print(f"dist range: {att_factor_dist.min():.2f} - {att_factor_dist.max():.2f}")
-    print(f"Max Attention intensity to: {max_att_factor:.4f}")
-    return max_att_factor, max_abs_ig
 
 # DEBUG
 def print_weights(weights, average=False):
@@ -62,11 +32,8 @@ class Explainer:
     def __init__(self, model):
         self.model = model.to('cpu')
         self.intensity = 1
-        self.att_factor_top = 10
-        self.ig_top = None
-
-    def calibrate(self, calibration_loader):
-        self.att_factor_top, self.ig_top = get_upper_limits(self.model, calibration_loader)
+        self.att_factor_top = model.stats['attention_factor_mean'] + model.stats['attention_factor_std']
+        self.ig_top = model.stats['target_std']
 
     def attention(self, graph, intensity=1):
         graph = graph.to('cpu')
