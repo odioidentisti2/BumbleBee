@@ -79,11 +79,10 @@ def calc_stats(model, calibration_loader):
     train_attn_weights = []
     with torch.no_grad():
         for batch in calibration_loader:
-            batch = batch.to('cpu')
+            # batch = batch.to('cpu')
             preds, attn_weights = model(batch, return_attention=True)
             predictions.extend(preds)
             train_attn_weights.extend(attn_weights)
-            
     import numpy as np
     model.stats = {}
     # IG
