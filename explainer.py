@@ -74,7 +74,7 @@ class Explainer:
         batched_graph = Batch.from_data_list([graph])
         # edge_feat = model.get_features(batched_graph)
         with torch.no_grad():
-            _, weights = model(batched_graph, return_attention=True)
+            _, weights = self.model(batched_graph, return_attention=True)
             # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
         weights = weights[0].detach().cpu()  # remove batch
 
