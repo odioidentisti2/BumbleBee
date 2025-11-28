@@ -41,7 +41,7 @@ def sum_bond_weights(edge_index, weights):
     return bond_keys, summed_weights
 
 
-def depict(graph, weights, attention=True):
+def depict(graph, weights, attention=True, factor=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.astype(float)
     edge_index = graph.edge_index
@@ -68,7 +68,12 @@ def depict(graph, weights, attention=True):
             bond_weights[bond_idx] = directional_weight
             continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
         weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
-        print(f"Bond {bond_idx}: {weight:.2f} \t({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+        if factor is not None:
+            scaled_weight = weight * factor
+            print(f"Bond {bond_idx}: {scaled_weight:.2f} <- {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+            weight = scaled_weight
+        else:
+            print(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
         bond_weights[bond_idx] = weight
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
@@ -97,7 +102,7 @@ def depict(graph, weights, attention=True):
     opts.annotationFontScale = 0.8  # Adjust font size for bond labels
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
-    target_label = graph.label if hasattr(graph, 'label') else graph.y.item()
+    target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
     legend = f"{graph.smiles}\n{target_label}\n\n{'Attention' if attention else 'Gradients'}"
 
     # Draw molecule with highlighting

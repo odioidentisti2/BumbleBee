@@ -138,8 +138,8 @@ def explain(model, dataset, calibration_loader=None):
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
-                intensity = intensity * (2 ** plus_count) / (2 ** minus_count)
-                intensity = intensity * (2 ** plus_count) / (2 ** minus_count)
+                intensity *= (2 ** plus_count) / (2 ** minus_count)
+                intensity *= (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
 
@@ -166,6 +166,7 @@ def main(dataset_info, cv=False):
         crossvalidation(dataset, criterion)
         return
   
+
     ## Train
     if 'split_header' in dataset_info:
         print(f"\nTraining set: {path} ('Training')")
@@ -175,16 +176,16 @@ def main(dataset_info, cv=False):
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
     train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = training_loop(train_loader, criterion)
+    # model = training_loop(train_loader, criterion)
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    save(model, "LOAD_SAVE.pt")
+    # save(model, "LOAD_SAVE.pt")
 
     ## Load saved model
-    # model = load("LOAD_SAVE.pt")
+    model = load("MODEL_logp.pt")
 
     ## Test)
     if testset is None:

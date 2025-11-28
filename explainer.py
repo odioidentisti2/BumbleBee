@@ -30,7 +30,7 @@ def get_upper_limits(model, calibration_loader):
     # IG
     ig_dist = np.array(predictions)
     ig_iqr = np.percentile(ig_dist, 75) - np.percentile(ig_dist, 25)
-    max_abs_ig = ig_iqr / 4
+    max_abs_ig = ig_dist.std()
     print("\nIG Intensity calibration:")
     print("IQR = ", ig_iqr)
     print("STD =", ig_dist.std())
@@ -78,6 +78,7 @@ class Explainer:
         weights = weights[0].detach().cpu()  # remove batch
 
         print("\nDEPICT ATTENTION")
+        print(int(graph.y.item()), graph.smiles)
         print_weights(weights, average=True)
         # Weights come after softmax (they add up to 1): 
         # => weights.mean() = 1 / len(weights)
@@ -133,90 +134,71 @@ class Explainer:
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
-        clip_weights = torch.clip(weights, -self.ig_top, self.ig_top)
-        norm_weights = clip_weights / self.ig_top
+        factor = None
+        if not hasattr(graph, 'label'):  # regression
+            factor = 1 / self.ig_top
 
         # Before depict I should normalize edge_importance by 0.5 - baseline
-        depict(graph, norm_weights.numpy() * intensity, attention=False)
+        depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
         # depict(graph, weights.numpy() / (0.5 - baseline_pred.item()), attention=False)
 
 
-    def explain_with_mlp_IG(self, graph, steps=50, intensity=1.0):
-        """
-        Integrated gradients for the output of input_mlp (edge embeddings).
-        """
-        graph = graph.to('cpu')
+    # def explain_with_mlp_IG(self, graph, steps=50, intensity=1.0):
+    #     """
+    #     Integrated gradients for the output of input_mlp (edge embeddings).
+    #     """
+    #     graph = graph.to('cpu')
 
-        # Get edge features and baseline
-        batched_graph = Batch.from_data_list([graph])
-        edge_feat = self.model.get_features(batched_graph)
-        baseline_emb = torch.zeros_like(self.model.input_mlp(edge_feat))
-        edge_emb = self.model.input_mlp(edge_feat).detach()
+    #     # Get edge features and baseline
+    #     batched_graph = Batch.from_data_list([graph])
+    #     edge_feat = self.model.get_features(batched_graph)
+    #     baseline_emb = torch.zeros_like(self.model.input_mlp(edge_feat))
+    #     edge_emb = self.model.input_mlp(edge_feat).detach()
 
-        integrated_grads = torch.zeros_like(edge_emb)
+    #     integrated_grads = torch.zeros_like(edge_emb)
 
-        for alpha in torch.linspace(0, 1, steps):
-            interp_emb = baseline_emb + alpha * (edge_emb - baseline_emb)
-            interp_emb = interp_emb.detach().clone().requires_grad_(True)
+    #     for alpha in torch.linspace(0, 1, steps):
+    #         interp_emb = baseline_emb + alpha * (edge_emb - baseline_emb)
+    #         interp_emb = interp_emb.detach().clone().requires_grad_(True)
 
-            # --- Forward hook trick: temporarily replace input_mlp's forward to return interp_emb ---
-            orig_forward = self.model.input_mlp.forward
-            self.model.input_mlp.forward = lambda *_: interp_emb
+    #         # --- Forward hook trick: temporarily replace input_mlp's forward to return interp_emb ---
+    #         orig_forward = self.model.input_mlp.forward
+    #         self.model.input_mlp.forward = lambda *_: interp_emb
 
-            # Forward pass
-            pred = self.model(batched_graph)
-            pred = torch.flatten(pred)[0]
+    #         # Forward pass
+    #         pred = self.model(batched_graph)
+    #         pred = torch.flatten(pred)[0]
 
-            # Backward pass
-            self.model.zero_grad()
-            pred.backward()
-            grad = interp_emb.grad.detach()
-            integrated_grads += grad
+    #         # Backward pass
+    #         self.model.zero_grad()
+    #         pred.backward()
+    #         grad = interp_emb.grad.detach()
+    #         integrated_grads += grad
 
-            # Restore original forward
-            self.model.input_mlp.forward = orig_forward
+    #         # Restore original forward
+    #         self.model.input_mlp.forward = orig_forward
 
-        integrated_grads /= steps
-        attributions = (edge_emb - baseline_emb) * integrated_grads
-        edge_importance = attributions.sum(dim=1)  # Sum across embedding dimensions
+    #     integrated_grads /= steps
+    #     attributions = (edge_emb - baseline_emb) * integrated_grads
+    #     edge_importance = attributions.sum(dim=1)  # Sum across embedding dimensions
 
-        # After computing attributions
-        pred_real = float(self.model(batched_graph).detach().cpu().numpy())
-        # Temporarily override input_mlp to always return baseline_emb
-        orig_forward = self.model.input_mlp.forward
-        self.model.input_mlp.forward = lambda *_: baseline_emb
-        pred_base = float(self.model(batched_graph).detach().cpu().numpy())
-        self.model.input_mlp.forward = orig_forward
+    #     # After computing attributions
+    #     pred_real = float(self.model(batched_graph).detach().cpu().numpy())
+    #     # Temporarily override input_mlp to always return baseline_emb
+    #     orig_forward = self.model.input_mlp.forward
+    #     self.model.input_mlp.forward = lambda *_: baseline_emb
+    #     pred_base = float(self.model(batched_graph).detach().cpu().numpy())
+    #     self.model.input_mlp.forward = orig_forward
 
-        weights = edge_importance.detach().cpu()
-
-
-        print("\nDEPICT MLP INTEGRATED GRADIENTS")
-        print(f"Prediction (real): {pred_real:.2f}")
-        print(f"Prediction (baseline): {pred_base:.2f}")
-        print(f"Sum of attributions: {edge_importance.sum():.2f}")
-        print(f"Difference: {pred_real - pred_base:.2f}")
-        print_weights(weights)
-        depict(graph, weights.numpy() * intensity/ 10, attention=False)
-        return edge_importance
+    #     weights = edge_importance.detach().cpu()
 
 
-#     # Place this inside explain_with_attention
-#     # In the depiction of attention, I highlight bonds with an intensity proportional to their attention weights.
-#     # I'd like this intensity to be "absolute" (referred to the whole training set).
-#     # But attention weights are very relative to each molecule (and proportionate to the number of bonds, after softmax).
-#     # So I need to find a "max intensity" threshold from the training set, to normalize it,
-#     # I can divide by the mean attention weight for each molecule.
-#     # In conclusion: given the distribution of attention max/mean ratio in the training set, I can set a threshold
-#     # (e.g. mean + std) to be the "max intensity" (1.0) in the depiction, so that only "outlier" weights
-#     # are fully highlighted. In other words, let's say that the maximum max/mean ratio in any molecule
-#     # in the training set was 30 (30 times more attention than the average), mean + std will be lower than that,
-#     # let's say 7, so in the depiction an attention weight 7 times higher than the average
-#     # will be highlighted with intensity 1.0.
-#     train_attn_weights = []
-#     for batch in train_loader:
-#         batch = batch.to(DEVICE)
-#         with torch.no_grad():
-#             train_attn_weights.extend(model(batch, return_attention=True))
-#     dist = np.array([aw.max() / aw.mean() for aw in train_attn_weights])
-#     top = dist.mean() + dist.std()
+    #     print("\nDEPICT MLP INTEGRATED GRADIENTS")
+    #     print(f"Prediction (real): {pred_real:.2f}")
+    #     print(f"Prediction (baseline): {pred_base:.2f}")
+    #     print(f"Sum of attributions: {edge_importance.sum():.2f}")
+    #     print(f"Difference: {pred_real - pred_base:.2f}")
+    #     print_weights(weights)
+    #     depict(graph, weights.numpy() * intensity/ 10, attention=False)
+    #     return edge_importance
+
