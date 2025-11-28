@@ -53,11 +53,11 @@ class Explainer:
         # - weight * len(weights) == 1  means "average attention"
         # - weight * len(weights) > 1  means "increased attention"
         # - weight * len(weights) < 1  means "decreased attention" => clip
-        # I measure how many times above average each weight is and I normalize [1, top] to [0, 1])
-        attention_factors = weights * len(weights)
-        clip_weights = torch.clip(attention_factors, 1, self.att_factor_top)
-        norm_weights = (clip_weights - 1) / (self.att_factor_top - 1)
-        depict(graph, norm_weights.numpy()*intensity)
+        scores = weights * len(weights)
+        scores = torch.clip(scores, 1) - 1  # clip and scale to 0
+        # clip_weights = torch.clip(attention_factors, 1, self.att_factor_top)
+        # norm_weights = (clip_weights - 1) / (self.att_factor_top - 1)
+        depict(graph, scores.numpy()*intensity)
 
 
     def integrated_gradients(self, graph, steps=100, intensity=1):

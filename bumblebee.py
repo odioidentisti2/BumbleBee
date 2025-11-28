@@ -193,24 +193,25 @@ def main(dataset_info, cv=False):
         crossvalidation(dataset, criterion)
         return
   
+    testset = None
 
-    ## Train
+    # Train
     if 'split_header' in dataset_info:
         print(f"\nTraining set: {path} ('Training')")
         trainingset = GraphDataset(dataset_info, split='train')
-        testset = None
     else:
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
-    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = training_loop(train_loader, criterion)
-    calc_stats(model, train_loader)
+        
+    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    # model = training_loop(train_loader, criterion)
+    # calc_stats(model, train_loader)
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # statistics(model, loader, criterion, flag="Train")
 
     ## Save model
-    save(model, "MODEL_logp.pt")
+    # save(model, "MODEL_logp.pt")
 
     ## Load saved model
     model = load("MODEL_logp.pt")
