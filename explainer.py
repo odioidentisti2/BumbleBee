@@ -50,14 +50,13 @@ class Explainer:
         # Weights come after softmax (they add up to 1): 
         # => weights.mean() = 1 / len(weights)
         # Therefore:
-        # - weight * len(weights) == 1  means "average attention"
-        # - weight * len(weights) > 1  means "increased attention"
-        # - weight * len(weights) < 1  means "decreased attention" => clip
-        scores = weights * len(weights)
-        scores = torch.clip(scores, 1) - 1  # clip and scale to 0
+        #   weight * len(weights) == 1  means "average attention"
+        scores = weights * len(weights)  # visualize the proportion to average attention
+        shift = -1  # shift so that average attention is at 0
+        factor = 1 / (self.att_factor_top - 1)
         # clip_weights = torch.clip(attention_factors, 1, self.att_factor_top)
         # norm_weights = (clip_weights - 1) / (self.att_factor_top - 1)
-        depict(graph, scores.numpy()*intensity)
+        depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
 
 
     def integrated_gradients(self, graph, steps=100, intensity=1):

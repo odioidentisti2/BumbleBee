@@ -202,7 +202,7 @@ def main(dataset_info, cv=False):
     else:
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
-        
+
     # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
     # model = training_loop(train_loader, criterion)
     # calc_stats(model, train_loader)
@@ -214,7 +214,7 @@ def main(dataset_info, cv=False):
     # save(model, "MODEL_logp.pt")
 
     ## Load saved model
-    model = load("MODEL_logp.pt")
+    model = load("MODEL_muta.pt")
 
     ## Test)
     if testset is None:
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    main(datasets.muta, cv=False)
 
 
     ## ESA: README

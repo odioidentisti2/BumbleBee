@@ -25,7 +25,8 @@ def red_or_green(weight):
         return (1.0-abs(weight), 1.0, 1.0-abs(weight))
 
 def yellow(weight):
-    return (1.0, 1.0, 1.0-abs(weight))
+    if weight < 0: weight = 0
+    return (1.0, 1.0, 1.0-weight)
 
 def sum_bond_weights(edge_index, weights):
     # edge_index: shape [2, num_edges]
@@ -41,7 +42,7 @@ def sum_bond_weights(edge_index, weights):
     return bond_keys, summed_weights
 
 
-def depict(graph, weights, attention=True, factor=None):
+def depict(graph, weights, attention=True, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.astype(float)
     edge_index = graph.edge_index
@@ -68,12 +69,15 @@ def depict(graph, weights, attention=True, factor=None):
             bond_weights[bond_idx] = directional_weight
             continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
         weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
-        if factor is not None:
-            scaled_weight = weight * factor
-            print(f"Bond {bond_idx}: {scaled_weight:.2f} <- {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
-            weight = scaled_weight
-        else:
+        if factor is None and shift is None:
             print(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+        else:
+            original_weight = weight
+            if shift is not None:
+                weight = weight + shift * 2  # sum of 2 weights (clipping in yellow() for attention)
+            if factor is not None:
+                weight = weight * factor
+            print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")            
         bond_weights[bond_idx] = weight
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
