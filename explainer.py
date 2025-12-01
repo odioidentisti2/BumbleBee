@@ -93,8 +93,7 @@ class Explainer:
         # assert baseline_pred.item() == _baseline_pred, "Baseline prediction mismatch!"
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = edge_importance.sum().item()
-        # expected_sum = (final_pred - baseline_pred).item() 
-        print(f"\nBaseline prediction: {baseline_pred.item():.2f}")   
+        # expected_sum = (final_pred - baseline_pred).item()   
         print(f"\nBaseline prediction: {baseline_pred.item():.2f}")
         print(f"Attribution sum: {attribution_sum:.2f}")
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
