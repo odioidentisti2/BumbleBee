@@ -53,9 +53,7 @@ class Explainer:
         #   weight * len(weights) == 1  means "average attention"
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
-        factor = 1 / (self.att_factor_top - 1)
-        # clip_weights = torch.clip(attention_factors, 1, self.att_factor_top)
-        # norm_weights = (clip_weights - 1) / (self.att_factor_top - 1)
+        factor = 1 / (self.att_factor_top - 1)  # scale so that top attention is at 1
         depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
 
 
@@ -78,11 +76,18 @@ class Explainer:
                                 inputs=interp_feat,
                                 create_graph=False
                             )[0]
+            if alpha == 0:
+                _baseline_pred = prediction.item()
         
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
+
+        # Shift attributions from baseline to neutral point
+        neutral_pont = 0.5
+        offset = neutral_pont - _baseline_pred
+        edge_importance -= offset / edge_importance.shape[0]
 
         print("\n\nDEPICT INTEGRATED GRADIENTS")
         print(int(graph.y.item()), graph.smiles)
@@ -90,6 +95,7 @@ class Explainer:
         with torch.no_grad():
             baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
             final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch)
+        assert baseline_pred.item() == _baseline_pred, "Baseline prediction mismatch!"
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = edge_importance.sum().item()
         # expected_sum = (final_pred - baseline_pred).item()    

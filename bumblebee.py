@@ -158,7 +158,7 @@ def explain(model, dataset):
     for graph in dataset:
         repeat = True
         while repeat:
-            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
+            # explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
             explainer.integrated_gradients(graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -195,7 +195,6 @@ def main(dataset_info, cv=False):
   
     testset = None
 
-    # Train
     if 'split_header' in dataset_info:
         print(f"\nTraining set: {path} ('Training')")
         trainingset = GraphDataset(dataset_info, split='train')
@@ -203,12 +202,14 @@ def main(dataset_info, cv=False):
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
+    # Train
     # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
     # model = training_loop(train_loader, criterion)
     # calc_stats(model, train_loader)
-    ## Statistics on Training set
+
+    # # Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
-    # statistics(model, loader, criterion, flag="Train")
+    # evaluate(model, loader, criterion, flag="Train")
 
     ## Save model
     # save(model, "MODEL_logp.pt")
