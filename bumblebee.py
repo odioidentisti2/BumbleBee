@@ -180,7 +180,7 @@ def main(dataset_info, cv=False):
 
     path = dataset_info['path']
     task = dataset_info['task']
-    if task == 'binary_classification':     
+    if False:  # task == 'binary_classification':     
         # Default: reduction='mean', return mean loss over batch
         criterion = torch.nn.BCEWithLogitsLoss()
     else:
