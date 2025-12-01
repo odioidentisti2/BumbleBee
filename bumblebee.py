@@ -161,7 +161,8 @@ def explain(model, dataset):
             # explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
             explainer.integrated_gradients(graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
-            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+            user_input = ''
+            # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
