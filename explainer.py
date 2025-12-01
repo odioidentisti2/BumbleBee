@@ -115,9 +115,6 @@ class Explainer:
         # print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
 
         weights = edge_importance.detach().cpu()
-
-        weights *= len(weights)  # EXPERIMENT IF MSE IN CLASSIFICATION
-
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression

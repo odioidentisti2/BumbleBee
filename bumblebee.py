@@ -205,19 +205,19 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = training_loop(train_loader, criterion)
-    calc_stats(model, train_loader)
+    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    # model = training_loop(train_loader, criterion)
+    # calc_stats(model, train_loader)
 
     # # Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # evaluate(model, loader, criterion, flag="Train")
 
     ## Save model
-    save(model, "MODEL_muta_MSE.pt")
+    # save(model, "MODEL_muta.pt")
 
     ## Load saved model
-    # model = load("MODEL_muta.pt")
+    model = load("MODEL_muta_MSE.pt")
 
     ## Test)
     if testset is None:
