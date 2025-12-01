@@ -214,7 +214,7 @@ def main(dataset_info, cv=False):
     # evaluate(model, loader, criterion, flag="Train")
 
     ## Save model
-    # save(model, "MODEL_muta.pt")
+    save(model, "MODEL_muta_MSE.pt")
 
     ## Load saved model
     # model = load("MODEL_muta.pt")
