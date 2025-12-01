@@ -82,7 +82,7 @@ def smiles2graph(smiles):
         else:
             print(f"Removed salts from: {smiles}")    
 
-    # mol = Chem.AddHs(mol)
+    mol = Chem.AddHs(mol)
 
     adj_matrix = Chem.rdmolops.GetAdjacencyMatrix(mol)
     node_attr = torch.tensor([atom_features(atom) for atom in mol.GetAtoms()], dtype=torch.float)

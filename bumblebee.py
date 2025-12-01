@@ -158,7 +158,7 @@ def explain(model, dataset):
     for graph in dataset:
         repeat = True
         while repeat:
-            # explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
+            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
             explainer.integrated_gradients(graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
             # user_input = ''
@@ -213,7 +213,7 @@ def main(dataset_info, cv=False):
     # evaluate(model, loader, criterion, flag="Train")
 
     ## Save model
-    save(model, "MODEL_muta.pt")
+    # save(model, "MODEL_muta.pt")
 
     ## Load saved model
     # model = load("MODEL_muta.pt")

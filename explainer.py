@@ -100,21 +100,20 @@ class Explainer:
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # Shift attributions from baseline to neutral point
-        neutral_point = 0.5
-        offset = (neutral_point - baseline_pred).item()
-        edge_importance -= offset / edge_importance.shape[0]
-        # VERIFY: Centered property
-        centered_sum = edge_importance.sum().item()
-        expected_centered = (final_pred.item() - neutral_point)
-        print(f"\n=== CENTERED (after shifting to neutral) ===")
-        print(f"Neutral point: {neutral_point:.4f}")
-        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        print(f"Centered attribution sum: {centered_sum:.4f}")
-        print(f"Expected (final - neutral): {expected_centered:.4f}")
-        print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
-        print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
-
+        # # Shift attributions from baseline to neutral point
+        # neutral_point = 0.5
+        # offset = (neutral_point - baseline_pred).item()
+        # edge_importance -= offset / edge_importance.shape[0]
+        # # VERIFY: Centered property
+        # centered_sum = edge_importance.sum().item()
+        # expected_centered = (final_pred.item() - neutral_point)
+        # print(f"\n=== CENTERED (after shifting to neutral) ===")
+        # print(f"Neutral point: {neutral_point:.4f}")
+        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        # print(f"Centered attribution sum: {centered_sum:.4f}")
+        # print(f"Expected (final - neutral): {expected_centered:.4f}")
+        # print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
+        # print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
