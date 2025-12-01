@@ -168,7 +168,6 @@ def explain(model, dataset):
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
-                intensity *= (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
 
@@ -181,7 +180,7 @@ def main(dataset_info, cv=False):
 
     path = dataset_info['path']
     task = dataset_info['task']
-    if False:  # task == 'binary_classification':     
+    if False:  #task == 'binary_classification':     
         # Default: reduction='mean', return mean loss over batch
         criterion = torch.nn.BCEWithLogitsLoss()
     else:
@@ -205,9 +204,9 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = training_loop(train_loader, criterion)
-    # calc_stats(model, train_loader)
+    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = training_loop(train_loader, criterion)
+    calc_stats(model, train_loader)
 
     # # Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
@@ -217,7 +216,7 @@ def main(dataset_info, cv=False):
     # save(model, "MODEL_muta.pt")
 
     ## Load saved model
-    model = load("MODEL_muta_MSE.pt")
+    # model = load("MODEL_muta_MSE.pt")
 
     ## Test)
     if testset is None:
@@ -258,7 +257,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.muta, cv=False)
+    main(datasets.muta, cv=True)
 
 
     ## ESA: README
