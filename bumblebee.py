@@ -161,8 +161,8 @@ def explain(model, dataset):
             # explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
             explainer.integrated_gradients(graph.clone(), intensity=intensity)
             # explain_with_mlp_IG(model, graph, intensity=current_intensity)
-            user_input = ''
-            # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+            # user_input = ''
+            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
             plus_count = user_input.count('+')
             minus_count = user_input.count('-')
             if plus_count + minus_count > 0:
@@ -204,19 +204,19 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = training_loop(train_loader, criterion)
-    # calc_stats(model, train_loader)
+    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = training_loop(train_loader, criterion)
+    calc_stats(model, train_loader)
 
     # # Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # evaluate(model, loader, criterion, flag="Train")
 
     ## Save model
-    # save(model, "MODEL_logp.pt")
+    save(model, "MODEL_muta.pt")
 
     ## Load saved model
-    model = load("MODEL_muta.pt")
+    # model = load("MODEL_muta.pt")
 
     ## Test)
     if testset is None:

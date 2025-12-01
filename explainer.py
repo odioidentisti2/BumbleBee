@@ -76,18 +76,13 @@ class Explainer:
                                 inputs=interp_feat,
                                 create_graph=False
                             )[0]
-            if alpha == 0:
-                _baseline_pred = prediction.item()
+            # if alpha == 0:
+            #     _baseline_pred = prediction.item()
         
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
-
-        # Shift attributions from baseline to neutral point
-        neutral_pont = 0.5
-        offset = neutral_pont - _baseline_pred
-        edge_importance -= offset / edge_importance.shape[0]
 
         print("\n\nDEPICT INTEGRATED GRADIENTS")
         print(int(graph.y.item()), graph.smiles)
@@ -95,14 +90,31 @@ class Explainer:
         with torch.no_grad():
             baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
             final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch)
-        assert baseline_pred.item() == _baseline_pred, "Baseline prediction mismatch!"
+        # assert baseline_pred.item() == _baseline_pred, "Baseline prediction mismatch!"
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = edge_importance.sum().item()
-        # expected_sum = (final_pred - baseline_pred).item()    
+        # expected_sum = (final_pred - baseline_pred).item() 
+        print(f"\nBaseline prediction: {baseline_pred.item():.2f}")   
         print(f"\nBaseline prediction: {baseline_pred.item():.2f}")
         print(f"Attribution sum: {attribution_sum:.2f}")
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
+
+        # Shift attributions from baseline to neutral point
+        neutral_point = 0.5
+        offset = (neutral_point - baseline_pred).item()
+        edge_importance -= offset / edge_importance.shape[0]
+        # VERIFY: Centered property
+        centered_sum = edge_importance.sum().item()
+        expected_centered = (final_pred.item() - neutral_point)
+        print(f"\n=== CENTERED (after shifting to neutral) ===")
+        print(f"Neutral point: {neutral_point:.4f}")
+        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        print(f"Centered attribution sum: {centered_sum:.4f}")
+        print(f"Expected (final - neutral): {expected_centered:.4f}")
+        print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
+        print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
+
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
