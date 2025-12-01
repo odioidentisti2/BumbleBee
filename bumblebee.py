@@ -43,7 +43,8 @@ def test(model, loader, criterion):
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
             if criterion.task == 'binary_classification':
-                preds = (torch.sigmoid(logits) > 0.5)
+                preds = logits > 0.5)
+                # preds = (torch.sigmoid(logits) > 0.5)
                 metric += (preds == targets).sum().item()  # to compute Accuracy
             else:  # Regression
                 metric += torch.sum(torch.abs(logits - targets)).item()  # to compute MAE
