@@ -136,7 +136,7 @@ def crossvalidation(dataset, task, folds=5):
         # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
         fold_results.append(validation_stats)
         fold += 1
-    statistics.cv_statistics(fold_results)
+    statistics.cv_stats(fold_results)
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
