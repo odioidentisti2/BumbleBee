@@ -121,7 +121,7 @@ def load(model_path):
     print(f"Loaded layer_types: {layer_types}")
     return model
 
-def crossvalidation(dataset, folds=5):
+def crossvalidation(dataset, task, folds=5):
     fold = 1
     fold_results = []
     start_time = time.time()  
@@ -136,12 +136,11 @@ def crossvalidation(dataset, folds=5):
         print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
-        setup_training(model, dataset.task)
-        validation_stats = training_loop(model, train_loader, dataset.task, test_loader)
+        validation_stats = training_loop(model, train_loader, task, test_loader)
         # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
         fold_results.append(validation_stats)
         fold += 1
-    cv_statistics(fold_results, dataset.task)
+    cv_statistics(fold_results, task)
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
@@ -184,11 +183,12 @@ def main(dataset_info, cv=False):
     pprint.pprint(glob)
 
     path = dataset_info['path']
+    task = dataset_info['task']
 
     if cv:
         print(f"\nCross-Validation on: ", path)
         dataset = GraphDataset(dataset_info)
-        crossvalidation(dataset)
+        crossvalidation(dataset, task)
         return
 
     # Load dataset(s)  
@@ -200,18 +200,18 @@ def main(dataset_info, cv=False):
         trainingset, testset = random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
-    ## Train
-    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
-    # training_loop(model, train_loader, trainingset.task)
-    # calc_stats(model, train_loader)  # Needed for Explainer
+    # Train
+    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
+    training_loop(model, train_loader, task)
+    calc_stats(model, train_loader)  # Needed for Explainer
 
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # evaluate(model, loader, flag="Train")
 
     ## Save model
-    # save(model, "MODEL_muta.pt")
+    save(model, "MODEL_logp.pt")
 
     ## Load saved model
     # model = load("MODEL_muta.pt")
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.muta, cv=False)
+    main(datasets.logp, cv=False)
 
 
     ## ESA: README
