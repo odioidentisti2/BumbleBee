@@ -234,7 +234,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 25,
+        "NUM_EPOCHS": 35,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
