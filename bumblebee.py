@@ -9,6 +9,10 @@ from explainer import Explainer
 import utils
 import statistics
 
+# Suppress RDKit C++ warnings
+import sys, os
+sys.stderr = open(os.devnull, 'w')
+
 
 def train(model, loader):
     model.train()  # set training mode
@@ -234,7 +238,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 75,
+        "NUM_EPOCHS": 50,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
