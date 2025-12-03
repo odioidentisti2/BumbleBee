@@ -58,7 +58,7 @@ def training_loop(model, loader, task, val_loader=None):
     start_time = time.time()
     for epoch in range(1, glob['NUM_EPOCHS'] + 1):
         loss = train(model, loader)
-        print(f"Epoch {epoch}: Loss {loss:.3f}  Time {time.time() - start_time:.0f}s")
+        print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
         if val_loader and epoch % 5 == 0:
             loss, metric = evaluate(model, val_loader, flag='> Validation')
             val_stats.append(metric)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 35,
+        "NUM_EPOCHS": 50,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
