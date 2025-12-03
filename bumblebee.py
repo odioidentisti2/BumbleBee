@@ -3,10 +3,6 @@ from unittest import loader
 import torch
 from torch_geometric.loader import DataLoader
 
-# Suppress RDKit warnings
-import logging
-logging.getLogger('rdkit').setLevel(logging.ERROR)
-
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
 from explainer import Explainer
