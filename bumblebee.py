@@ -2,11 +2,16 @@ import time
 from unittest import loader
 import torch
 from torch_geometric.loader import DataLoader
-from utils import set_random_seed
+
+# Suppress RDKit warnings
+import logging
+logging.getLogger('rdkit').setLevel(logging.ERROR)
+
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
-from crossvalidation import *
 from explainer import Explainer
+import utils
+import statistics
 
 
 def train(model, loader):
@@ -33,6 +38,7 @@ def test(model, loader):
     total_loss = 0
     metric = 0
     total = 0
+    evaluator = statistics.Evaluator(model.task)
     with torch.no_grad():
         for batch in loader:
             batch = batch.to(DEVICE)
@@ -41,19 +47,13 @@ def test(model, loader):
             loss = model.criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
-            if model.task == 'binary_classification':
-                if isinstance(model.criterion, torch.nn.BCEWithLogitsLoss):
-                    logits = torch.sigmoid(logits)
-                preds = (logits > 0.5)
-                metric += (preds == targets).sum().item()  # to compute Accuracy
-            else:  # Regression
-                metric += torch.sum(torch.abs(logits - targets)).item()  # to compute MAE
-    return total_loss / total, metric / total
 
-# def validate(model, loader):
-#     loss, metric = test(model, loader)
-#     print(f"> VALIDATION  Loss: {loss:.3f}  Metric: {metric:.3f}")
-#     return metric
+            # Statistics
+            if isinstance(model.criterion, torch.nn.BCEWithLogitsLoss):
+                logits = torch.sigmoid(logits)
+            evaluator.update(logits, targets, batch.num_graphs)
+    metric = evaluator.output()
+    return total_loss / total, metric
 
 def training_loop(model, loader, task, val_loader=None):
     setup_training(model, task )
@@ -125,9 +125,9 @@ def crossvalidation(dataset, task, folds=5):
     fold = 1
     fold_results = []
     start_time = time.time()  
-    for train_subset, test_subset in cv_subsets(dataset, folds):
+    for train_subset, test_subset in utils.cv_subsets(dataset, folds):
         # Reproducibility
-        set_random_seed()
+        utils.set_random_seed()
         g = torch.Generator()
         g.manual_seed(42)
         train_loader = DataLoader(train_subset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
@@ -140,7 +140,7 @@ def crossvalidation(dataset, task, folds=5):
         # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
         fold_results.append(validation_stats)
         fold += 1
-    cv_statistics(fold_results, task)
+    statistics.cv_statistics(fold_results)
     print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
@@ -148,8 +148,9 @@ def explain(model, dataset):
     model.eval()
     explainer = Explainer(model)
     print("\nCALIBRATION")
-    print(f"INTEGRATED GRADIENT: {explainer.ig_top:.2f}")
-    print(f"ATTENTION FACTOR: {explainer.att_factor_top:.2f}")
+    print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
+    print(f"IG top: {explainer.ig_top:.2f}")
+    print(f"ATT top: {explainer.att_factor_top:.2f}")
     intensity = 1
     for graph in dataset:
         repeat = True
@@ -177,7 +178,7 @@ def setup_training(model, task):
 
 def main(dataset_info, cv=False):
     ## Reproducibility
-    set_random_seed()
+    utils.set_random_seed()
     ## Print model stamp
     import pprint
     pprint.pprint(glob)
@@ -197,24 +198,24 @@ def main(dataset_info, cv=False):
         trainingset = GraphDataset(dataset_info, split='train')
         testset = None
     else:
-        trainingset, testset = random_subsets(GraphDataset(dataset_info))
+        trainingset, testset = utils.random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
-    training_loop(model, train_loader, task)
-    calc_stats(model, train_loader)  # Needed for Explainer
+    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    # model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
+    # training_loop(model, train_loader, task)
+    # calc_stats(model, train_loader)  # Needed for Explainer
 
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # evaluate(model, loader, flag="Train")
 
     ## Save model
-    save(model, "MODEL_logp.pt")
+    # save(model, "MODEL_logp.pt")
 
     ## Load saved model
-    # model = load("MODEL_muta.pt")
+    model = load("MODEL_logp.pt")
 
     ## Test
     if testset is None:
@@ -253,7 +254,7 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    main(datasets.logp, cv=True)
 
 
     ## ESA: README

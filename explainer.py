@@ -23,7 +23,7 @@ def print_weights(weights, average=False):
     print("\nWEIGHTS:")
     print(weights)
     print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
-    if average: print("Weights Average: ", weights.mean().item())
+    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
     print(f"Weight sum: {weights.sum():.2f}")
 
 
@@ -45,7 +45,7 @@ class Explainer:
         weights = weights[0].detach().cpu()  # remove batch
 
         print("\nDEPICT ATTENTION")
-        print(int(graph.y.item()), graph.smiles)
+        print(f"{graph.y.item():.2f}", graph.smiles)
         print_weights(weights, average=True)
         # Weights come after softmax (they add up to 1): 
         # => weights.mean() = 1 / len(weights)
@@ -85,7 +85,7 @@ class Explainer:
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
 
         print("\n\nDEPICT INTEGRATED GRADIENTS")
-        print(int(graph.y.item()), graph.smiles)
+        print(f"{graph.y.item():.2f}", graph.smiles)
         # Get baseline and final predictions for verification
         with torch.no_grad():
             baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
@@ -176,7 +176,7 @@ class Explainer:
 
 
     #     print("\nDEPICT MLP INTEGRATED GRADIENTS")
-    #     print(f"Prediction (real): {pred_real:.2f}")
+        # print(f"{graph.y.item():.2f}", graph.smiles)
     #     print(f"Prediction (baseline): {pred_base:.2f}")
     #     print(f"Sum of attributions: {edge_importance.sum():.2f}")
     #     print(f"Difference: {pred_real - pred_base:.2f}")
