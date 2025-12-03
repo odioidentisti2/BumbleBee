@@ -145,6 +145,6 @@ class PMA(nn.Module):
 
 
 
-    # mask = torch.stack([mask[0]] + mask, dim=1)
+    # mask = torch.stack([mask[0]] + mask, dim=1) 
     # assert self.mha.num_heads % mask.size(1) == 0
     # mask = torch.repeat_interleave(mask, self.mha.num_heads // mask.size(1), dim=1)

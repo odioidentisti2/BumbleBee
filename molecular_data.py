@@ -96,6 +96,7 @@ def smiles2graph(smiles):
 class GraphDataset(Dataset):
     def __init__(self, dataset_info, split=None):
         super().__init__()
+        self.task = dataset_info['task']
         self.graphs = []
         with open(dataset_info['path'], 'r') as f:
             reader = csv.DictReader(f)
@@ -110,11 +111,11 @@ class GraphDataset(Dataset):
                     print(f"Invalid SMILES: {smiles}")
                     continue
                 target = row[dataset_info['target_header']]
-                if dataset_info['task'] == 'binary_classification':
+                if self.task == 'binary_classification':
                     data.label = target
                     target = dataset_info['tox_map'][target]
-                elif dataset_info['task'] == 'regression':
-                    target = float(target)                  
+                elif self.task == 'regression':
+                    target = float(target)                
                 data.y = torch.tensor([target], dtype=torch.float)
                 self.graphs.append(data)
         print(f"Loaded {len(self.graphs)} molecules")
