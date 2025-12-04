@@ -145,7 +145,7 @@ def explain(model, dataset):
     explainer = Explainer(model)
     print("\nCALIBRATION")
     print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
-    print(f"IG top: {explainer.ig_top:.2f}")
+    print(f"IG top: {explainer.target_std:.2f}")
     print(f"ATT top: {explainer.att_factor_top:.2f}")
     intensity = 1
     for graph in dataset:

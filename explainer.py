@@ -33,7 +33,8 @@ class Explainer:
         self.model = model.to('cpu')
         self.intensity = 1
         self.att_factor_top = model.stats['attention_factor_mean'] + model.stats['attention_factor_std']
-        self.ig_top = model.stats['target_std']
+        self.target_std = model.stats['target_std']
+        self.target_mean = model.stats['target_mean']
 
     def attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -99,26 +100,27 @@ class Explainer:
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # # Shift attributions from baseline to neutral point
+        # Shift attributions from baseline to neutral point
         # neutral_point = 0.5
-        # offset = (neutral_point - baseline_pred).item()
-        # edge_importance -= offset / edge_importance.shape[0]
-        # # VERIFY: Centered property
-        # centered_sum = edge_importance.sum().item()
-        # expected_centered = (final_pred.item() - neutral_point)
-        # print(f"\n=== CENTERED (after shifting to neutral) ===")
-        # print(f"Neutral point: {neutral_point:.4f}")
-        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        # print(f"Centered attribution sum: {centered_sum:.4f}")
-        # print(f"Expected (final - neutral): {expected_centered:.4f}")
-        # print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
-        # print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
+        neutral_point = self.target_mean
+        offset = (neutral_point - baseline_pred).item()
+        edge_importance -= offset / edge_importance.shape[0]
+        # VERIFY: Centered property
+        centered_sum = edge_importance.sum().item()
+        expected_centered = (final_pred.item() - neutral_point)
+        print(f"\n=== CENTERED (after shifting to neutral) ===")
+        print(f"Neutral point: {neutral_point:.4f}")
+        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        print(f"Centered attribution sum: {centered_sum:.4f}")
+        print(f"Expected (final - neutral): {expected_centered:.4f}")
+        print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
+        print(f"Verify (neutral + centered sum): {neutral_point + centered_sum:.4f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.ig_top
+            factor = 1 / self.target_std
 
         # Before depict I should normalize edge_importance by 0.5 - baseline
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
