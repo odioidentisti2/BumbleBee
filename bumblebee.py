@@ -174,8 +174,8 @@ def setup_training(model, task):
 
 def main(dataset_info, cv=False):
     ## Reproducibility
-    utils.set_random_seed()
-    # print("\nRANDOM SEED = 30")
+    utils.set_random_seed(30)
+    print("\nRANDOM SEED = 30")
     ## Print model stamp
     import pprint
     pprint.pprint(glob)

@@ -15,5 +15,16 @@ logp = {
     'task': 'regression',
     'path': 'DATASETS/LogP.csv',
     'smiles_header': 'SMILES',
-    'target_header': 'Experimental value'
+    'target_header': 'Experimental value',
+}
+
+logp_split = {
+    'task': 'regression',
+    'path': 'DATASETS/Logp_split.csv',
+    'smiles_header': 'SMILES',
+    'target_header': 'Experimental value',
+    # Split info (optional)
+    'split_header': 'Status',
+    'train_split': 'Training',
+    'test_split': 'Test',
 }

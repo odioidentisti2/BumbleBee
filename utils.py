@@ -30,3 +30,19 @@ def random_subsets(dataset, test_fraction=0.2):
     train_subset = torch.utils.data.Subset(dataset, train_indices)
     test_subset = torch.utils.data.Subset(dataset, test_indices)
     return train_subset, test_subset
+import csv
+
+# def write_csv_from_subsets(train_subset, test_subset, filename):
+#     with open(filename, 'w', newline='') as csvfile:
+#         writer = csv.writer(csvfile)
+#         writer.writerow(["SMILES", "Experimental value", "Status"])
+        
+#         # Write training data
+#         for idx in train_subset.indices:
+#             data = train_subset.dataset[idx]
+#             writer.writerow([data.smiles, data.y.item(), "Training"])
+        
+#         # Write test data
+#         for idx in test_subset.indices:
+#             data = test_subset.dataset[idx]
+#             writer.writerow([data.smiles, data.y.item(), "Test"])
