@@ -174,8 +174,8 @@ def setup_training(model, task):
 
 def main(dataset_info, cv=False):
     ## Reproducibility
-    utils.set_random_seed(30)
-    print("\nRANDOM SEED = 30")
+    utils.set_random_seed()
+    # print("\nRANDOM SEED = 30")
     ## Print model stamp
     import pprint
     pprint.pprint(glob)
@@ -199,10 +199,10 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
-    training_loop(model, train_loader, task)
-    calc_stats(model, train_loader)  # Needed for Explainer
+    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    # model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
+    # training_loop(model, train_loader, task)
+    # calc_stats(model, train_loader)  # Needed for Explainer
 
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
@@ -212,7 +212,7 @@ def main(dataset_info, cv=False):
     # save(model, "MODELS/logp.pt")
 
     ## Load saved model
-    # model = load("MODELS/MODEL_logp.pt")
+    model = load("MODELS/MODEL_logp.pt")
 
     ## Test
     if testset is None:
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     glob = {
         "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
         "LR": 1e-4,
-        "NUM_EPOCHS": 15,
+        "NUM_EPOCHS": 100,
         "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
     }
     import datasets
@@ -251,7 +251,11 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    main(datasets.logp, cv=False)
+    import attention
+    for attention.PMA.K in (1):
+        print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
+        main(datasets.logp, cv=True)
+    # main(datasets.logp, cv=True)
 
 
     ## ESA: README

@@ -128,10 +128,12 @@ class SetAttention(nn.Module):
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
 
+    K = 32
+
     def __init__(self, dim, num_heads, num_seeds=32, dropout=PMA_DROPOUT):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
-        self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
+        self.S = nn.Parameter(torch.Tensor(1, PMA.K, dim))
         nn.init.xavier_normal_(self.S)
         # MultiHeadAttention takes seeds as Q and the input set as K
         self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
