@@ -252,7 +252,7 @@ if __name__ == "__main__":
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
     import attention
-    for attention.PMA.K in (1):
+    for attention.PMA.K in (1,):
         print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
         main(datasets.logp, cv=True)
     # main(datasets.logp, cv=True)
