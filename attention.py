@@ -128,7 +128,7 @@ class SetAttention(nn.Module):
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
 
-    K = 1
+    K = 32
 
     def __init__(self, dim, num_heads, num_seeds=32, dropout=PMA_DROPOUT):
         super(PMA, self).__init__()

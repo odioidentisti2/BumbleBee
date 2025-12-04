@@ -1,5 +1,4 @@
 import time
-from unittest import loader
 import torch
 from torch_geometric.loader import DataLoader
 
@@ -255,7 +254,7 @@ if __name__ == "__main__":
     # for attention.PMA.K in (1,):
     #     print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
     #     main(datasets.logp, cv=True)
-    print(f"\n\n### HEADS = 1, PMA K = 1 ###")
+    print(f"\n\n### HEADS = 8, PMA K = 32 ###")
     main(datasets.logp, cv=True)
 
 
