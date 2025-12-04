@@ -1,6 +1,3 @@
-from rdkit import RDLogger
-RDLogger.DisableLog('rdApp.*')  # Disable warnings
-
 import torch
 from torch_geometric.data import Data, Dataset
 from rdkit import Chem
@@ -8,7 +5,7 @@ from rdkit.Chem.SaltRemover import SaltRemover
 import csv
 
 from rdkit import RDLogger
-RDLogger.DisableLog('rdkit.*')
+RDLogger.DisableLog('rdApp.*')  # Disable warnings
 
 
 # These param are hardcoded

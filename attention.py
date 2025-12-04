@@ -4,11 +4,9 @@ from torch.nn import functional as F
 from torch.nn.init import xavier_normal_, xavier_uniform_, constant_ 
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
-COUNTER = 0  # For debugging
-SAB_DROPOUT = 0.0
-PMA_DROPOUT = 0.0
+from parameters import GLOB
 
-print("SAB_DROPOUT:", SAB_DROPOUT, "\nPMA_DROPOUT:", PMA_DROPOUT)
+COUNTER = 0  # For debugging
 
 
 class MultiHeadAttention(nn.Module):
@@ -113,7 +111,7 @@ class MultiHeadAttention(nn.Module):
 
 # Same input for both Q and K
 class SetAttention(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, dropout=SAB_DROPOUT):
+    def __init__(self, dim_in, dim_out, num_heads, dropout=GLOB['SAB_dropout']):
         super(SetAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
 
@@ -128,12 +126,10 @@ class SetAttention(nn.Module):
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
 
-    K = 32
-
-    def __init__(self, dim, num_heads, num_seeds=32, dropout=PMA_DROPOUT):
+    def __init__(self, dim, num_heads, num_seeds=GLOB['seeds'], dropout=GLOB['PMA_dropout']):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
-        self.S = nn.Parameter(torch.Tensor(1, PMA.K, dim))
+        self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_normal_(self.S)
         # MultiHeadAttention takes seeds as Q and the input set as K
         self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)

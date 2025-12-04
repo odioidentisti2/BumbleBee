@@ -1,6 +1,6 @@
 import torch
 
-def set_random_seed(seed=42):
+def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
@@ -30,7 +30,8 @@ def random_subsets(dataset, test_fraction=0.2):
     train_subset = torch.utils.data.Subset(dataset, train_indices)
     test_subset = torch.utils.data.Subset(dataset, test_indices)
     return train_subset, test_subset
-import csv
+
+# import csv
 
 # def write_csv_from_subsets(train_subset, test_subset, filename):
 #     with open(filename, 'w', newline='') as csvfile:

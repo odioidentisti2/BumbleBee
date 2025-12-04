@@ -2,11 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from attention import SetAttention, PMA
 
-
-MLP_EXPANSION_FACTOR = 2
-ESA_DROPOUT = 0.0
-
-print("MLP_EXPANSION_FACTOR:", MLP_EXPANSION_FACTOR, "\nESA_DROPOUT:", ESA_DROPOUT)
+from parameters import GLOB
 
 
 # Multilayer Perceptron
@@ -30,7 +26,7 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SetAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = mlp(hidden_dim, hidden_dim * MLP_EXPANSION_FACTOR, hidden_dim, dropout)
+        self.mlp = mlp(hidden_dim, hidden_dim * GLOB['mlp_expansion'], hidden_dim, dropout)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
@@ -85,21 +81,22 @@ class ESA(nn.Module):
     """
     def __init__(self, hidden_dim, num_heads, layer_types):
         super(ESA, self).__init__()
+        dropout = GLOB['ESA_dropout']
         assert layer_types.count('P') == 1
-        self.output_dropout = nn.Dropout(ESA_DROPOUT) 
+        self.output_dropout = nn.Dropout(dropout) 
         # Encoder
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type[0] in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, dropout))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', ESA_DROPOUT))
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', dropout))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, ESA_DROPOUT))
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, dropout))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):

@@ -2,6 +2,9 @@ import time
 import torch
 from torch_geometric.loader import DataLoader
 
+from parameters import GLOB
+import datasets
+
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAGClassifier
 from explainer import Explainer
@@ -55,7 +58,7 @@ def training_loop(model, loader, task, val_loader=None):
     print("\nTraining...")
     if val_loader: val_stats = []
     start_time = time.time()
-    for epoch in range(1, glob['NUM_EPOCHS'] + 1):
+    for epoch in range(1, GLOB['epochs'] + 1):
         loss = train(model, loader)
         print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
         if val_loader and epoch % 5 == 0:
@@ -125,12 +128,12 @@ def crossvalidation(dataset, task, folds=5):
         utils.set_random_seed()
         g = torch.Generator()
         g.manual_seed(42)
-        train_loader = DataLoader(train_subset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=glob['BATCH_SIZE'], generator=g)
+        train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
+        test_loader = DataLoader(test_subset, batch_size=GLOB['batch_size'], generator=g)
 
         print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
-        model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES']).to(DEVICE)
+        model = MAGClassifier(ATOM_DIM, BOND_DIM, GLOB['layer_types']).to(DEVICE)
         validation_stats = training_loop(model, train_loader, task, test_loader)
         # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
         fold_results.append(validation_stats)
@@ -164,7 +167,7 @@ def explain(model, dataset):
 
 def setup_training(model, task):
     model.task = task
-    model.optimizer = torch.optim.AdamW(model.parameters(), lr=glob['LR'])
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
@@ -172,12 +175,12 @@ def setup_training(model, task):
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
 def main(dataset_info, cv=False):
-    ## Reproducibility
-    utils.set_random_seed()
-    # print("\nRANDOM SEED = 30")
     ## Print model stamp
     import pprint
-    pprint.pprint(glob)
+    pprint.pprint(GLOB)
+    ## Reproducibility
+    utils.set_random_seed(GLOB['random_seed'])
+    # print("\nRANDOM SEED = 30")
 
     path = dataset_info['path']
     task = dataset_info['task']
@@ -198,20 +201,20 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
-    # training_loop(model, train_loader, task)
-    # calc_stats(model, train_loader)  # Needed for Explainer
+    train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
+    training_loop(model, train_loader, task)
+    calc_stats(model, train_loader)  # Needed for Explainer
 
     ## Statistics on Training set
-    # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
+    # loader = DataLoader(trainingset, batch_size=GLOB['batch_size'])
     # evaluate(model, loader, flag="Train")
 
     ## Save model
     # save(model, "MODELS/logp.pt")
 
     ## Load saved model
-    model = load("MODELS/MODEL_logp.pt")
+    # model = load("MODELS/MODEL_logp.pt")
 
     ## Test
     if testset is None:
@@ -219,28 +222,21 @@ def main(dataset_info, cv=False):
         testset = GraphDataset(dataset_info, split='test')
     else:
         print(f"\nTest set: {path} ({len(testset)} samples)")
-    test_loader = DataLoader(testset, batch_size=glob['BATCH_SIZE'])
+    test_loader = DataLoader(testset, batch_size=GLOB['batch_size'])
     evaluate(model, test_loader, flag="Test")
 
     ## Explain
     explain(model, testset)
 
+
 if __name__ == "__main__":
-    ## DEBUG
-    BATCH_DEBUG = None
-    # BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
+
     ## GLOBALS
+    BATCH_DEBUG =  None  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    glob = {
-        "BATCH_SIZE": 32,  # I should try reducing waste since drop_last=True
-        "LR": 1e-4,
-        "NUM_EPOCHS": 100,
-        "LAYER_TYPES": ['M', 'M', 'S', 'P'],  # 'MMSP'
-    }
-    import datasets
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
-    print(f"DEVICE: {DEVICE}")
-    # for glob['LAYER_TYPES'] in (['M0','M0','M0','M0','P'],
+    print(f"DEVICE: {DEVICE}\n")
+    # for GLOB['layer_types'] in (['M0','M0','M0','M0','P'],
     #                             ['M0','M0','M0','S','P'],
     #                             ['M0','M0','S','M0','P'],
     #                             ['M0','M0','S','S','P'],
@@ -250,12 +246,9 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    # import attention
-    # for attention.PMA.K in (1,):
-    #     print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
+    # for GLOB['seeds'] in (1,):
     #     main(datasets.logp, cv=True)
-    print(f"\n\n### HEADS = 8, PMA K = 32 ###")
-    main(datasets.logp, cv=True)
+    main(datasets.muta, cv=True)
 
 
     ## ESA: README

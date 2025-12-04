@@ -5,16 +5,14 @@ from torch_geometric.data import Batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
-HIDDEN_DIM = 128  # ESA hidden dimension
-HEADS = 8
-print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS)
+from parameters import GLOB
 
 
 class MAGClassifier(nn.Module):
 
-    IN_OUT_MLP_HIDDEN_DIM = 128  # MLP hidden dimension for input/output layers
+    IN_OUT_MLP_HIDDEN_DIM = GLOB['in_out_mlp']  # MLP hidden dimension for input/output layers
     
-    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=HIDDEN_DIM, num_heads=HEADS, output_dim=1):
+    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=GLOB['hidden_dim'], num_heads=GLOB['heads'], output_dim=1):
         super(MAGClassifier, self).__init__()
         self.layer_types = layer_types
         self.hidden_dim = hidden_dim
