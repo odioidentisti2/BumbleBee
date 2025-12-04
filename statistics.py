@@ -50,3 +50,10 @@ def cv_stats(fold_results):
     print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS (Epoch {best_epoch})\n{'='*50}")
     print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
     print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in metrics_at_best]}")
+    
+    # Print mean metrics across all epochs
+    print(f"\n{'='*50}\nMEAN METRICS ACROSS ALL EPOCHS\n{'='*50}")
+    for epoch_idx, mean_val in enumerate(mean_metrics):
+        epoch_num = (epoch_idx + 1) * 5
+        marker = " ← BEST" if epoch_idx == best_idx else ""
+        print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")

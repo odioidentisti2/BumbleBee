@@ -6,7 +6,7 @@ from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
 HIDDEN_DIM = 128  # ESA hidden dimension
-HEADS = 4
+HEADS = 8
 print("HIDDEN_DIM:", HIDDEN_DIM, "\nHEADS:", HEADS)
 
 

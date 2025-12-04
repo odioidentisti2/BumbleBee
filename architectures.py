@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from attention import *
+from attention import SetAttention, PMA
 
 
 MLP_EXPANSION_FACTOR = 2
