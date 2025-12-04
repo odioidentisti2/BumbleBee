@@ -199,20 +199,20 @@ def main(dataset_info, cv=False):
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     # Train
-    # train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
-    # model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
-    # training_loop(model, train_loader, task)
-    # calc_stats(model, train_loader)  # Needed for Explainer
+    train_loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'], shuffle=True, drop_last=True)
+    model = MAGClassifier(ATOM_DIM, BOND_DIM, glob['LAYER_TYPES'])
+    training_loop(model, train_loader, task)
+    calc_stats(model, train_loader)  # Needed for Explainer
 
     ## Statistics on Training set
     # loader = DataLoader(trainingset, batch_size=glob['BATCH_SIZE'])
     # evaluate(model, loader, flag="Train")
 
     ## Save model
-    # save(model, "MODEL_logp.pt")
+    # save(model, "MODELS/logp.pt")
 
     ## Load saved model
-    model = load("MODEL_logp.pt")
+    # model = load("MODELS/MODEL_logp.pt")
 
     ## Test
     if testset is None:
