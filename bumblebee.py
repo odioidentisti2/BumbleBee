@@ -251,11 +251,12 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    import attention
-    for attention.PMA.K in (1,):
-        print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
-        main(datasets.logp, cv=True)
-    # main(datasets.logp, cv=True)
+    # import attention
+    # for attention.PMA.K in (1,):
+    #     print(f"\n\n### PMA seeds = {attention.PMA.K} ###")
+    #     main(datasets.logp, cv=True)
+    print(f"\n\n### HEADS = 1, PMA K = 1 ###")
+    main(datasets.logp, cv=True)
 
 
     ## ESA: README
