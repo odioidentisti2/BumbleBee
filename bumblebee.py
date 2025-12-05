@@ -196,11 +196,12 @@ def main(dataset_info, model_name=None, cv=False):
         trainingset = GraphDataset(dataset_info, split='train')
         testset = None
     else:
+        print(f"\nLoading dataset: {path}")
         trainingset, testset = utils.random_subsets(GraphDataset(dataset_info))
-        print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
     if not model_name:  # Train
        
+        print(f"\nTraining set: {len(trainingset)} samples")
         train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
         training_loop(model, train_loader, task)
@@ -222,7 +223,7 @@ def main(dataset_info, model_name=None, cv=False):
         print(f"\nTest set: {path} ('Test')")
         testset = GraphDataset(dataset_info, split='test')
     else:
-        print(f"\nTest set: {path} ({len(testset)} samples)")
+        print(f"\nTest set: {len(testset)} samples")
     test_loader = DataLoader(testset, batch_size=GLOB['batch_size'])
     evaluate(model, test_loader, flag="Test")
 

@@ -4,7 +4,7 @@ GLOB = {
     'lr': 1e-4,
     'epochs': 100,
     'batch_size': 32,
-    'random_seed': 30,
+    'random_seed': 42,
     # 'weight_decay': 1e-5,
 
     ## Model
@@ -12,10 +12,10 @@ GLOB = {
     'in_out_mlp': 128,
 
     ## ESA
-    'hidden_dim': 128,
+    'hidden_dim': 256,
     'mlp_expansion': 2,
-    'heads': 8,
-    'seeds': 32,
+    'heads': 16,
+    'seeds': 1,
 
     # Regularization
     'ESA_dropout': 0.0,
