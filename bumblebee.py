@@ -199,7 +199,7 @@ def main(dataset_info, model_name=None, cv=False):
         trainingset, testset = utils.random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
-    if model is None:  # Train
+    if not model_name:  # Train
        
         train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
@@ -214,7 +214,7 @@ def main(dataset_info, model_name=None, cv=False):
         # save(model, "MODELS/logp.pt")
 
     else:  # Load saved model
-        
+
         model = load(f"MODELS/{model_name}")
 
     ## Test
