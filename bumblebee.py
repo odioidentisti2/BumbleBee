@@ -253,7 +253,7 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    main(datasets.logp, model_name, cv=False)
+    main(datasets.logp, model_name, cv=True)
 
 
     

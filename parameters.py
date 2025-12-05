@@ -14,7 +14,7 @@ GLOB = {
     ## ESA
     'hidden_dim': 256,
     'mlp_expansion': 2,
-    'heads': 16,
+    'heads': 8,
     'seeds': 1,
 
     # Regularization
