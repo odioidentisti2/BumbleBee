@@ -102,3 +102,22 @@ class MAG(nn.Module):
         # Concatenate node (src and dst) and edge features
         src, dst = batch.edge_index
         return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+    
+    
+    # def get_encoder_output(self, batch, BATCH_DEBUG=False):
+    #     """Returns encoder set features [batch, seq_len, hidden_dim] before pooling."""
+    #     edge_feat = MAGClassifier.get_features(batch)
+    #     batched_h = self.input_mlp(edge_feat)
+    #     edge_batch = self._edge_batch(batch.edge_index, batch.batch)
+    #     max_edges = torch.bincount(edge_batch).max().item()
+    #     dense_batch_h, pad_mask = to_dense_batch(
+    #         batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+    #     batch_size = batch.batch.max().item() + 1
+    #     adj_mask = edge_mask(batch.edge_index, batch.batch, batch_size, max_edges)
+        
+    #     # Run encoder only
+    #     enc = dense_batch_h
+    #     for layer in self.esa.encoder:
+    #         enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
+        
+    #     return enc  # [batch, seq_len, hidden_dim]
