@@ -127,3 +127,37 @@ class ESA(nn.Module):
 
     def get_attention(self, index=-1):
         return self.decoder[index].attn_weights.mean(dim=1)  # Aggregate seeds by mean (try sum?)
+    
+
+
+
+        # # Get top-5 attended edges for each seed
+        # top_edges_per_seed = self.decoder[index].attn_weights[0, :, :].topk(5, dim=-1).indices  # [num_seeds, 5]
+        # print("\nTop-5 edge indices per seed:")
+        # for i in range(min(5, top_edges_per_seed.size(0))):
+        #     print(f"  Seed {i:02d}: {top_edges_per_seed[i].tolist()}")
+        
+        # # Check overlap: how many seeds attend to the same top-5 edges?
+        # unique_top_edges = torch.unique(top_edges_per_seed)
+        # print(f"\nUnique edges in top-5 across all seeds: {len(unique_top_edges)} / {top_edges_per_seed.numel()}")
+
+
+        # attn_per_seed = self.decoder[index].attn_weights  # preserve [seeds, tokens] (or [batch, seeds, tokens])
+        # if attn_per_seed.dim() == 3:
+        #     attn_per_seed = attn_per_seed.squeeze(0)  # remove batch if present
+        
+        # print(f"Attention (seeds × tokens): {attn_per_seed.shape}")
+        # for seed_idx in range(attn_per_seed.shape[0]):
+        #     first_tokens = attn_per_seed[seed_idx, :5]
+        #     print(f"Seed {seed_idx:02d}: first 5 tokens = {first_tokens.tolist()}")
+        
+        # if attn_per_seed.shape[0] > 1:
+        #     diffs = []
+        #     for i in range(attn_per_seed.shape[0]):
+        #         for j in range(i + 1, attn_per_seed.shape[0]):
+        #             diffs.append(torch.norm(attn_per_seed[i] - attn_per_seed[j]).item())
+        #     max_diff = max(diffs)
+        #     print(f"Max pairwise L2 diff between seeds: {max_diff:.6f}")
+        #     print(f"Seeds similar within 1e-2 tolerance? {max_diff < 1e-2}")
+        
+        # return attn_per_seed.mean(dim=0)
