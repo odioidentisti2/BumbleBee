@@ -252,16 +252,34 @@ if __name__ == "__main__":
     # main(datasets.logp, cv=True)
 
 
-    ## ESA: README
-    # lr = 0.0001
-    # BATCH_SIZE = 128
-    # HIDDEN_DIM = 256  (= graph_dim)
-    # MLP_hidden_dim = 256 (graph-level) or 512 (node-level)
-    # NUM_HEADS = 16  (= 4 in the template)
-    # LAYER_TYPES = 'MMSP' default; 'MSMSMP' graph-level
-    # DROPOUT = 0 !!!!!!!!!
-    # weight_decay = 1e-10 nel README (useless)
-    ## ESA (hardcoded)
-    # PMA seeds = 32
-    # model's MLP hidden dimension = 128
-    # model's MLP dropout = 0
+    
+#  TO BE PLACED INSID MAIN TO DEBUG SEED DIVERSITY
+    # with torch.no_grad():
+    #     pma = model.esa.decoder[-1].attention  # shortcut
+
+    #     seeds = pma.S.squeeze(0)
+    #     print("Seed pairwise dist mean:", torch.cdist(seeds, seeds).mean().item())
+
+    #     q = pma.mha.fc_q(seeds)
+    #     q_ln = pma.mha.ln_q(q)
+    #     print("Query pairwise dist mean:", torch.cdist(q_ln, q_ln).mean().item())
+
+    #     sample = next(iter(DataLoader(testset, batch_size=GLOB['batch_size'])))
+    #     sample = sample.to(DEVICE)
+    #     q_batch = pma.mha.ln_q(pma.mha.fc_q(pma.S.repeat(sample.num_graphs, 1, 1)))
+    #     enc_out = model.get_encoder_output(sample, BATCH_DEBUG)
+    #     k_batch = pma.mha.ln_k(pma.mha.fc_k(enc_out))
+    #     logits = torch.einsum('bshd,bthd->bhst',
+    #                           q_batch.view(sample.num_graphs, -1, pma.mha.num_heads, 128 // pma.mha.num_heads),
+    #                           k_batch.view(sample.num_graphs, -1, pma.mha.num_heads, 128 // pma.mha.num_heads))
+    #     print("Attention logit std per head:", logits.std(dim=-1).mean().item())
+
+    #     print("Key pairwise distances (first graph, first 10 edges):")
+    #     k_sample = k_batch[0, :10]  # [10, num_heads * head_dim]
+    #     print(torch.cdist(k_sample, k_sample).mean().item())
+        
+    #     print("\nEncoder output variance per edge (first graph):")
+    #     print(enc_out[0].var(dim=0).mean().item())  # variance across feature dims
+
+    #     return
+
