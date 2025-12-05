@@ -111,9 +111,10 @@ class MultiHeadAttention(nn.Module):
 
 # Same input for both Q and K
 class SetAttention(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, dropout=GLOB['SAB_dropout']):
+
+    def __init__(self, dim_in, dim_out, num_heads):
         super(SetAttention, self).__init__()
-        self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, dropout)
+        self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, GLOB['SAB_dropout'])
 
     def forward(self, X, mask=None, return_attention=False):
         if mask is not None:
@@ -126,13 +127,13 @@ class SetAttention(nn.Module):
 # num_seeds = 32 (An end-to-end attention-based approach for learning on graphs, cap. 3.2)
 class PMA(nn.Module):
 
-    def __init__(self, dim, num_heads, num_seeds=GLOB['seeds'], dropout=GLOB['PMA_dropout']):
+    def __init__(self, dim, num_heads):
         super(PMA, self).__init__()
         # Learnable seed vectors for pooling
-        self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
+        self.S = nn.Parameter(torch.Tensor(1, GLOB['seeds'], dim))
         nn.init.xavier_normal_(self.S)
         # MultiHeadAttention takes seeds as Q and the input set as K
-        self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=dropout)
+        self.mha = MultiHeadAttention(dim, dim, dim, num_heads, dropout=GLOB['PMA_dropout'])
 
     def forward(self, X, mask=None, return_attention=False):
         # Repeat seeds across batch: use seeds as queries, X as keys/values

@@ -8,20 +8,18 @@ from adj_mask_utils import edge_adjacency, edge_mask
 from parameters import GLOB
 
 
-class MAGClassifier(nn.Module):
-
-    IN_OUT_MLP_HIDDEN_DIM = GLOB['in_out_mlp']  # MLP hidden dimension for input/output layers
+class MAG(nn.Module):
     
-    def __init__(self, node_dim, edge_dim, layer_types, hidden_dim=GLOB['hidden_dim'], num_heads=GLOB['heads'], output_dim=1):
-        super(MAGClassifier, self).__init__()
+    def __init__(self, node_dim, edge_dim, layer_types):
+        super(MAG, self).__init__()
         self.layer_types = layer_types
-        self.hidden_dim = hidden_dim
+        self.hidden_dim = GLOB['hidden_dim']
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = mlp(2 * node_dim + edge_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, hidden_dim)
+        self.input_mlp = mlp(2 * node_dim + edge_dim, GLOB['in_out_mlp'], self.hidden_dim)
         # ESA block
-        self.esa = ESA(hidden_dim, num_heads, layer_types)
+        self.esa = ESA(self.hidden_dim, GLOB['heads'], layer_types)
         # Classifier
-        self.output_mlp = mlp(hidden_dim, MAGClassifier.IN_OUT_MLP_HIDDEN_DIM, output_dim)
+        self.output_mlp = mlp(self.hidden_dim, GLOB['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
@@ -71,7 +69,7 @@ class MAGClassifier(nn.Module):
                 batch.edge_attr      # [batch_edges, edge_dim]
                 batch.batch          # [batch_nodes]
         """
-        edge_feat = MAGClassifier.get_features(batch)
+        edge_feat = MAG.get_features(batch)
 
         if BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch)

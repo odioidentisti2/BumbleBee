@@ -6,7 +6,7 @@ from parameters import GLOB
 import datasets
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
-from model import MAGClassifier
+from model import MAG
 from explainer import Explainer
 import utils
 import statistics
@@ -111,7 +111,7 @@ def load(model_path):
     print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=DEVICE)
     layer_types = ckpt.get('layer_types')
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
+    model = MAG(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
     setup_training(model, ckpt.get('task'))
     model.stats = ckpt.get('model_stats', None)
     model.load_state_dict(ckpt['state_dict'])
@@ -125,7 +125,7 @@ def crossvalidation(dataset, task, folds=5):
     start_time = time.time()  
     for train_subset, test_subset in utils.cv_subsets(dataset, folds):
         # Reproducibility
-        utils.set_random_seed()
+        utils.set_random_seed(GLOB['random_seed'])
         g = torch.Generator()
         g.manual_seed(42)
         train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
@@ -133,7 +133,7 @@ def crossvalidation(dataset, task, folds=5):
 
         print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
-        model = MAGClassifier(ATOM_DIM, BOND_DIM, GLOB['layer_types']).to(DEVICE)
+        model = MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types']).to(DEVICE)
         validation_stats = training_loop(model, train_loader, task, test_loader)
         # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
         fold_results.append(validation_stats)
@@ -202,7 +202,7 @@ def main(dataset_info, cv=False):
 
     # Train
     train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
-    model = MAGClassifier(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
+    model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
     training_loop(model, train_loader, task)
     calc_stats(model, train_loader)  # Needed for Explainer
 
@@ -246,9 +246,10 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    # for GLOB['seeds'] in (1,):
-    #     main(datasets.logp, cv=True)
-    main(datasets.muta, cv=True)
+    for GLOB['heads'] in (8, 16):
+        GLOB['seeds'] = 1
+        main(datasets.logp, cv=True)
+    # main(datasets.logp, cv=True)
 
 
     ## ESA: README

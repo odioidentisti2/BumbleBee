@@ -6,18 +6,20 @@ from parameters import GLOB
 
 
 # Multilayer Perceptron
-def mlp(in_dim, inter_dim, out_dim, dropout=0.0):
+def mlp(in_dim, inter_dim, out_dim):
+
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
-            nn.Dropout(dropout),  # automatic check for training mode (identity function in eval mode)
+            nn.Dropout(GLOB['ESA_dropout']),  # automatic check for training mode (identity function in eval mode)
             nn.Linear(inter_dim, out_dim),
             # nn.Dropout(dropout)
         )
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, hidden_dim, num_heads, layer_type, dropout):
+
+    def __init__(self, hidden_dim, num_heads, layer_type):
         super(TransformerBlock, self).__init__()
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
@@ -26,7 +28,7 @@ class TransformerBlock(nn.Module):
             self.attention = PMA(hidden_dim, num_heads)
         else:
             self.attention = SetAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = mlp(hidden_dim, hidden_dim * GLOB['mlp_expansion'], hidden_dim, dropout)
+        self.mlp = mlp(hidden_dim, hidden_dim * GLOB['mlp_expansion'], hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
@@ -79,24 +81,24 @@ class ESA(nn.Module):
         torch.Tensor: Output graph-level representation after pooling and non-linearity.
         torch.Tensor (optional): Attention scores from the 'P' layer if `return_attention` is True.
     """
+
     def __init__(self, hidden_dim, num_heads, layer_types):
         super(ESA, self).__init__()
-        dropout = GLOB['ESA_dropout']
         assert layer_types.count('P') == 1
-        self.output_dropout = nn.Dropout(dropout) 
+        self.output_dropout = nn.Dropout(GLOB['ESA_dropout']) 
         # Encoder
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type[0] in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, dropout))
+            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P', dropout))
+        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P'))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type, dropout))
+            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):
