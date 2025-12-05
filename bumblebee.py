@@ -125,9 +125,9 @@ def crossvalidation(dataset, task, folds=5):
     start_time = time.time()  
     for train_subset, test_subset in utils.cv_subsets(dataset, folds):
         # Reproducibility
-        utils.set_random_seed(GLOB['random_seed'])
+        utils.set_random_seed()
         g = torch.Generator()
-        g.manual_seed(42)
+        g.manual_seed(GLOB['random_seed'])
         train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=GLOB['batch_size'], generator=g)
 
@@ -179,8 +179,7 @@ def main(dataset_info, cv=False):
     import pprint
     pprint.pprint(GLOB)
     ## Reproducibility
-    utils.set_random_seed(GLOB['random_seed'])
-    # print("\nRANDOM SEED = 30")
+    utils.set_random_seed()
 
     path = dataset_info['path']
     task = dataset_info['task']
@@ -246,10 +245,10 @@ if __name__ == "__main__":
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
     #                         ):
-    for GLOB['heads'] in (8, 16):
-        GLOB['seeds'] = 1
-        main(datasets.logp, cv=True)
-    # main(datasets.logp, cv=True)
+    # for GLOB['heads'] in (8, 16):
+    #     GLOB['seeds'] = 1
+    #     main(datasets.logp, cv=True)
+    main(datasets.muta, cv=True)
 
 
     
