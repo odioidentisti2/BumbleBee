@@ -174,7 +174,7 @@ def setup_training(model, task):
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
-def main(dataset_info, cv=False):
+def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
     import pprint
     pprint.pprint(GLOB)
@@ -199,21 +199,23 @@ def main(dataset_info, cv=False):
         trainingset, testset = utils.random_subsets(GraphDataset(dataset_info))
         print(f"\nTraining set: {path} ({len(trainingset)} samples)")
 
-    # Train
-    train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
-    model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
-    training_loop(model, train_loader, task)
-    calc_stats(model, train_loader)  # Needed for Explainer
+    if model is None:  # Train
+       
+        train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
+        model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
+        training_loop(model, train_loader, task)
+        calc_stats(model, train_loader)  # Needed for Explainer
 
-    ## Statistics on Training set
-    # loader = DataLoader(trainingset, batch_size=GLOB['batch_size'])
-    # evaluate(model, loader, flag="Train")
+        ## Statistics on Training set
+        # loader = DataLoader(trainingset, batch_size=GLOB['batch_size'])
+        # evaluate(model, loader, flag="Train")
 
-    ## Save model
-    # save(model, "MODELS/logp.pt")
+        ## Save model
+        # save(model, "MODELS/logp.pt")
 
-    ## Load saved model
-    # model = load("MODELS/MODEL_logp.pt")
+    else:  # Load saved model
+        
+        model = load(f"MODELS/{model_name}")
 
     ## Test
     if testset is None:
@@ -248,10 +250,14 @@ if __name__ == "__main__":
     # for GLOB['heads'] in (8, 16):
     #     GLOB['seeds'] = 1
     #     main(datasets.logp, cv=True)
-    main(datasets.muta, cv=True)
+    model_name = None
+    # model_name = 
+    main(datasets.logp, model_name, cv=False)
 
 
     
+
+
 #  TO BE PLACED INSID MAIN TO DEBUG SEED DIVERSITY
     # with torch.no_grad():
     #     pma = model.esa.decoder[-1].attention  # shortcut

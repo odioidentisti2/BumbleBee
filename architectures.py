@@ -126,9 +126,9 @@ class ESA(nn.Module):
                     delattr(layer, 'attn_weights')
 
     def get_attention(self, index=-1):
-        return self.decoder[index].attn_weights.mean(dim=1)  # Aggregate seeds by mean (try sum?)
+        # Aggregate seeds by mean (try sum?)
+        return self.decoder[index].attn_weights.mean(dim=1)  # [batch, seq_len]
     
-
 
 
         # # Get top-5 attended edges for each seed
