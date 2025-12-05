@@ -238,8 +238,8 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
-    # for GLOB['layer_types'] in (['M0','M0','M0','M0','P'],
-    #                             ['M0','M0','M0','S','P'],
+    for GLOB['layer_types'] in (['M','M','M','S','P'],
+                                ['M','M','M','P'],
     #                             ['M0','M0','S','M0','P'],
     #                             ['M0','M0','S','S','P'],
     #                             ['M0','S','M0','M0','P'],
@@ -247,13 +247,13 @@ if __name__ == "__main__":
     #                             ['M0','S','S','M0','P'],
     #                             ['M0','S','S','S','P'],
     #                             ['M0', 'M1', 'M2', 'S', 'P'],
-    #                         ):
+                            ):
     # for GLOB['heads'] in (8, 16):
     #     GLOB['seeds'] = 1
-    #     main(datasets.logp, cv=True)
+        main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    main(datasets.logp, model_name, cv=True)
+    main(datasets.muta, model_name, cv=True)
 
 
     

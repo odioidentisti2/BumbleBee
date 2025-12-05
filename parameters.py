@@ -12,7 +12,7 @@ GLOB = {
     'in_out_mlp': 128,
 
     ## ESA
-    'hidden_dim': 256,
+    'hidden_dim': 128,
     'mlp_expansion': 2,
     'heads': 8,
     'seeds': 1,
