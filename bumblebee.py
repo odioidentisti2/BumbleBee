@@ -171,8 +171,8 @@ def setup_training(model, task):
     if False:  #task == 'binary_classification':
         model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
-        model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
 def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
@@ -253,9 +253,9 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    GLOB['layer_types'] = ['M', 'M', 'M', 'M', 'P']
-    GLOB['epochs'] = 150
-    main(datasets.logp, model_name, cv=True)
+    GLOB['epochs'] = 100
+    print('L1Loss, 100 E')
+    main(datasets.muta, model_name, cv=True)
 
 
     
