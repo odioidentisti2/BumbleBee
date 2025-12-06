@@ -254,7 +254,8 @@ if __name__ == "__main__":
     model_name = None
     # model_name = 
     print('MSE Loss: ')
-    GLOB['lr'] = 1e-5]
+    GLOB['lr'] = 1e-5
+    GLOB['epochs'] = 200
     main(datasets.muta, model_name, cv=True)
 
 
