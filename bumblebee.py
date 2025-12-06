@@ -172,8 +172,8 @@ def setup_training(model, task):
         pass
         # model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
-        model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
 def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     # model_name = 
     GLOB['lr'] = 5e-5
     GLOB['epochs'] = 200
-    print(f'MSE Loss, lr={GLOB['lr']}')
+    print(f'L1 Loss, lr={GLOB['lr']}')
     main(datasets.muta, model_name, cv=True)
 
 
