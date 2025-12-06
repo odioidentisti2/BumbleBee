@@ -253,8 +253,8 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    GLOB['epochs'] = 100
-    print('L1Loss, 100 E')
+    print('MSE Loss: ')
+    GLOB['lr'] = 1e-5]
     main(datasets.muta, model_name, cv=True)
 
 
