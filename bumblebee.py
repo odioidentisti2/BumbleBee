@@ -168,11 +168,12 @@ def explain(model, dataset):
 def setup_training(model, task):
     model.task = task
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
-    if False:  #task == 'binary_classification':
-        model.criterion = torch.nn.BCEWithLogitsLoss()
+    if False:  # task == 'binary_classification':
+        pass
+        # model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
-        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
 def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
@@ -253,9 +254,9 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    print('MSE Loss: ')
-    GLOB['lr'] = 1e-5
+    GLOB['lr'] = 5e-5
     GLOB['epochs'] = 200
+    print(f'BCE Loss, lr={GLOB['lr']}')
     main(datasets.muta, model_name, cv=True)
 
 
