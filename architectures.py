@@ -71,7 +71,7 @@ class ESA(nn.Module):
             - 'M': Masked self-attention layer.
             - 'P': PMA (Pooling by Multihead Attention) decoder layer.
             The string must contain exactly one 'P' layer. 'S' and 'M' layers can be arranged in any order before 'P'.
-            After 'P', only 'S' layers are allowed.
+            After 'P', only 'S' layers are allowed (but they make sense only if PMA seeds (k) > 1).
 
     Attributes:
         encoder (nn.ModuleList): List of transformer blocks for the encoder ('S' and 'M' layers).

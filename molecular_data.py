@@ -101,6 +101,7 @@ class GraphDataset(Dataset):
         super().__init__()
         self.task = dataset_info['task']
         self.graphs = []
+        self.targets = []
         with open(dataset_info['path'], 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
@@ -121,6 +122,7 @@ class GraphDataset(Dataset):
                     target = float(target)                
                 data.y = torch.tensor([target], dtype=torch.float)
                 self.graphs.append(data)
+                self.targets.append(target)
         print(f"Loaded {len(self.graphs)} molecules")
         
         if not self.graphs:
