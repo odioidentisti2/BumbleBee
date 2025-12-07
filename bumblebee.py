@@ -193,7 +193,7 @@ class BinaryHingeLoss(torch.nn.Module):
     
 def setup_training(model, task):
     model.task = task
-    model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'], fused=False)
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         # model.criterion = hinge_loss
         model.criterion = BinaryHingeLoss()
