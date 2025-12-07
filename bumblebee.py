@@ -168,22 +168,29 @@ def explain(model, dataset):
             else:
                 repeat = False  # Move to next molecule
 
-class BinaryHingeLoss(torch.nn.Module):
-    def forward(self, pred, target):
-        # Convert target {0,1} → {-1,+1}
-        y = 2 * target - 1
-        # Hinge: max(0, 1 - y*pred)
-        # return torch.clamp(1 - y * pred, min=0).mean()
+# class BinaryHingeLoss(torch.nn.Module):
+#     def forward(self, pred, target):
+#         # Convert target {0,1} → {-1,+1}
+#         y = 2 * target - 1
+#         # Hinge: max(0, 1 - y*pred)
+#         # return torch.clamp(1 - y * pred, min=0).mean()
     
-        loss = torch.nn.functional.relu(1 - y * pred)
-        return loss.mean()
-
-# def hinge_loss(pred, target):
-#     # Convert target {0,1} → {-1,+1}
-#     y = 2 * target - 1
-#     # Hinge: max(0, 1 - y*pred)
-#     return torch.clamp(1 - y * pred, min=0).mean()
-
+#         loss = torch.nn.functional.relu(1 - y * pred)
+#         return loss.mean()
+    
+class BinaryHingeLoss(torch.nn.Module):
+    def __init__(self, smoothness=0.01):
+        super().__init__()
+        self.smoothness = smoothness
+    
+    def forward(self, pred, target):
+        y = 2 * target - 1
+        # Smooth approximation: softplus(x) = log(1 + exp(x))
+        smooth_loss = torch.nn.functional.softplus(
+            (1 - y * pred) / self.smoothness
+        ) * self.smoothness
+        return smooth_loss.mean()
+    
 def setup_training(model, task):
     model.task = task
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])

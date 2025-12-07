@@ -1,6 +1,16 @@
 import torch
 from parameters import GLOB
 
+
+
+# # This specifically fixes attention backward non-determinism
+# # but causes 10-20% slowdown in training (only the last row or also the first 2?)
+# if DEVICE.type == 'cuda':
+#     torch.backends.cudnn.deterministic = True
+#     torch.backends.cudnn.benchmark = False
+#     # This forces deterministic algorithms in attention operations
+#     torch.use_deterministic_algorithms(True, warn_only=True)
+
 def set_random_seed():
     seed = GLOB.get('random_seed')
     torch.manual_seed(seed)
