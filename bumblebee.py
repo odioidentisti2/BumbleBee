@@ -83,6 +83,8 @@ def calc_stats(model, calibration_loader):
     targets = np.array(predictions)
     model.stats['target_mean'] = float(targets.mean())
     model.stats['target_std'] = float(targets.std())
+    model.stats['target_min'] = float(targets.min())
+    model.stats['target_max'] = float(targets.max())
     # Attention
     att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
     model.stats['attention_factor_mean'] = float(att_factor.mean())
@@ -147,6 +149,7 @@ def explain(model, dataset):
     explainer = Explainer(model)
     print("\nCALIBRATION")
     print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
+    print(f"Prediction range: {model.stats['target_min']:.2f} to {model.stats['target_max']:.2f}")
     print(f"IG top: {explainer.target_std:.2f}")
     print(f"ATT top: {explainer.att_factor_top:.2f}")
     intensity = 1
@@ -268,10 +271,10 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    GLOB['lr'] = 5e-4
-    GLOB['epochs'] = 200
+    GLOB['lr'] = 1e-4
+    GLOB['epochs'] = 120
     print(f'HINGE Loss, lr={GLOB['lr']}')
-    main(datasets.muta, model_name, cv=True)
+    main(datasets.muta, model_name, cv=False)
 
 
     
