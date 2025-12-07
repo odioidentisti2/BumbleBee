@@ -173,7 +173,10 @@ class BinaryHingeLoss(torch.nn.Module):
         # Convert target {0,1} → {-1,+1}
         y = 2 * target - 1
         # Hinge: max(0, 1 - y*pred)
-        return torch.clamp(1 - y * pred, min=0).mean()
+        # return torch.clamp(1 - y * pred, min=0).mean()
+    
+        loss = torch.nn.functional.relu(1 - y * pred)
+        return loss.mean()
 
 # def hinge_loss(pred, target):
 #     # Convert target {0,1} → {-1,+1}
