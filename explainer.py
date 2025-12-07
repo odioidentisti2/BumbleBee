@@ -33,6 +33,9 @@ class Explainer:
         self.model = model.to('cpu')
         self.intensity = 1
         self.att_factor_top = model.stats['attention_factor_mean'] + model.stats['attention_factor_std']
+        # WARNING: Now I use PREDICTION stats, NOT target stats!
+        # For regression it's probably the same,
+        # for binary class with hinge or BCE no: target.mean = 0.5 but prediction.mean ~ 0
         self.target_std = model.stats['target_std']
         self.target_mean = model.stats['target_mean']
 
@@ -101,7 +104,7 @@ class Explainer:
         print(f"PREDICTION: {final_pred.item():.2f}")
 
         # Shift attributions from baseline to neutral point
-        # neutral_point = 0.5
+        # neutral_point = 0.0  # it should be zero for binary prediction???? 
         neutral_point = self.target_mean
         offset = (neutral_point - baseline_pred).item()
         edge_importance -= offset / edge_importance.shape[0]
@@ -109,12 +112,12 @@ class Explainer:
         centered_sum = edge_importance.sum().item()
         # expected_centered = (final_pred.item() - neutral_point)
         print(f"\n=== CENTERED (after shifting to neutral) ===")
-        print(f"Neutral point: {neutral_point:.4f}")
+        print(f"Neutral point: {neutral_point:.2f}")
         print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        print(f"Centered attribution sum: {centered_sum:.4f}")
+        print(f"Centered attribution sum: {centered_sum:.2f}")
         # print(f"Expected (final - neutral): {expected_centered:.4f}")
         # print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
-        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.4f}")
+        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
