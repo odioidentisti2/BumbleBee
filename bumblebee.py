@@ -165,11 +165,25 @@ def explain(model, dataset):
             else:
                 repeat = False  # Move to next molecule
 
+# from torch import nn
+# class BinaryHingeLoss(nn.Module):
+#     def forward(self, pred, target):
+#         # Convert target {0,1} → {-1,+1}
+#         y = 2 * target - 1
+#         # Hinge: max(0, 1 - y*pred)
+#         return torch.clamp(1 - y * pred, min=0).mean()
+
+def hinge_loss(pred, target):
+    # Convert target {0,1} → {-1,+1}
+    y = 2 * target - 1
+    # Hinge: max(0, 1 - y*pred)
+    return torch.clamp(1 - y * pred, min=0).mean()
+
 def setup_training(model, task):
     model.task = task
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
-    if False:  # task == 'binary_classification':
-        pass
+    if task == 'binary_classification':
+        model.criterion = hinge_loss
         # model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
         # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
@@ -254,9 +268,9 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 
-    GLOB['lr'] = 5e-5
+    GLOB['lr'] = 5e-4
     GLOB['epochs'] = 200
-    print(f'L1 Loss, lr={GLOB['lr']}')
+    print(f'HINGE Loss, lr={GLOB['lr']}')
     main(datasets.muta, model_name, cv=True)
 
 
