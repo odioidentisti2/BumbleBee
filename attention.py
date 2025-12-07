@@ -80,20 +80,20 @@ class MultiHeadAttention(nn.Module):
         if return_attention:
             out, attn_weights = self._sdpa_with_weights(Q, K, V, mask)
         else:
-            try:    
-                with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
-                    out = F.scaled_dot_product_attention(
-                        Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
-                    )
-                global COUNTER
-                if COUNTER == 0:
-                    COUNTER += 1
-                    print("Using efficient attention kernel")
-                # print(self.dropout)
-            except RuntimeError as e:
-                out = F.scaled_dot_product_attention(
-                    Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
-                )
+            # try:    
+            #     with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+            #         out = F.scaled_dot_product_attention(
+            #             Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
+            #         )
+            #     global COUNTER
+            #     if COUNTER == 0:
+            #         COUNTER += 1
+            #         print("Using efficient attention kernel")
+            #     # print(self.dropout)
+            # except RuntimeError as e:
+            out = F.scaled_dot_product_attention(
+                Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
+            )
                 # # DEBUG
                 # out2, _ = self._sdpa_with_weights(Q, K, V, mask)
                 # if not torch.allclose(out, out2, rtol=1e-3, atol=1e-6):

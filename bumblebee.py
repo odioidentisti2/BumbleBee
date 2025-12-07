@@ -281,16 +281,6 @@ if __name__ == "__main__":
     #     main(datasets.logp, cv=True)
     model_name = None
 
-
-    # Force deterministic CUDA operations
-    if DEVICE.type == 'cuda':
-        torch.use_deterministic_algorithms(True, warn_only=True)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        # Specifically for attention operations:
-        import os
-        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-
     # model_name = 
     # GLOB['lr'] = 1e-4
     # GLOB['epochs'] = 120
