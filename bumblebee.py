@@ -240,7 +240,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp.pt")
+        # save(model, "MODELS/logp.pt")
 
     else:  # Load saved model
 
@@ -285,7 +285,7 @@ if __name__ == "__main__":
     # GLOB['lr'] = 1e-4
     # GLOB['epochs'] = 120
     # print(f'HINGE Loss, lr={GLOB['lr']}')
-    main(datasets.logp, model_name, cv=False)
+    main(datasets.logp, model_name, cv=True)
 
 
     

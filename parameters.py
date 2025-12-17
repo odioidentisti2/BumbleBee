@@ -2,7 +2,7 @@ GLOB = {
 
     ## Training
     'lr': 1e-4,
-    'epochs': 100,
+    'epochs': 250,
     'batch_size': 32,
     'random_seed': 42,
     # 'weight_decay': 1e-5,
