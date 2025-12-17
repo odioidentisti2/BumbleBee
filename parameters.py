@@ -8,7 +8,7 @@ GLOB = {
     # 'weight_decay': 1e-5,
 
     ## Model
-    'layer_types': ['M', 'M', 'S', 'P'],
+    'layer_types': ['M', 'M', 'M', 'P'],
     'in_out_mlp': 128,
 
     ## ESA
