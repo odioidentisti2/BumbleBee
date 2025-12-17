@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 import torch
 from torch_geometric.data import Batch
 from graphic import *
@@ -57,7 +57,7 @@ class Explainer:
         #   weight * len(weights) == 1  means "average attention"
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
-        factor = 1 / (self.att_factor_top - 1)  # scale so that top attention is at 1
+        factor = 1 / (self.att_factor_top + shift)  # scale so that top attention is at 1
         depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
 
 
