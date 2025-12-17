@@ -199,8 +199,8 @@ def setup_training(model, task):
         model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
     else:
-        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
 
 def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
