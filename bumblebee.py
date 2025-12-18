@@ -196,9 +196,8 @@ def setup_training(model, task):
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         # model.criterion = hinge_loss
-        # model.criterion = BinaryHingeLoss()
+        model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
-        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
@@ -241,7 +240,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/muta_L1_MMM_100e.pt")
+        # save(model, "MODELS/muta_MMM_100e.pt")
 
     else:  # Load saved model
 
@@ -271,7 +270,7 @@ if __name__ == "__main__":
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
 
-    main(datasets.muta, model_name, cv=False)
+    main(datasets.logp, model_name, cv=False)
 
 
     
