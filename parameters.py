@@ -4,7 +4,7 @@ GLOB = {
     'lr': 1e-4,
     'epochs': 100,
     'batch_size': 32,
-    'random_seed': 33,
+    'random_seed': 34,
     # 'weight_decay': 1e-5,
 
     ## Model
