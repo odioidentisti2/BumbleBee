@@ -15,7 +15,7 @@ GLOB = {
     'hidden_dim': 128,
     'mlp_expansion': 2,
     'heads': 8,
-    'seeds': 1,
+    'seeds': 32,
 
     # Regularization
     'ESA_dropout': 0.0,

@@ -240,7 +240,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_MMS_100e.pt")
+        save(model, "MODELS/k32_logp_MMS_100e.pt")
 
     else:  # Load saved model
 
