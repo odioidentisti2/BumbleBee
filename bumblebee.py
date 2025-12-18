@@ -196,8 +196,9 @@ def setup_training(model, task):
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         # model.criterion = hinge_loss
-        model.criterion = BinaryHingeLoss()
+        # model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
+        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
@@ -240,7 +241,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/muta_MMM_100e.pt")
+        save(model, "MODELS/muta_L1_MMM_100e.pt")
 
     else:  # Load saved model
 
@@ -266,26 +267,10 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
-    # for GLOB['layer_types'] in (['M','M','M','S','P'],
-    #                             ['M','M','M','P'],
-    # #                             ['M0','M0','S','M0','P'],
-    # #                             ['M0','M0','S','S','P'],
-    # #                             ['M0','S','M0','M0','P'],
-    # #                             ['M0','S','M0','S','P'],
-    # #                             ['M0','S','S','M0','P'],
-    # #                             ['M0','S','S','S','P'],
-    # #                             ['M0', 'M1', 'M2', 'S', 'P'],
-    #                         ):
-    # # for GLOB['heads'] in (8, 16):
-    # #     GLOB['seeds'] = 1
-    #     main(datasets.logp, cv=True)
     model_name = None
     # model_name = 'logp_MMS_100e.pt'
+    # model_name = 'muta_MMM_100e.pt'
 
-    # model_name = 
-    # GLOB['lr'] = 1e-4
-    # GLOB['epochs'] = 120
-    # print(f'HINGE Loss, lr={GLOB['lr']}')
     main(datasets.muta, model_name, cv=False)
 
 
