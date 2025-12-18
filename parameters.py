@@ -2,13 +2,13 @@ GLOB = {
 
     ## Training
     'lr': 1e-4,
-    'epochs': 250,
+    'epochs': 100,
     'batch_size': 32,
     'random_seed': 42,
     # 'weight_decay': 1e-5,
 
     ## Model
-    'layer_types': ['M', 'M', 'M', 'P'],
+    'layer_types': ['M', 'M', 'S', 'P'],
     'in_out_mlp': 128,
 
     ## ESA

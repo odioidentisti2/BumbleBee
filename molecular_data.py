@@ -22,7 +22,7 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
-        print(f"WARNING: {value} not in {allowed_values}")  # DEBUG
+        # print(f"WARNING: {value} not in {allowed_values}")  # DEBUG
         # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
