@@ -270,7 +270,7 @@ if __name__ == "__main__":
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
 
-    main(datasets.logp, model_name, cv=False)
+    main(datasets.logp_split, model_name, cv=False)
 
 
     
