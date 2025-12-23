@@ -16,8 +16,6 @@ import statistics
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 torch.use_deterministic_algorithms(True)
-import os
-os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
 
 def train(model, loader):
@@ -270,7 +268,7 @@ def main(dataset_info, model_name=None, cv=False):
 if __name__ == "__main__":
 
     ## GLOBALS
-    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
