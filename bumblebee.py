@@ -203,8 +203,8 @@ def setup_training(model, task):
     if task == 'binary_classification':
         # model.criterion = hinge_loss
         # model.criterion = BinaryHingeLoss()
-        # model.criterion = torch.nn.BCEWithLogitsLoss()
-        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        model.criterion = torch.nn.BCEWithLogitsLoss()
+        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
