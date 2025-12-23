@@ -12,10 +12,10 @@ import utils
 import statistics
 
 
-# CUDA reproducibility
-import os
-os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-torch.use_deterministic_algorithms(True)
+# # CUDA reproducibility
+# import os
+# os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+# torch.use_deterministic_algorithms(True)
 
 
 def train(model, loader):
