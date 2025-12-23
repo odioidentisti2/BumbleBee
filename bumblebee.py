@@ -12,10 +12,10 @@ import utils
 import statistics
 
 
-# # CUDA reproducibility
-# import os
-# os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-# torch.use_deterministic_algorithms(True)
+# CUDA reproducibility
+import os
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+torch.use_deterministic_algorithms(True)
 
 
 def train(model, loader):
@@ -202,8 +202,9 @@ def setup_training(model, task):
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         # model.criterion = hinge_loss
-        model.criterion = BinaryHingeLoss()
+        # model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
+        model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
