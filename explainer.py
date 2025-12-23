@@ -104,7 +104,7 @@ class Explainer:
         print(f"PREDICTION: {final_pred.item():.2f}")
 
         # Shift attributions from baseline to neutral point
-        # neutral_point = 0.0  # it should be zero for binary prediction???? 
+        # neutral_point = 0.0  # it should be zero for binary prediction?
         neutral_point = self.target_mean
         offset = (neutral_point - baseline_pred).item()
         edge_importance -= offset / edge_importance.shape[0]

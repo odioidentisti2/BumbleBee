@@ -53,7 +53,8 @@ def test(model, loader):
             total += batch.num_graphs
 
             # Statistics
-            if isinstance(model.criterion, torch.nn.BCEWithLogitsLoss):
+            # if isinstance(model.criterion, torch.nn.BCEWithLogitsLoss):
+            if model.task == 'binary_classification':
                 logits = torch.sigmoid(logits)
             evaluator.update(logits, targets, batch.num_graphs)
     metric = evaluator.output()
