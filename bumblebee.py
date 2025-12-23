@@ -245,18 +245,12 @@ if __name__ == "__main__":
     ## CUDA reproducibility
     import os
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    # TF32 (Tensor cores con precisione ridotta)
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
-    
-    # cuDNN operations (convolutions, batch norm, etc.)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    
-    # Forza algoritmi deterministici per operazioni specifiche
-    # (scatter, index, embedding backward)
-    torch.backends.cudnn.enabled = True
-    # torch.use_deterministic_algorithms(True)
+    # torch.backends.cuda.matmul.allow_tf32 = False
+    # torch.backends.cudnn.allow_tf32 = False
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    # torch.backends.cudnn.enabled = True
+    torch.use_deterministic_algorithms(True)
     ## GLOBALS
     BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
