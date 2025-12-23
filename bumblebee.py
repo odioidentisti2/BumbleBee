@@ -12,12 +12,6 @@ import utils
 import statistics
 
 
-# CUDA reproducibility
-import os
-os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-torch.use_deterministic_algorithms(True)
-
-
 def train(model, loader):
     model.train()  # set training mode
     model = model.to(DEVICE)
@@ -53,7 +47,6 @@ def test(model, loader):
             total += batch.num_graphs
 
             # Statistics
-            # if isinstance(model.criterion, torch.nn.BCEWithLogitsLoss):
             if model.task == 'binary_classification':
                 logits = torch.sigmoid(logits)
             evaluator.update(logits, targets, batch.num_graphs)
@@ -174,32 +167,19 @@ def explain(model, dataset):
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
             else:
                 repeat = False  # Move to next molecule
-
-# class BinaryHingeLoss(torch.nn.Module):
-#     def forward(self, pred, target):
-#         # Convert target {0,1} → {-1,+1}
-#         y = 2 * target - 1
-#         # Hinge: max(0, 1 - y*pred)
-#         # return torch.clamp(1 - y * pred, min=0).mean()
-    
-#         loss = torch.nn.functional.relu(1 - y * pred)
-#         return loss.mean()
     
 class BinaryHingeLoss(torch.nn.Module):
     def forward(self, pred, target):
-        target = 2 * target - 1  # Convert {0,1} → {-1,+1}
-        loss = torch.clamp(1 - target * pred, min=0)  # max(0, 1 - y*pred)
+        y = 2 * target - 1  # Convert {0,1} → {-1,+1}
+        loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
         return loss.mean()
     
 def setup_training(model, task):
     model.task = task
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
-        # model.criterion = hinge_loss
         model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
-        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
-        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
@@ -262,7 +242,10 @@ def main(dataset_info, model_name=None, cv=False):
 
 
 if __name__ == "__main__":
-
+    ## CUDA reproducibility
+    import os
+    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+    torch.use_deterministic_algorithms(True)
     ## GLOBALS
     BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

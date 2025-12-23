@@ -81,7 +81,7 @@ class MultiHeadAttention(nn.Module):
             out, attn_weights = self._sdpa_with_weights(Q, K, V, mask)
         else:
             try:
-                raise RuntimeError("Force fallback")  # DEBUG
+                # raise RuntimeError("Force fallback")  # DEBUG
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
                         Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
@@ -90,16 +90,15 @@ class MultiHeadAttention(nn.Module):
                 if COUNTER == 0:
                     COUNTER += 1
                     print("Using efficient attention kernel")
-                # print(self.dropout)
             except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                 )
-                # # DEBUG
+                ## DEBUG
                 # out2, _ = self._sdpa_with_weights(Q, K, V, mask)
                 # if not torch.allclose(out, out2, rtol=1e-3, atol=1e-6):
                 #     diff = (out - out2).abs()
-                #     print(f"⚠️  Attention outputs differ:")
+                #     print(f"   Attention outputs differ:")
                 #     print(f"   Max diff: {diff.max():.2e} | Mean diff: {diff.mean():.2e}")
 
         
