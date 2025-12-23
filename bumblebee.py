@@ -185,7 +185,7 @@ def explain(model, dataset):
 #         return loss.mean()
     
 class BinaryHingeLoss(torch.nn.Module):
-    def __init__(self, smoothness=0.01):
+    def __init__(self, smoothness=0.1):
         super().__init__()
         self.smoothness = smoothness
     
@@ -202,9 +202,10 @@ def setup_training(model, task):
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         # model.criterion = hinge_loss
-        # model.criterion = BinaryHingeLoss()
-        model.criterion = torch.nn.BCEWithLogitsLoss()
+        model.criterion = BinaryHingeLoss()
+        # model.criterion = torch.nn.BCEWithLogitsLoss()
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        # model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
