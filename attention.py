@@ -81,7 +81,7 @@ class MultiHeadAttention(nn.Module):
             out, attn_weights = self._sdpa_with_weights(Q, K, V, mask)
         else:
             try:
-                # raise RuntimeError("Force fallback")  # DEBUG
+                raise RuntimeError("Force fallback")  # DEBUG
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
                         Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
