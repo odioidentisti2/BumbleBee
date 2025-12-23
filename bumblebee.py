@@ -186,8 +186,8 @@ def explain(model, dataset):
     
 class BinaryHingeLoss(torch.nn.Module):
     def forward(self, pred, target):
-        y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-        loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
+        # target = 2 * target - 1  # Convert {0,1} → {-1,+1}
+        loss = torch.clamp(1 - target * pred, min=0)  # max(0, 1 - y*pred)
         return loss.mean()
     
 def setup_training(model, task):
