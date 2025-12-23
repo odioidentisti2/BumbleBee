@@ -21,7 +21,7 @@ def train(model, loader):
         batch = batch.to(DEVICE)
         targets = batch.y.view(-1).to(DEVICE)
         model.optimizer.zero_grad()  # zero gradients
-        logits = model(batch, BATCH_DEBUG)  # forward pass
+        logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)  # forward pass
         loss = model.criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
         model.optimizer.step()  # update weights
@@ -41,7 +41,7 @@ def test(model, loader):
         for batch in loader:
             batch = batch.to(DEVICE)
             targets = batch.y.view(-1).to(DEVICE)
-            logits = model(batch, BATCH_DEBUG)  # forward pass
+            logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)  # forward pass
             loss = model.criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs

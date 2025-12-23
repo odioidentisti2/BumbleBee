@@ -79,11 +79,11 @@ class MAG(nn.Module):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
         
-    @staticmethod
-    def get_features(batch):
-        # Concatenate node (src and dst) and edge features
-        src, dst = batch.edge_index
-        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+    # @staticmethod
+    # def get_features(batch):
+    #     # Concatenate node (src and dst) and edge features
+    #     src, dst = batch.edge_index
+    #     return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
