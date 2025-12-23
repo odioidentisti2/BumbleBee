@@ -245,7 +245,7 @@ if __name__ == "__main__":
     ## CUDA reproducibility
     import os
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    torch.use_deterministic_algorithms(True)
+    # torch.use_deterministic_algorithms(True)
     ## GLOBALS
     BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
