@@ -12,6 +12,14 @@ import utils
 import statistics
 
 
+# CUDA reproducibility
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+torch.use_deterministic_algorithms(True)
+import os
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+
+
 def train(model, loader):
     model.train()  # set training mode
     model = model.to(DEVICE)
@@ -198,7 +206,6 @@ def setup_training(model, task):
         # model.criterion = hinge_loss
         # model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
-        model.criterion = torch.nn.MSELoss()  # Mean Absolute Error
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
