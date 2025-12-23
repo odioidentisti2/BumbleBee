@@ -262,7 +262,7 @@ def main(dataset_info, model_name=None, cv=False):
 if __name__ == "__main__":
 
     ## GLOBALS
-    BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
