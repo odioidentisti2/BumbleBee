@@ -118,9 +118,9 @@ class SetAttention(nn.Module):
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, num_heads, GLOB['SAB_dropout'])
 
     def forward(self, X, mask=None, return_attention=False):
-        if mask is not None:
-            mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
-            mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
+        # if mask is not None:
+            # mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
+            # mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
         return self.mha(X, X, mask, return_attention)
 
 
