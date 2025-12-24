@@ -85,74 +85,50 @@ def edge_mask(b_edge_index, b_map, batch_size, num_edges):
 
     return adj_mask
 
-# def proximity_masks(source, target, hops):
-#     """    
-#     Args:
-#         edge_adj_mask: [num_edges, num_edges] boolean or float tensor
-#         max_hops: number of hops to compute
+
+def atom_adjacency(edge_index, num_nodes):
+    """
+    Returns a boolean adjacency mask indicating which atoms are connected by bonds.
     
-#     Returns:
-#         list of [num_edges, num_edges] boolean masks
-#     """
-
-#     adj_mask = edge_adjacency(source, target)
-#     masks = [adj_mask]
-#     A = adj_mask.float()  # Convert to float for matmul
-#     cumulative = A.clone()
-#     current = A.clone()
+    Args:
+        edge_index (torch.Tensor): Edge indices [2, num_edges] (source, target)
+        num_nodes (int): Total number of atoms in the graph
     
-#     for _ in range(hops):        
-#         current = torch.matmul(current, A)
-#         # # Cumulative
-#         # cumulative = cumulative + current
-#         # mask = (cumulative > 0).fill_diagonal_(0).bool()  # Binarize, remove diagonal, convert to bool
-        
-#         # Exclusive
-#         cumulative = cumulative.bool()
-#         current = current.bool()
-#         current = current & ~cumulative  # Get only new connections at this hop
-#         cumulative = cumulative | current
-#         mask = current.fill_diagonal_(0)
-#         current = current.float()
-#         cumulative = cumulative.float()
+    Returns:
+        torch.Tensor: Boolean adjacency mask of shape [num_nodes, num_nodes].
+                     adj_mask[i, j] = True if atoms i and j are connected by a bond.
+    """
+    adj_mask = torch.zeros(num_nodes, num_nodes, dtype=torch.bool, device=edge_index.device)
+    src, dst = edge_index
+    adj_mask[src, dst] = True
+    # Note: If edge_index is undirected (has both i->j and j->i), this naturally creates symmetric mask
+    return adj_mask
 
-#         masks.append(mask)
-#         # CHECK IF IDENTITY (EXCEPT DIAGONAL) THEN STOP AND FILL THE REST WITH LAST MASK
+def atom_mask(edge_index, node_batch, batch_size, max_nodes):
+    """
+    Generates a boolean adjacency mask for atoms across a batch of graphs.
     
-#     # # Verify cumulative property
-#     # for i in range(len(masks) - 1):
-#     #     assert (masks[i] <= masks[i+1]).all(), f"Mask {i+1} should include mask {i}"
-#     #     assert not torch.equal(masks[i], masks[i+1]) or torch.equal(masks[i+1], torch.ones_like(masks[i+1]).fill_diagonal_(False))
-#     # # Verify no self-loops
-#     # for i, mask in enumerate(masks):
-#     #     assert not mask.diag().any(), f"Mask {i} has self-loops!"
-
-#     return masks
-
-# def edge_mask(b_edge_index, b_map, batch_size, num_edges, hops):
-#     masks = []
-#     edge_to_graph = b_map[b_edge_index[0]]
-#     ei_to_original_index = generate_consecutive_tensor(
-#         get_first_unique_index(edge_to_graph), edge_to_graph.shape[0]
-#     )
-#     # edge_adj_matrix = edge_adjacency(b_edge_index[0], b_edge_index[1])
-#     prox_masks = proximity_masks(b_edge_index[0], b_edge_index[1], hops=hops)
-
-#     for hop in range(hops + 1):
-#         edge_adj_matrix = prox_masks[hop]
-#         eam_nonzero = edge_adj_matrix.nonzero()
-#         adj_mask = torch.full(
-#             size=(batch_size, num_edges, num_edges),
-#             fill_value=False,
-#             device=b_edge_index.device,
-#             dtype=torch.bool,
-#             requires_grad=False,
-#         )
-#         adj_mask[
-#             edge_to_graph[eam_nonzero[:, 0]],
-#             ei_to_original_index[eam_nonzero[:, 0]],
-#             ei_to_original_index[eam_nonzero[:, 1]],
-#         ] = True
-#         masks.append(adj_mask)
-
-#     return masks
+    Args:
+        edge_index (torch.Tensor): Edge indices of shape [2, num_edges].
+        node_batch (torch.Tensor): Mapping from node indices to batch indices [num_nodes].
+        batch_size (int): Number of graphs in the batch.
+        max_nodes (int): Maximum node count across graphs (padded dimension).
+    
+    Returns:
+        torch.Tensor: Boolean adjacency mask of shape [batch_size, max_nodes, max_nodes],
+                     where adj_mask[b, i, j] is True if atoms i and j are connected in graph b.
+    """
+    src, dst = edge_index
+    edge_batch = node_batch[src]  # Which batch each edge belongs to
+    
+    # Map global node indices to local (within-graph) indices
+    node_counts = torch.bincount(node_batch, minlength=batch_size)
+    cumsum = torch.cat([torch.tensor([0], device=node_batch.device), node_counts.cumsum(0)[:-1]])
+    local_src = src - cumsum[node_batch[src]]
+    local_dst = dst - cumsum[node_batch[dst]]
+    
+    # Create adjacency mask
+    adj_mask = torch.zeros(batch_size, max_nodes, max_nodes, dtype=torch.bool, device=edge_index.device)
+    adj_mask[edge_batch, local_src, local_dst] = True
+    
+    return adj_mask
