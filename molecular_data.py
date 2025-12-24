@@ -10,7 +10,7 @@ RDLogger.DisableLog('rdApp.*')  # Disable warnings
 
 # These param are hardcoded
 ATOM_DIM = 57
-BOND_DIM = 7
+BOND_DIM = 5
 ELEMENTS = ['H', 'Li', 'B', 'C', 'N', 'O', 'F', 'Na', 'Mg', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Cr', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Se', 'Br', 'Sn', 'I']
 ATOMIC_NUMBERS = [Chem.GetPeriodicTable().GetAtomicNumber(element) for element in ELEMENTS]
 # Ge, As, Pb, Hg ?
