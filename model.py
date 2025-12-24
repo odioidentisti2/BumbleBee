@@ -88,7 +88,7 @@ class MAG(nn.Module):
         node_feat = batch.x
         feat = node_feat
 
-        if BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
+        if False:  #BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
             return self.batch_forward(feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
             return self.single_forward(feat, batch.edge_index, batch.batch, return_attention)
