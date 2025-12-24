@@ -17,19 +17,35 @@ class MAG(nn.Module):
         # Edge feature encoder (node-edge MLP)
         # self.input_mlp = mlp(2 * node_dim + edge_dim, GLOB['in_out_mlp'], self.hidden_dim)
         self.input_mlp = mlp(node_dim, GLOB['in_out_mlp'], self.hidden_dim)
+
+        # Bond type embedding for attention bias
+        bond_dim = GLOB.get('bond_dim', 8)  # embedding dimension
+        self.bond_embedding = nn.Embedding(num_embeddings=5, embedding_dim=bond_dim)  # 5 bond types (SINGLE, DOUBLE, TRIPLE, AROMATIC, OTHER)
+        self.bond_projection = nn.Linear(bond_dim, GLOB['heads'])  # project to num_heads
+        
         # ESA block
         self.esa = ESA(self.hidden_dim, GLOB['heads'], layer_types)
         # Classifier
         self.output_mlp = mlp(self.hidden_dim, GLOB['in_out_mlp'], 1)
 
-    def batch_forward(self, edge_features, edge_index, node_batch):
-        batched_h = self.input_mlp(edge_features)  # [num_nodes, hidden_dim] - ATOMS not edges
+    def batch_forward(self, node_features, edge_index, edge_attr, node_batch):
+        batched_h = self.input_mlp(node_features)  # [num_nodes, hidden_dim] - ATOMS
         max_nodes = torch.bincount(node_batch).max().item()
         dense_batch_h, pad_mask = to_dense_batch(batched_h, node_batch, fill_value=0, max_num_nodes=max_nodes)
         batch_size = node_batch.max().item() + 1
+        
+        # Create adjacency mask
         adj_mask = atom_mask(edge_index, node_batch, batch_size, max_nodes)  # [batch_size, max_nodes, max_nodes]
-        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
-        # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
+        
+        # Create bond bias
+        bond_bias = self._create_bond_bias_batch(edge_attr, edge_index, node_batch, batch_size, max_nodes)  # [batch_size, num_heads, max_nodes, max_nodes]
+        
+        # Combine adjacency mask with bond bias
+        # Where adj_mask is True (connected), use bond_bias; otherwise -inf (masked out)
+        adj_mask_expanded = adj_mask.unsqueeze(1)  # [batch_size, 1, max_nodes, max_nodes]
+        combined_mask = torch.where(adj_mask_expanded, bond_bias, torch.tensor(float('-inf'), device=bond_bias.device))
+        
+        out = self.esa(dense_batch_h, combined_mask, pad_mask)  # [batch_size, hidden_dim]
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
@@ -88,7 +104,7 @@ class MAG(nn.Module):
         feat = node_feat
 
         if BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
-            return self.batch_forward(feat, batch.edge_index, batch.batch)
+            return self.batch_forward(feat, batch.edge_index, batch.edge_attr, batch.batch)
         else:  # per-graph Attention (faster on CPU)
             return self.single_forward(feat, batch.edge_index, batch.batch, return_attention)
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
@@ -118,7 +134,46 @@ class MAG(nn.Module):
     #     src, dst = batch.edge_index
     #     return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
     
-    
+    def _create_bond_bias_batch(self, edge_attr, edge_index, node_batch, batch_size, max_nodes):
+        """
+        Creates bond bias for batched attention.
+        
+        Args:
+            edge_attr: [num_edges, 5] - one-hot bond type [SINGLE, DOUBLE, TRIPLE, AROMATIC, OTHER]
+            edge_index: [2, num_edges] - connectivity
+            node_batch: [num_nodes] - batch assignment
+            batch_size: int
+            max_nodes: int - max atoms per graph in batch
+        
+        Returns:
+            bond_bias: [batch_size, num_heads, max_nodes, max_nodes]
+        """
+        # Extract bond type indices directly from one-hot encoding
+        bond_types = edge_attr.argmax(dim=1)  # [num_edges] - indices 0-4
+        
+        # Embed and project: [num_edges] -> [num_edges, bond_dim] -> [num_edges, num_heads]
+        bond_embed = self.bond_embedding(bond_types)
+        bond_bias_flat = self.bond_projection(bond_embed)  # [num_edges, num_heads]
+        
+        # Get edge batch assignment
+        src, dst = edge_index
+        edge_batch = node_batch[src]  # [num_edges] - which batch each edge belongs to
+        
+        # Map global node indices to local indices within each graph
+        node_counts = torch.bincount(node_batch, minlength=batch_size)
+        cumsum = torch.cat([torch.tensor([0], device=node_batch.device), node_counts.cumsum(0)[:-1]])
+        local_src = src - cumsum[node_batch[src]]
+        local_dst = dst - cumsum[node_batch[dst]]
+        
+        # Create bond bias tensor
+        bond_bias = torch.zeros(batch_size, max_nodes, max_nodes, self.bond_projection.out_features,
+                               device=edge_attr.device)
+        
+        # Fill in bond biases at edge positions
+        bond_bias[edge_batch, local_src, local_dst] = bond_bias_flat
+        
+        # Permute to [batch, num_heads, max_nodes, max_nodes]
+        return bond_bias.permute(0, 3, 1, 2)    
 
 
     # def get_encoder_output(self, batch, BATCH_DEBUG=False):

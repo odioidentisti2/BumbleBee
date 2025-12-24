@@ -66,9 +66,9 @@ def bond_features(bond):
             Chem.rdchem.BondType.DOUBLE,
             Chem.rdchem.BondType.TRIPLE,
             Chem.rdchem.BondType.AROMATIC
-        ]) +  # 4 + 1
-        [float(bond.GetIsConjugated()),  # 1
-         float(bond.IsInRing())]  # 1
+        ]) #+  # 4 + 1
+        # [float(bond.GetIsConjugated()),  # 1
+        #  float(bond.IsInRing())]  # 1
     )
 
 # ESA/data_loading/transforms.py > add_chemprop_features
