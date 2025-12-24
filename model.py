@@ -23,12 +23,11 @@ class MAG(nn.Module):
         self.output_mlp = mlp(self.hidden_dim, GLOB['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch):
-        batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
-        edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
-        max_edges = torch.bincount(edge_batch).max().item()
-        dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
+        batched_h = self.input_mlp(edge_features)  # [num_nodes, hidden_dim] - ATOMS not edges
+        max_nodes = torch.bincount(node_batch).max().item()
+        dense_batch_h, pad_mask = to_dense_batch(batched_h, node_batch, fill_value=0, max_num_nodes=max_nodes)
         batch_size = node_batch.max().item() + 1
-        adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
+        adj_mask = atom_mask(edge_index, node_batch, batch_size, max_nodes)  # [batch_size, max_nodes, max_nodes]
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
