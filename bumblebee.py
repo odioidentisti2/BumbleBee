@@ -255,7 +255,7 @@ if __name__ == "__main__":
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
 
-    main(datasets.muta, model_name, cv=False)
+    main(datasets.muta, model_name, cv=True)
 
 
     
