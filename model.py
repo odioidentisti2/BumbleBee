@@ -15,7 +15,8 @@ class MAG(nn.Module):
         self.layer_types = layer_types
         self.hidden_dim = GLOB['hidden_dim']
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = mlp(2 * node_dim + edge_dim, GLOB['in_out_mlp'], self.hidden_dim)
+        # self.input_mlp = mlp(2 * node_dim + edge_dim, GLOB['in_out_mlp'], self.hidden_dim)
+        self.input_mlp = mlp(2 * node_dim, GLOB['in_out_mlp'], self.hidden_dim)
         # ESA block
         self.esa = ESA(self.hidden_dim, GLOB['heads'], layer_types)
         # Classifier
@@ -101,7 +102,8 @@ class MAG(nn.Module):
             batch = batch_or_graph
         # Concatenate node (src and dst) and edge features
         src, dst = batch.edge_index
-        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+        # return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+        return torch.cat([batch.x[src], batch.x[dst], dim=1)
     
     
     # def get_encoder_output(self, batch, BATCH_DEBUG=False):
