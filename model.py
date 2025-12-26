@@ -103,7 +103,7 @@ class MAG(nn.Module):
         # Concatenate node (src and dst) and edge features
         src, dst = batch.edge_index
         # return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
-        return torch.cat([batch.x[src], batch.x[dst], dim=1)
+        return torch.cat([batch.x[src], batch.x[dst]], dim=1)
     
     
     # def get_encoder_output(self, batch, BATCH_DEBUG=False):
