@@ -41,7 +41,9 @@ class MAG(nn.Module):
         # Combine adjacency mask with bond bias
         # Where adj_mask is True (connected), use bond_bias; otherwise -inf (masked out)
         adj_mask_expanded = adj_mask.unsqueeze(1)  # [batch_size, 1, max_nodes, max_nodes]
-        combined_mask = torch.where(adj_mask_expanded, bond_bias, torch.tensor(float('-inf'), device=bond_bias.device))
+        # combined_mask = torch.where(adj_mask_expanded, bond_bias, torch.tensor(float('-inf'), device=bond_bias.device))
+        combined_mask = torch.zeros(batch_size, GLOB['heads'], max_nodes, max_nodes, device=adj_mask.device)
+        combined_mask = combined_mask.masked_fill(~adj_mask_expanded, float('-inf'))
         
         out = self.esa(dense_batch_h, combined_mask, pad_mask)  # [batch_size, hidden_dim]
         logits = self.output_mlp(out)    # [batch_size, output_dim]
