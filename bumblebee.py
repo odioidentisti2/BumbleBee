@@ -247,7 +247,7 @@ if __name__ == "__main__":
     # os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     # torch.use_deterministic_algorithms(True)
     ## GLOBALS
-    BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
+    BATCH_DEBUG =  True  # Debug: use batch Attention even on CPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
 
-    main(datasets.logp, model_name, cv=True)
+    main(datasets.muta, model_name, cv=True)
 
 
     

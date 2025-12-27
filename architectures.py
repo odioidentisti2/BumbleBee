@@ -30,7 +30,7 @@ class TransformerBlock(nn.Module):
             self.attention = SetAttention(hidden_dim, hidden_dim, num_heads)
         self.mlp = mlp(hidden_dim, hidden_dim * GLOB['mlp_expansion'], hidden_dim)
 
-    def forward(self, X, adj_mask=None, pad_mask=None):
+    def forward(self, X, adj_mask=None, pad_mask=None, bond_matrix=None):
         mask = None
         if self.layer_type == 'M':
             mask = adj_mask
@@ -39,25 +39,31 @@ class TransformerBlock(nn.Module):
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
         else:  # 'P'
             mask = pad_mask  # [batch, seq_len]
+        
         # Attention
         if hasattr(self, 'attn_weights'):
-            out, self.attn_weights = self.attention(self.norm(X), mask=mask, return_attention=True)
+           if self.layer_type == 'P':
+               # PMA doesn't take bond_matrix or return_attention
+               out = self.attention(self.norm(X), mask)
+               self.attn_weights = None  # PMA doesn't return attention yet
+           else:
+               out, self.attn_weights = self.attention(
+                   self.norm(X), mask, bond_matrix, return_attention=True
+               )
         else:
-            out= self.attention(self.norm(X), mask=mask)
+           if self.layer_type == 'P':
+               out = self.attention(self.norm(X), mask)
+           else:
+               out = self.attention(self.norm(X), mask, bond_matrix)
+       
         if self.layer_type != 'P':
             out = X + out  # Residual connection
-            # Zero out output for padded positions after each layer
-            # if pad_mask is not None:
-            #     out = out * pad_mask.unsqueeze(-1)
 
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
-        # Zero out output for padded positions after MLP
-        # if pad_mask is not None and self.layer_type != 'P':
-        #     out = out * pad_mask.unsqueeze(-1)
         return out
-    
+
 
 class ESA(nn.Module):
     """
@@ -99,22 +105,23 @@ class ESA(nn.Module):
         for layer_type in dec_layers:
             assert layer_type == 'S'
             self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
-        # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask, pad_mask=None):
+    def forward(self, X, adj_mask, pad_mask=None, bond_matrix=None):
         # Encoder
         enc = X
         for layer in self.encoder:
-            enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
+            enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask, bond_matrix=bond_matrix)
+        
         dec = enc + X  # Residual connection
-        # Decoder
+        
+        # Decoder (PMA doesn't use bond_matrix - only encoder layers)
         for layer in self.decoder:
-            dec = layer(dec, pad_mask=pad_mask)
+            dec = layer(dec, pad_mask=pad_mask)  # No bond_matrix for PMA
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
+        
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         out = F.mish(out)
         return self.output_dropout(out)  # Pre-activation dropout
-        # return F.mish(self.decoder_linear(out))
 
     def expose_attention(self, expose=True):
         if expose:
