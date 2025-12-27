@@ -94,6 +94,7 @@ def smiles2graph(smiles):
         bond_features(mol.GetBondBetweenAtoms(src.item(), dst.item()))
         for src, dst in edge_index.T
     ], dtype=torch.float)
+    edge_attr = edge_attr[:, :5].argmax(dim=1) + 1  # Convert one-hot to indices for embedding
     return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
 
 class GraphDataset(Dataset):
@@ -111,7 +112,7 @@ class GraphDataset(Dataset):
                 data = smiles2graph(smiles)
                 if not (data
                         and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
-                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
+                        and len(data.edge_attr.shape) == 1):
                     print(f"Invalid SMILES: {smiles}")
                     continue
                 target = row[dataset_info['target_header']]

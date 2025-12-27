@@ -22,6 +22,19 @@ class MAG(nn.Module):
         # Classifier
         self.output_mlp = mlp(self.hidden_dim, GLOB['in_out_mlp'], 1)
 
+        self.bond_embedding = nn.Embedding(
+            num_embeddings=6,    # [0=unused, 1=SINGLE, 2=DOUBLE, 3=TRIPLE, 4=AROMATIC, 5=OTHER]
+            embedding_dim=16,    # Dense 8-dim vectors
+            padding_idx=0        # Index 0 = no bond (won't be trained)
+        )
+        
+        # NEW: Bond projection to attention space
+        self.bond_projection = nn.Sequential(
+            nn.Linear(16, self.hidden_dim),  # 16 → hidden_dim
+            nn.ReLU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim)
+        )
+
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [num_nodes, hidden_dim] - ATOMS not edges
         max_nodes = torch.bincount(node_batch).max().item()
