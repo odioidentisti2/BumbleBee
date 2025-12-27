@@ -95,6 +95,8 @@ class MultiHeadAttention(nn.Module):
         
         # Softmax
         attn_weights = F.softmax(attn_scores, dim=-1)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+         
         
         # Dropout
         if self.training and self.dropout > 0:
