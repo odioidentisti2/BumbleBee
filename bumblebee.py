@@ -215,7 +215,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        # save(model, "MODELS/logp_MMM_100e.pt")
+        save(model, "MODELS/muta_RAND30.pt")
 
     else:  # Load saved model
 
