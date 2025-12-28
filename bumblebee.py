@@ -49,17 +49,12 @@ def test(model, loader):
 
 def training_loop(model, loader, val_loader=None):
     print("\nTraining...")
-    # if val_loader: 
-    #     val_stats = []
     start_time = time.time()
     for epoch in range(1, GLOB['epochs'] + 1):
         loss = train(model, loader)
         print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
         if val_loader and epoch % 5 == 0:
             evaluate(model, val_loader, flag='Validation')
-            # val_stats.append(metric)
-    # if val_loader:
-        # return val_stats
 
 def evaluate(model, loader, flag):
     if flag == 'Test': 
@@ -220,7 +215,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_MMM_100e.pt")
+        save(model, "MODELS/muta_MMM_100e.pt")
 
     else:  # Load saved model
 
@@ -254,7 +249,7 @@ if __name__ == "__main__":
     print(f"DEVICE: {DEVICE}\n")
     model_name = None
     # model_name = 'logp_MMS_100e.pt'
-    # model_name = 'muta_MMM_100e.pt'
+    model_name = 'muta_MMM_100e.pt'
 
     main(datasets.muta, model_name, cv=False)
 
