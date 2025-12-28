@@ -121,13 +121,13 @@ def crossvalidation(dataset, task, folds=5):
     start_time = time.time()
     
     for fold, (train_subset, test_subset) in enumerate(utils.cv_subsets(dataset, folds), start=1):
-        print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
+        utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
-
         # Reproducibility
         utils.set_random_seed()
         g = torch.Generator()
         g.manual_seed(GLOB['random_seed'])
+
         train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=GLOB['batch_size'], generator=g)
         
@@ -136,10 +136,8 @@ def crossvalidation(dataset, task, folds=5):
         training_loop(model, train_loader, val_loader=test_loader)        
         cv_tracker.add_fold(model.statistics.metrics())    
     
-    cv_tracker.print_summary()  # Print summary
-    
+    cv_tracker.summary()  # Print summary    
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
-    print(f"{'='*50}\n")
 
 def explain(model, dataset):
     model.eval()

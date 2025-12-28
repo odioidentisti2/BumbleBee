@@ -1,4 +1,5 @@
 import torch
+from utils import print_header
 
 
 class MetricTracker:
@@ -105,18 +106,14 @@ class CVTracker:
             'epoch_means': epoch_means
         }
     
-    def print_summary(self):
+    def summary(self):
         stats = self.compute_statistics()
         
-        print(f"\n{'='*50}")
-        print(f"CROSS-VALIDATION RESULTS (Epoch {stats['best_epoch']})")
-        print(f"{'='*50}")
+        print_header(f"CV RESULTS (Epoch {stats['best_epoch']})")
         print(f"Test metric:   {stats['mean']:.3f} ± {stats['std']:.3f}")
         print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in stats['fold_metrics']]}")
         
-        print(f"\n{'='*50}")
-        print(f"MEAN METRICS ACROSS ALL EPOCHS")
-        print(f"{'='*50}")
+        print_header("MEAN METRICS ACROSS ALL EPOCHS")
         for epoch_idx, mean_val in enumerate(stats['epoch_means']):
             epoch_num = (epoch_idx + 1) * 5
             marker = " ← BEST" if epoch_idx == stats['best_epoch_index'] else ""
