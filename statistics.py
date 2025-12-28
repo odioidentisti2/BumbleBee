@@ -1,59 +1,153 @@
 import torch
 
-class Evaluator:
-    def __init__(self, task):
-        self.task = task
-        self.stats = {
-            'num_correct': 0,
-            'targets_sum': 0.0,
-            'targets_squared_sum': 0.0,
-            'residuals_squared_sum': 0.0,
-            'total_samples': 0
-        }
 
-    def update(self, logits, targets, num_graphs):
-        self.stats['total_samples'] += num_graphs
-        if self.task == 'binary_classification':
-            preds = (logits > 0.5)
-            self.stats['num_correct'] += (preds == targets).sum().item()
-        else:  # Regression
-            self.stats['targets_sum'] += targets.sum().item()
-            self.stats['targets_squared_sum'] += (targets ** 2).sum().item()
-            self.stats['residuals_squared_sum'] += ((targets - logits) ** 2).sum().item()
-
-    def output(self):
-        if self.task == 'binary_classification':
-            return self.stats['num_correct'] / self.stats['total_samples'] if self.stats['total_samples'] > 0 else 0
-        else:  # Regression
-            mean_targets = self.stats['targets_sum'] / self.stats['total_samples']
-            ss_total = self.stats['targets_squared_sum'] - (self.stats['targets_sum'] ** 2) / self.stats['total_samples']
-            return 1 - (self.stats['residuals_squared_sum'] / ss_total) if ss_total != 0 else 0
-
-
-def cv_stats(fold_results):
-    num_epochs = len(fold_results[0])
-
-    # Compute mean per epoch index
-    mean_metrics = []
-    for i in range(num_epochs):
-        vals = [v[i] for v in fold_results]
-        mean_metrics.append(sum(vals) / len(vals))
-
-    best_idx = max(range(len(mean_metrics)), key=lambda i: mean_metrics[i])
-    best_epoch = (best_idx + 1) * 5
-
-    # Get metrics at best epoch
-    metrics_at_best = [v[best_idx] for v in fold_results]
-    mean_metric = sum(metrics_at_best) / len(metrics_at_best)
-    std_metric = (sum((x - mean_metric)**2 for x in metrics_at_best) / len(metrics_at_best)) ** 0.5
-
-    print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS (Epoch {best_epoch})\n{'='*50}")
-    print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
-    print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in metrics_at_best]}")
+class MetricTracker:
+    """Base class for tracking metrics across multiple runs."""
     
-    # Print mean metrics across all epochs
-    print(f"\n{'='*50}\nMEAN METRICS ACROSS ALL EPOCHS\n{'='*50}")
-    for epoch_idx, mean_val in enumerate(mean_metrics):
-        epoch_num = (epoch_idx + 1) * 5
-        marker = " ← BEST" if epoch_idx == best_idx else ""
-        print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")
+    # Subclasses should override this
+    values = {}
+    
+    def __init__(self):
+        self.stats = []
+    
+    def init(self):
+        """Start tracking a new run."""
+        self.stats.append(self.values.copy())
+    
+    def update(self, logits, targets):
+        """Update statistics for current run."""
+        pass
+    
+    def metric(self, index=-1):
+        """Compute metric for specific run. Default: last run."""
+        pass
+    
+    def metrics(self):
+        """Get metrics for all runs."""
+        return [self.metric(i) for i in range(len(self.stats))]
+
+
+class R2Tracker(MetricTracker):
+    """Tracks R² (coefficient of determination) for regression tasks."""
+    
+    values = {
+        'targets_sum': 0.0,
+        'targets_squared_sum': 0.0,
+        'residuals_squared_sum': 0.0,
+        'total_samples': 0
+    }
+
+    def update(self, logits, targets):
+        assert len(targets) == len(logits)
+        self.stats[-1]['total_samples'] += len(targets)
+        self.stats[-1]['targets_sum'] += targets.sum().item()
+        self.stats[-1]['targets_squared_sum'] += (targets ** 2).sum().item()
+        self.stats[-1]['residuals_squared_sum'] += ((targets - logits) ** 2).sum().item()
+
+    def metric(self, index=-1):
+        run = self.stats[index]
+        ss_total = run['targets_squared_sum'] - (run['targets_sum'] ** 2) / run['total_samples']
+        return 1 - (run['residuals_squared_sum'] / ss_total) if ss_total != 0 else 0
+
+
+class AccuracyTracker(MetricTracker):
+    
+    values = {
+        'num_correct': 0,
+        'total_samples': 0
+    }
+
+    def update(self, logits, targets):
+        preds = (torch.sigmoid(logits) > 0.5)
+        assert len(targets) == len(logits)
+        self.stats[-1]['total_samples'] += len(targets)
+        self.stats[-1]['num_correct'] += (preds == targets).sum().item()
+
+    def metric(self, index=-1):
+        run = self.stats[index]
+        return run['num_correct'] / run['total_samples'] if run['total_samples'] > 0 else 0
+
+
+class CVTracker:
+    
+    def __init__(self):
+        self.fold_results = []
+    
+    def add_fold(self, fold_metrics):
+        self.fold_results.append(fold_metrics)
+    
+    def compute_statistics(self):
+        num_epochs = len(self.fold_results[0])
+        
+        # Compute mean per epoch across folds
+        epoch_means = []
+        for epoch_idx in range(num_epochs):
+            epoch_values = [fold[epoch_idx] for fold in self.fold_results]
+            epoch_means.append(sum(epoch_values) / len(epoch_values))
+        
+        # Find best epoch
+        best_epoch_idx = max(range(len(epoch_means)), key=lambda i: epoch_means[i])
+        best_epoch = (best_epoch_idx + 1) * 5
+        
+        # Get metrics at best epoch across all folds
+        metrics_at_best = [fold[best_epoch_idx] for fold in self.fold_results]
+        mean_metric = sum(metrics_at_best) / len(metrics_at_best)
+        std_metric = (
+            sum((x - mean_metric)**2 for x in metrics_at_best) / len(metrics_at_best)
+        ) ** 0.5
+        
+        return {
+            'best_epoch': best_epoch,
+            'best_epoch_index': best_epoch_idx,
+            'mean': mean_metric,
+            'std': std_metric,
+            'fold_metrics': metrics_at_best,
+            'epoch_means': epoch_means
+        }
+    
+    def print_summary(self):
+        stats = self.compute_statistics()
+        
+        print(f"\n{'='*50}")
+        print(f"CROSS-VALIDATION RESULTS (Epoch {stats['best_epoch']})")
+        print(f"{'='*50}")
+        print(f"Test metric:   {stats['mean']:.3f} ± {stats['std']:.3f}")
+        print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in stats['fold_metrics']]}")
+        
+        print(f"\n{'='*50}")
+        print(f"MEAN METRICS ACROSS ALL EPOCHS")
+        print(f"{'='*50}")
+        for epoch_idx, mean_val in enumerate(stats['epoch_means']):
+            epoch_num = (epoch_idx + 1) * 5
+            marker = " ← BEST" if epoch_idx == stats['best_epoch_index'] else ""
+            print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")
+
+
+# def cv_output(fold_results):
+#     """Compute and print cross-validation statistics."""
+#     num_epochs = len(fold_results[0])
+
+#     # Compute mean per epoch index
+#     mean_metrics = []
+#     for i in range(num_epochs):
+#         vals = [v[i] for v in fold_results]
+#         mean_metrics.append(sum(vals) / len(vals))
+
+#     best_idx = max(range(len(mean_metrics)), key=lambda i: mean_metrics[i])
+#     best_epoch = (best_idx + 1) * 5
+
+#     # Get metrics at best epoch
+#     metrics_at_best = [v[best_idx] for v in fold_results]
+#     mean_metric = sum(metrics_at_best) / len(metrics_at_best)
+#     std_metric = (sum((x - mean_metric)**2 for x in metrics_at_best) / len(metrics_at_best)) ** 0.5
+
+#     print(f"\n{'='*50}\nCROSS-VALIDATION RESULTS (Epoch {best_epoch})\n{'='*50}")
+#     print(f"Test metric:   {mean_metric:.3f} ± {std_metric:.3f}")
+#     print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in metrics_at_best]}")
+    
+#     # Print mean metrics across all epochs
+#     print(f"\n{'='*50}\nMEAN METRICS ACROSS ALL EPOCHS\n{'='*50}")
+#     for epoch_idx, mean_val in enumerate(mean_metrics):
+#         epoch_num = (epoch_idx + 1) * 5
+#         marker = " ← BEST" if epoch_idx == best_idx else ""
+#         print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")

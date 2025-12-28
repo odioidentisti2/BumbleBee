@@ -25,47 +25,49 @@ def train(model, loader):
         loss = model.criterion(logits, targets)  # calculate loss
         loss.backward()  # backward pass
         model.optimizer.step()  # update weights
-        # statistics
         total_loss += loss.item() * batch.num_graphs
         total += batch.num_graphs
     return total_loss / total
 
 def test(model, loader):
     model.eval()  # set evaluation mode
+    model.statistics.init()
     model = model.to(DEVICE)
     total_loss = 0
-    metric = 0
     total = 0
-    evaluator = statistics.Evaluator(model.task)
     with torch.no_grad():
         for batch in loader:
             batch = batch.to(DEVICE)
             targets = batch.y.view(-1).to(DEVICE)
-            logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)  # forward pass
+            logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)
             loss = model.criterion(logits, targets)
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
+            # Record statistics
+            model.statistics.update(logits, targets)
+    return total_loss / total
 
-            # Statistics
-            if model.task == 'binary_classification':
-                logits = torch.sigmoid(logits)
-            evaluator.update(logits, targets, batch.num_graphs)
-    metric = evaluator.output()
-    return total_loss / total, metric
-
-def training_loop(model, loader, task, val_loader=None):
-    setup_training(model, task )
+def training_loop(model, loader, val_loader=None):
     print("\nTraining...")
-    if val_loader: val_stats = []
+    # if val_loader: 
+    #     val_stats = []
     start_time = time.time()
     for epoch in range(1, GLOB['epochs'] + 1):
         loss = train(model, loader)
         print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
         if val_loader and epoch % 5 == 0:
-            loss, metric = evaluate(model, val_loader, flag='> Validation')
-            val_stats.append(metric)
-    if val_loader:
-        return val_stats
+            evaluate(model, val_loader, flag='Validation')
+            # val_stats.append(metric)
+    # if val_loader:
+        # return val_stats
+
+def evaluate(model, loader, flag):
+    if flag == 'Test': 
+        print("\nTesting...")
+    loss = test(model, loader)
+    metric = model.statistics.metric()
+    print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
+    return metric
 
 def calc_stats(model, calibration_loader):
     model = model.to('cpu')
@@ -90,13 +92,6 @@ def calc_stats(model, calibration_loader):
     model.stats['attention_factor_mean'] = float(att_factor.mean())
     model.stats['attention_factor_std'] = float(att_factor.std())
 
-def evaluate(model, loader, flag):
-    if flag[0] != '>': 
-        print("\nEvaluating...")
-    loss, metric = test(model, loader)
-    print(f"{flag}: Loss {loss:.3f}  Metric {metric:.3f}")
-    return loss, metric
-
 def save(model, path=None):
     if not path:
         path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
@@ -114,7 +109,7 @@ def load(model_path):
     ckpt = torch.load(model_path, map_location=DEVICE)
     layer_types = ckpt.get('layer_types')
     model = MAG(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
-    setup_training(model, ckpt.get('task'))
+    model_setup(model, ckpt.get('task'))
     model.stats = ckpt.get('model_stats', None)
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
@@ -122,26 +117,28 @@ def load(model_path):
     return model
 
 def crossvalidation(dataset, task, folds=5):
-    fold = 1
-    fold_results = []
-    start_time = time.time()  
-    for train_subset, test_subset in utils.cv_subsets(dataset, folds):
+    cv_tracker = statistics.CVTracker()
+    start_time = time.time()
+    
+    for fold, (train_subset, test_subset) in enumerate(utils.cv_subsets(dataset, folds), start=1):
+        print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
+        print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
+
         # Reproducibility
         utils.set_random_seed()
         g = torch.Generator()
         g.manual_seed(GLOB['random_seed'])
         train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=GLOB['batch_size'], generator=g)
-
-        print(f"\n{'='*50}\nFold {fold}/{folds}\n{'='*50}")
-        print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
+        
         model = MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types']).to(DEVICE)
-        validation_stats = training_loop(model, train_loader, task, test_loader)
-        # loss, metric = evaluate(model, test_loader, flag=f"Fold {fold+1}")        
-        fold_results.append(validation_stats)
-        fold += 1
-    statistics.cv_stats(fold_results)
-    print(F"\nTOTAL TIME: {time.time() - start_time:.0f}s")
+        model_setup(model, task)
+        training_loop(model, train_loader, val_loader=test_loader)        
+        cv_tracker.add_fold(model.statistics.metrics())    
+    
+    cv_tracker.print_summary()  # Print summary
+    
+    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
     print(f"{'='*50}\n")
 
 def explain(model, dataset):
@@ -174,15 +171,17 @@ class BinaryHingeLoss(torch.nn.Module):
         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
         return loss.mean()
     
-def setup_training(model, task):
+def model_setup(model, task):
     model.task = task
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
     if task == 'binary_classification':
         model.criterion = BinaryHingeLoss()
         # model.criterion = torch.nn.BCEWithLogitsLoss()
+        model.statistics = statistics.AccuracyTracker()
     else:
         model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
         # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        model.statistics =  statistics.R2Tracker()
 
 def main(dataset_info, model_name=None, cv=False):
     ## Print model stamp
@@ -214,6 +213,7 @@ def main(dataset_info, model_name=None, cv=False):
         print(f"\nTraining set: {len(trainingset)} samples")
         train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
+        model_setup(model, task)
         training_loop(model, train_loader, task)
         calc_stats(model, train_loader)  # Needed for Explainer
 
@@ -235,10 +235,13 @@ def main(dataset_info, model_name=None, cv=False):
     else:
         print(f"\nTest set: {len(testset)} samples")
     test_loader = DataLoader(testset, batch_size=GLOB['batch_size'])
-    evaluate(model, test_loader, flag="Test")
+
+    metric = evaluate(model, test_loader, flag="Test")
 
     ## Explain
-    explain(model, testset)
+    # explain(model, testset)
+
+    return metric
 
 
 if __name__ == "__main__":

@@ -45,9 +45,12 @@ class MultiHeadAttention(nn.Module):
         if mask is not None:  # MASK: set masked positions to -inf before softmax
             attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
         attn_weights = F.softmax(attn_scores, dim=-1)
+        # attn_weights = torch.nan_to_num(attn_weights, nan=0.0)  # fix NaN
+
         # # DROPOUT for debug only, this method is used in eval mode only!!!     
         # if self.training and self.dropout > 0:
-        #     attn_weights = F.dropout(attn_weights, p=self.dropout)            
+        #     attn_weights = F.dropout(attn_weights, p=self.dropout)
+    
         out = torch.matmul(attn_weights, V)
         # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
         attn_weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
