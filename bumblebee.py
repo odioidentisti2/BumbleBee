@@ -212,7 +212,7 @@ def main(dataset_info, model_name=None, cv=False):
         train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
         model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
         model_setup(model, task)
-        training_loop(model, train_loader, task)
+        training_loop(model, train_loader)
         calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
