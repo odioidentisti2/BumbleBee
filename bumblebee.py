@@ -220,7 +220,7 @@ def main(dataset_info, model_name=None, cv=False):
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        # save(model, "MODELS/logp_MMM_100e.pt")
+        save(model, "MODELS/logp_MMM_100e.pt")
 
     else:  # Load saved model
 
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
 
-    main(datasets.muta, model_name, cv=True)
+    main(datasets.muta, model_name, cv=False)
 
 
     

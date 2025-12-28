@@ -7,7 +7,7 @@ def set_random_seed():
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def print_header(string)
+def print_header(string):
     print(f"\n{'='*50}\n{string}\n{'='*50}")
     
 def cv_subsets(dataset, num_folds):
