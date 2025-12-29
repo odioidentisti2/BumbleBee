@@ -159,7 +159,7 @@ if __name__ == "__main__":
     model_name = None
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
-    main(datasets.muta, model_name, cv=False)
+    main(datasets.muta, model_name, cv=True)
 
     # m1 = main(datasets.muta, 'muta_benchmark.pt')
     # pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
