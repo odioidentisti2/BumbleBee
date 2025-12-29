@@ -1,0 +1,80 @@
+import time
+import torch
+from statistics import AccuracyTracker, R2Tracker
+from parameters import trainer_params as PARAMS
+
+
+class Trainer:
+
+    def __init__(self, task, device):
+        self.task = task
+        self.device = device
+        self.optimizer = None
+        if self.task == 'binary_classification':
+            self.criterion = BinaryHingeLoss()
+            # self.criterion = torch.nn.BCEWithLogitsLoss()
+            self.statistics = AccuracyTracker()
+        else:
+            self.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+            # self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+            self.statistics =  R2Tracker()
+
+    def _train(self, model, loader):
+        model.train()  # set training mode
+        model = model.to(self.device)
+        total_loss = 0
+        total = 0
+        for batch in loader:
+            batch = batch.to(self.device)
+            targets = batch.y.view(-1).to(self.device   )
+            self.optimizer.zero_grad()  # zero gradients
+            logits = model(batch)  # forward pass
+            loss = self.criterion(logits, targets)  # calculate loss
+            loss.backward()  # backward pass
+            self.optimizer.step()  # update weights
+            total_loss += loss.item() * batch.num_graphs
+            total += batch.num_graphs
+        return total_loss / total
+
+    def _eval(self, model, loader):
+        model.eval()  # set evaluation mode
+        self.statistics.init()
+        model = model.to(self.device)
+        total_loss = 0
+        total = 0
+        with torch.no_grad():
+            for batch in loader:
+                batch = batch.to(self.device)
+                targets = batch.y.view(-1).to(self.device)
+                logits = model(batch)
+                loss = self.criterion(logits, targets)
+                total_loss += loss.item() * batch.num_graphs
+                total += batch.num_graphs
+                # Record statistics
+                self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
+        return total_loss / total
+
+    def train(self, model, loader, val_loader=None):        
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
+        print("\nTraining...")
+        start_time = time.time()
+        for epoch in range(1, PARAMS['epochs'] + 1):
+            loss = self._train(model, loader)
+            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
+            if val_loader and epoch % 5 == 0:
+                self.eval(model, val_loader, flag='Validation')
+
+    def eval(self, model, loader, flag):
+        if flag == 'Test': 
+            print("\nTesting...")
+        loss = self._eval(model, loader)
+        metric = self.statistics.metric()
+        print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
+        return metric
+
+
+class BinaryHingeLoss(torch.nn.Module):
+    def forward(self, pred, target):
+        y = 2 * target - 1  # Convert {0,1} → {-1,+1}
+        loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
+        return loss.mean()

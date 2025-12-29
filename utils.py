@@ -1,9 +1,7 @@
 import torch
-from parameters import GLOB
 
 
-def set_random_seed():
-    seed = GLOB.get('random_seed')
+def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 

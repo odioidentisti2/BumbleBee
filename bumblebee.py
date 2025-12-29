@@ -2,70 +2,17 @@ import time
 import torch
 from torch_geometric.loader import DataLoader
 
-from parameters import GLOB
-import datasets
-
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
+import parameters
+from trainer import Trainer
 from model import MAG
 from explainer import explain
 import utils
 import statistics
 
+import datasets
+from parameters import main_params as PARAMS
 
-
-
-
-def train(model, loader):
-    model.train()  # set training mode
-    model = model.to(DEVICE)
-    total_loss = 0
-    total = 0
-    for batch in loader:
-        batch = batch.to(DEVICE)
-        targets = batch.y.view(-1).to(DEVICE)
-        model.optimizer.zero_grad()  # zero gradients
-        logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)  # forward pass
-        loss = model.criterion(logits, targets)  # calculate loss
-        loss.backward()  # backward pass
-        model.optimizer.step()  # update weights
-        total_loss += loss.item() * batch.num_graphs
-        total += batch.num_graphs
-    return total_loss / total
-
-def test(model, loader):
-    model.eval()  # set evaluation mode
-    model.statistics.init()
-    model = model.to(DEVICE)
-    total_loss = 0
-    total = 0
-    with torch.no_grad():
-        for batch in loader:
-            batch = batch.to(DEVICE)
-            targets = batch.y.view(-1).to(DEVICE)
-            logits = model(batch, BATCH_DEBUG=BATCH_DEBUG)
-            loss = model.criterion(logits, targets)
-            total_loss += loss.item() * batch.num_graphs
-            total += batch.num_graphs
-            # Record statistics
-            model.statistics.update(logits.detach().cpu(), targets.detach().cpu())
-    return total_loss / total
-
-def training_loop(model, loader, val_loader=None):
-    print("\nTraining...")
-    start_time = time.time()
-    for epoch in range(1, GLOB['epochs'] + 1):
-        loss = train(model, loader)
-        print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
-        if val_loader and epoch % 5 == 0:
-            evaluate(model, val_loader, flag='Validation')
-
-def evaluate(model, loader, flag):
-    if flag == 'Test': 
-        print("\nTesting...")
-    loss = test(model, loader)
-    metric = model.statistics.metric()
-    print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
-    return metric
 
 def calc_stats(model, calibration_loader):
     model = model.to('cpu')
@@ -106,15 +53,15 @@ def load(model_path):
     print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=DEVICE)
     layer_types = ckpt.get('layer_types')
-    model = MAG(ATOM_DIM, BOND_DIM, ckpt.get('layer_types')).to(DEVICE)
-    model_setup(model, ckpt.get('task'))
+    model = MAG(ATOM_DIM, BOND_DIM).to(DEVICE)
+    model.task = ckpt.get('task')
     model.stats = ckpt.get('model_stats', None)
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
     print(f"Loaded layer_types: {layer_types}")
     return model
 
-def crossvalidation(dataset, task, folds=5):
+def crossvalidation(trainer, dataset, folds=5):
     cv_tracker = statistics.CVTracker()
     start_time = time.time()
     
@@ -122,53 +69,37 @@ def crossvalidation(dataset, task, folds=5):
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
-        utils.set_random_seed()
+        utils.set_random_seed(PARAMS['random_seed'])
         g = torch.Generator()
-        g.manual_seed(GLOB['random_seed'])
+        g.manual_seed(PARAMS['random_seed'])
 
-        train_loader = DataLoader(train_subset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=GLOB['batch_size'], generator=g)
+        train_loader = DataLoader(train_subset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
+        test_loader = DataLoader(test_subset, batch_size=PARAMS['batch_size'], generator=g)
         
-        model = MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types']).to(DEVICE)
-        model_setup(model, task)
-        training_loop(model, train_loader, val_loader=test_loader)        
-        cv_tracker.add_fold(model.statistics.metrics())    
+        model = MAG(ATOM_DIM, BOND_DIM).to(DEVICE)
+        trainer.train(model, train_loader, val_loader=test_loader)   
+        cv_tracker.add_fold(trainer.statistics.metrics())    
     
     cv_tracker.summary()  # Print summary    
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
-class BinaryHingeLoss(torch.nn.Module):
-    def forward(self, pred, target):
-        y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-        loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
-        return loss.mean()
-    
-def model_setup(model, task):
-    model.task = task
-    model.optimizer = torch.optim.AdamW(model.parameters(), lr=GLOB['lr'])
-    if task == 'binary_classification':
-        model.criterion = BinaryHingeLoss()
-        # model.criterion = torch.nn.BCEWithLogitsLoss()
-        model.statistics = statistics.AccuracyTracker()
-    else:
-        model.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-        # model.criterion = torch.nn.L1Loss()  # Mean Absolute Error
-        model.statistics =  statistics.R2Tracker()
 
 def main(dataset_info, model_name=None, cv=False):
-    ## Print model stamp
-    import pprint
-    pprint.pprint(GLOB)
+    print('MODEL PARAMETERS:')
+    import parameters, pprint
+    for name in dir(parameters):
+        if name.endswith('_params'):
+            pprint.pprint(getattr(parameters, name))
     ## Reproducibility
-    utils.set_random_seed()
+    utils.set_random_seed(PARAMS['random_seed'])
 
     path = dataset_info['path']
-    task = dataset_info['task']
+    trainer = Trainer(dataset_info['task'], DEVICE)
 
     if cv:
         print(f"\nCross-Validation on: ", path)
         dataset = GraphDataset(dataset_info)
-        crossvalidation(dataset, task)
+        crossvalidation(trainer, dataset)
         return
 
     # Load dataset(s)  
@@ -183,22 +114,21 @@ def main(dataset_info, model_name=None, cv=False):
     if not model_name:  # Train
        
         print(f"\nTraining set: {len(trainingset)} samples")
-        train_loader = DataLoader(trainingset, batch_size=GLOB['batch_size'], shuffle=True, drop_last=True)
-        model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
-        model_setup(model, task)
-        training_loop(model, train_loader)
+        train_loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
+        model =  MAG(ATOM_DIM, BOND_DIM)
+        trainer.train(model, train_loader)
         # calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
-        # loader = DataLoader(trainingset, batch_size=GLOB['batch_size'])
+        # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # evaluate(model, loader, flag="Train")
 
         ## Save model
         # save(model, "MODELS/muta_RAND30.pt")
 
     else:  # Load saved model
-
         model = load(f"MODELS/{model_name}")
+        assert model.task == trainer.task
 
     ## Test
     if testset is None:
@@ -206,9 +136,10 @@ def main(dataset_info, model_name=None, cv=False):
         testset = GraphDataset(dataset_info, split='test')
     else:
         print(f"\nTest set: {len(testset)} samples")
-    test_loader = DataLoader(testset, batch_size=GLOB['batch_size'])
+    test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
 
-    metric = evaluate(model, test_loader, flag="Test")
+    trainer.eval(model, test_loader, flag="Test")
+    # metric = evaluate(model, test_loader, flag="Test")
 
     ## Explain
     # explain(model, testset)
@@ -220,32 +151,31 @@ if __name__ == "__main__":
     import os
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     torch.use_deterministic_algorithms(True)
-    ## GLOBALS
-    BATCH_DEBUG =  False  # Debug: use batch Attention even on CPU
+    ## CPU or GPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
 
     model_name = None
-    # model_name = 'logp_MMS_100e.pt'
-    # model_name = 'muta_MMM_100e.pt'
-    # main(datasets.muta, model_name, cv=False)
+    # model_name = 'logp_benchmark.pt'
+    # model_name = 'muta_benchmark.pt'
+    main(datasets.muta, model_name, cv=False)
 
-    m1 = main(datasets.muta, 'muta_benchmark.pt')
-    pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
-    l1 = torch.cat(m1.statistics.stats[-1]['logits'])
+    # m1 = main(datasets.muta, 'muta_benchmark.pt')
+    # pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
+    # l1 = torch.cat(m1.statistics.stats[-1]['logits'])
 
-    m2 = main(datasets.muta, 'muta_RAND30.pt')
-    pred2 = torch.cat(m2.statistics.stats[-1]['predictions'])
-    l2 = torch.cat(m2.statistics.stats[-1]['logits'])
+    # m2 = main(datasets.muta, 'muta_RAND30.pt')
+    # pred2 = torch.cat(m2.statistics.stats[-1]['predictions'])
+    # l2 = torch.cat(m2.statistics.stats[-1]['logits'])
 
-    agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
-    logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
-    logit_diff = (l1 - l2).abs()
-    print(f"\nModels agreement: {agree} / {len(pred1)}")
-    print(f"Logits close: {logits_close}")
-    print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
-    c=1
+    # agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
+    # logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
+    # logit_diff = (l1 - l2).abs()
+    # print(f"\nModels agreement: {agree} / {len(pred1)}")
+    # print(f"Logits close: {logits_close}")
+    # print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
+    # c=1
 
 
 
@@ -263,7 +193,7 @@ if __name__ == "__main__":
     #     q_ln = pma.mha.ln_q(q)
     #     print("Query pairwise dist mean:", torch.cdist(q_ln, q_ln).mean().item())
 
-    #     sample = next(iter(DataLoader(testset, batch_size=GLOB['batch_size'])))
+    #     sample = next(iter(DataLoader(testset, batch_size=PARAMS['batch_size'])))
     #     sample = sample.to(DEVICE)
     #     q_batch = pma.mha.ln_q(pma.mha.fc_q(pma.S.repeat(sample.num_graphs, 1, 1)))
     #     enc_out = model.get_encoder_output(sample, BATCH_DEBUG)

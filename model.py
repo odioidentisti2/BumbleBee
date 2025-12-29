@@ -5,21 +5,21 @@ from torch_geometric.data import Batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
-from parameters import GLOB
+from parameters import model_params as PARAMS
 
 
 class MAG(nn.Module):
     
-    def __init__(self, node_dim, edge_dim, layer_types):
+    def __init__(self, node_dim, edge_dim):
         super(MAG, self).__init__()
-        self.layer_types = layer_types
-        self.hidden_dim = GLOB['hidden_dim']
+        self.layer_types = PARAMS['layer_types']
+        self.hidden_dim = PARAMS['hidden_dim']
         # Edge feature encoder (node-edge MLP)
-        self.input_mlp = mlp(2 * node_dim + edge_dim, GLOB['in_out_mlp'], self.hidden_dim)
+        self.input_mlp = mlp(2 * node_dim + edge_dim, PARAMS['in_out_mlp'], self.hidden_dim)
         # ESA block
-        self.esa = ESA(self.hidden_dim, GLOB['heads'], layer_types)
+        self.esa = ESA(self.hidden_dim, self.layer_types, PARAMS['mlp_expansion'])
         # Classifier
-        self.output_mlp = mlp(self.hidden_dim, GLOB['in_out_mlp'], 1)
+        self.output_mlp = mlp(self.hidden_dim, PARAMS['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
@@ -60,7 +60,7 @@ class MAG(nn.Module):
             return logits, attn_weights
         return logits 
     
-    def forward(self, batch, return_attention=False, BATCH_DEBUG=False):
+    def forward(self, batch, return_attention=False):
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -71,7 +71,7 @@ class MAG(nn.Module):
         """
         edge_feat = MAG.get_features(batch)
 
-        if BATCH_DEBUG or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
+        if PARAMS['BATCH_DEBUG'] or edge_feat.device.type == 'cuda' and not return_attention:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # per-graph Attention (faster on CPU)
             return self.single_forward(edge_feat, batch.edge_index, batch.batch, return_attention)

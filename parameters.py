@@ -1,24 +1,27 @@
-GLOB = {
-
-    ## Training
-    'lr': 1e-4,
-    'epochs': 100,
+# PARAMETERS
+main_params = {
     'batch_size': 32,
     'random_seed': 42,
-    # 'weight_decay': 1e-5,
+}
 
-    ## Model
+trainer_params = {
+    'lr': 1e-4,
+    'epochs': 10,
+    # 'weight_decay': 1e-5,
+}
+
+model_params = {
     'layer_types': ['M', 'M', 'M', 'P'],
     'in_out_mlp': 128,
-
-    ## ESA
     'hidden_dim': 128,
     'mlp_expansion': 2,
+    'ESA_dropout': 0.0,
+    'BATCH_DEBUG': False,  # Debug: use batch Attention even on CPU
+}
+
+attention_params = {
     'heads': 8,
     'seeds': 1,
-
-    # Regularization
-    'ESA_dropout': 0.0,
     'SAB_dropout': 0.0,
     'PMA_dropout': 0.0,
 }

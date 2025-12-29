@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from attention import SetAttention, PMA
 
-from parameters import GLOB
+from parameters import model_params as PARAMS
 
 
 # Multilayer Perceptron
@@ -11,7 +11,7 @@ def mlp(in_dim, inter_dim, out_dim):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
-            nn.Dropout(GLOB['ESA_dropout']),  # automatic check for training mode (identity function in eval mode)
+            nn.Dropout(PARAMS['ESA_dropout']),  # automatic check for training mode (identity function in eval mode)
             nn.Linear(inter_dim, out_dim),
             # nn.Dropout(dropout)
         )
@@ -19,16 +19,16 @@ def mlp(in_dim, inter_dim, out_dim):
 
 class TransformerBlock(nn.Module):
 
-    def __init__(self, hidden_dim, num_heads, layer_type):
+    def __init__(self, hidden_dim, layer_type, mlp_expansion):
         super(TransformerBlock, self).__init__()
         self.layer_type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
         self.norm_mlp = nn.LayerNorm(hidden_dim, eps=1e-8)
         if layer_type == 'P':
-            self.attention = PMA(hidden_dim, num_heads)
+            self.attention = PMA(hidden_dim)
         else:
-            self.attention = SetAttention(hidden_dim, hidden_dim, num_heads)
-        self.mlp = mlp(hidden_dim, hidden_dim * GLOB['mlp_expansion'], hidden_dim)
+            self.attention = SetAttention(hidden_dim, hidden_dim)
+        self.mlp = mlp(hidden_dim, hidden_dim * mlp_expansion, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
         mask = None
@@ -65,7 +65,6 @@ class ESA(nn.Module):
 
     Args:
         hidden_dim (int): The dimensionality of the hidden representations.
-        num_heads (int): Number of attention heads in each transformer block.
         layer_types (str): Specify the order and type of layers.
             - 'S': Self-attention layer.
             - 'M': Masked self-attention layer.
@@ -82,23 +81,23 @@ class ESA(nn.Module):
         torch.Tensor (optional): Attention scores from the 'P' layer if `return_attention` is True.
     """
 
-    def __init__(self, hidden_dim, num_heads, layer_types):
+    def __init__(self, hidden_dim, layer_types, mlp_expansion):
         super(ESA, self).__init__()
         assert layer_types.count('P') == 1
-        self.output_dropout = nn.Dropout(GLOB['ESA_dropout']) 
+        self.output_dropout = nn.Dropout(PARAMS['ESA_dropout']) 
         # Encoder
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
             assert layer_type[0] in ['M', 'S']
-            self.encoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+            self.encoder.append(TransformerBlock(hidden_dim, layer_type, mlp_expansion))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
         self.decoder = nn.ModuleList()
-        self.decoder.append(TransformerBlock(hidden_dim, num_heads, 'P'))
+        self.decoder.append(TransformerBlock(hidden_dim, 'P', mlp_expansion))
         for layer_type in dec_layers:
             assert layer_type == 'S'
-            self.decoder.append(TransformerBlock(hidden_dim, num_heads, layer_type))
+            self.decoder.append(TransformerBlock(hidden_dim, layer_type, mlp_expansion))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
     def forward(self, X, adj_mask, pad_mask=None):
