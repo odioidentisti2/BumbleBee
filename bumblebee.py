@@ -22,30 +22,28 @@ def save(model, path=None):
         path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'state_dict': model.state_dict(),
-        'layer_types': getattr(model, 'layer_types'),
-        'task': getattr(model, 'task'),
         'model_stats': getattr(model, 'stats', None),
     }
     torch.save(ckpt, path)
     print(f"\nModel checkpoint saved to: {path}")
 
-def load(model_path):
+def load(model_path, device):
     print(f"\nLoading model {model_path}")
-    ckpt = torch.load(model_path, map_location=DEVICE)
-    layer_types = ckpt.get('layer_types')
-    model = MAG(ATOM_DIM, BOND_DIM).to(DEVICE)
-    model.task = ckpt.get('task')
+    ckpt = torch.load(model_path, map_location=device)
+    model = MAG(ATOM_DIM, BOND_DIM).to(device)
     model.stats = ckpt.get('model_stats', None)
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
-    print(f"Loaded layer_types: {layer_types}")
     return model
 
-def crossvalidation(trainer, dataset, folds=5):
+def crossvalidation(trainer, dataset_info, folds=5):
+    print(f"\nCross-Validation on: ", dataset_info['path'])
+    dataset = GraphDataset(dataset_info)
+    from preprocessing import cv_subsets
     cv_tracker = statistics.CVTracker()
     start_time = time.time()
     
-    for fold, (train_subset, test_subset) in enumerate(utils.cv_subsets(dataset, folds), start=1):
+    for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
@@ -56,67 +54,54 @@ def crossvalidation(trainer, dataset, folds=5):
         train_loader = DataLoader(train_subset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=PARAMS['batch_size'], generator=g)
         
-        model = MAG(ATOM_DIM, BOND_DIM).to(DEVICE)
+        model = MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader, val_loader=test_loader)   
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
     cv_tracker.summary()  # Print summary    
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
-def main(dataset_info, model_name=None, cv=False):
+
+def main(device, dataset_info, model_name=None, cv=False):
     print('MODEL PARAMETERS:')
     import parameters, pprint
     for name in dir(parameters):
         if name.endswith('_params'):
             pprint.pprint(getattr(parameters, name))
+
     ## Reproducibility
     set_random_seed(PARAMS['random_seed'])
 
-    path = dataset_info['path']
-    trainer = Trainer(dataset_info['task'], DEVICE)
+    trainer = Trainer(dataset_info['task'], device)
 
     if cv:
-        print(f"\nCross-Validation on: ", path)
-        dataset = GraphDataset(dataset_info)
-        crossvalidation(trainer, dataset)
+        crossvalidation(trainer, dataset_info)
         return
 
-    # Load dataset(s)  
-    if 'split_header' in dataset_info:
-        print(f"\nTraining set: {path} ('Training')")
-        trainingset = GraphDataset(dataset_info, split='train')
-        testset = None
-    else:
-        print(f"\nLoading dataset: {path}")
-        trainingset, testset = utils.random_subsets(GraphDataset(dataset_info))
-
-    if not model_name:  # Train
-       
-        print(f"\nTraining set: {len(trainingset)} samples")
+    if not model_name:  # Train model
+        ## Load training set
+        trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
         train_loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
+
+        ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader)
         # trainer.calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
-        # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
-        # trainer.eval(model, loader, flag="Train")
+        loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
+        trainer.eval(model, loader, flag="Train")
 
         ## Save model
         # save(model, "MODELS/muta_RAND30.pt")
 
     else:  # Load saved model
-        model = load(f"MODELS/{model_name}")
-        assert model.task == trainer.task
+        model = load(f"MODELS/{model_name}", device)
+        # assert model.task == trainer.task
 
     ## Test
-    if testset is None:
-        print(f"\nTest set: {path} ('Test')")
-        testset = GraphDataset(dataset_info, split='test')
-    else:
-        print(f"\nTest set: {len(testset)} samples")
+    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
-
     trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
@@ -127,20 +112,25 @@ def main(dataset_info, model_name=None, cv=False):
 
 if __name__ == "__main__":
 
-    ## CUDA reproducibility
-    import os
-    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    torch.use_deterministic_algorithms(True)
-
     ## CPU or GPU
-    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
-    print(f"DEVICE: {DEVICE}\n")
+    print(f"DEVICE: {device}\n")
+
+    ## Reproducibility
+    if device.type == 'cuda':
+        import os
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+    torch.use_deterministic_algorithms(True)
 
     model_name = None
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
-    main(datasets.logp, model_name, cv=True)
+    main(device, datasets.muta, model_name, cv=False)
+
+
+
+
 
 
     # m1 = main(datasets.muta, 'muta_benchmark.pt')

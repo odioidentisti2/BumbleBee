@@ -8,7 +8,7 @@ muta = {
     'split_header': 'Status',
     'train_split': 'Training',
     'test_split': 'Test',
-    'split_map': {'train': 'Training', 'test': 'Test'}
+    # 'split_map': {'train': 'Training', 'test': 'Test'}
 }
 
 logp = {
@@ -27,5 +27,5 @@ logp_split = {
     'split_header': 'Status',
     'train_split': 'Training',
     'test_split': 'Test',
-    'split_map': {'train': 'Training', 'test': 'Test'}
+    # 'split_map': {'train': 'Training', 'test': 'Test'}
 }

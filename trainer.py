@@ -7,10 +7,9 @@ from parameters import trainer_params as PARAMS
 class Trainer:
 
     def __init__(self, task, device):
-        self.task = task
         self.device = device
         self.optimizer = None
-        if self.task == 'binary_classification':
+        if task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
             # self.criterion = torch.nn.BCEWithLogitsLoss()
             self.statistics = AccuracyTracker()

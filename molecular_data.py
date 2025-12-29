@@ -98,6 +98,7 @@ def smiles2graph(smiles):
 
 class GraphDataset(Dataset):
     def __init__(self, dataset_info, split=None):
+        print(f"\n{split} set: {dataset_info['path']}")
         super().__init__()
         self.task = dataset_info['task']
         self.graphs = []
@@ -105,7 +106,7 @@ class GraphDataset(Dataset):
         with open(dataset_info['path'], 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if split and row[dataset_info['split_header']] != dataset_info['split_map'][split]:
+                if split and row[dataset_info['split_header']] != split:
                     continue                    
                 smiles = row[dataset_info['smiles_header']]
                 data = smiles2graph(smiles)
