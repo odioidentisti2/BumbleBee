@@ -3,7 +3,6 @@ import torch
 from torch_geometric.loader import DataLoader
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
-import parameters
 from trainer import Trainer
 from model import MAG
 from explainer import explain
@@ -121,7 +120,7 @@ def main(dataset_info, model_name=None, cv=False):
 
         ## Statistics on Training set
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
-        # evaluate(model, loader, flag="Train")
+        # trainer.eval(model, loader, flag="Train")
 
         ## Save model
         # save(model, "MODELS/muta_RAND30.pt")
@@ -139,7 +138,6 @@ def main(dataset_info, model_name=None, cv=False):
     test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
 
     trainer.eval(model, test_loader, flag="Test")
-    # metric = evaluate(model, test_loader, flag="Test")
 
     ## Explain
     # explain(model, testset)
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     model_name = None
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
-    main(datasets.muta, model_name, cv=True)
+    main(datasets.logp_split, model_name, cv=False)
 
     # m1 = main(datasets.muta, 'muta_benchmark.pt')
     # pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
