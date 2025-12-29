@@ -86,11 +86,11 @@ def main(device, dataset_info, model_name=None, cv=False):
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader)
-        # trainer.calc_stats(model, train_loader)  # Needed for Explainer
+        trainer.calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
-        loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
-        trainer.eval(model, loader, flag="Train")
+        # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
+        # trainer.eval(model, loader, flag="Train")
 
         ## Save model
         # save(model, "MODELS/muta_RAND30.pt")
@@ -105,7 +105,7 @@ def main(device, dataset_info, model_name=None, cv=False):
     trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
-    # explain(model, testset)
+    explain(model, testset)
 
     return model
 
@@ -125,8 +125,8 @@ if __name__ == "__main__":
 
     model_name = None
     # model_name = 'logp_benchmark.pt'
-    # model_name = 'muta_benchmark.pt'
-    main(device, datasets.logp, model_name, cv=True)
+    model_name = 'muta_benchmark.pt'
+    main(device, datasets.muta, model_name, cv=False)
 
 
 
