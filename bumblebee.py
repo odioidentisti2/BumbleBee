@@ -7,9 +7,12 @@ import datasets
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from model import MAG
-from explainer import Explainer
+from explainer import explain
 import utils
 import statistics
+
+
+
 
 
 def train(model, loader):
@@ -44,7 +47,7 @@ def test(model, loader):
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
             # Record statistics
-            model.statistics.update(logits, targets)
+            model.statistics.update(logits.detach().cpu(), targets.detach().cpu())
     return total_loss / total
 
 def training_loop(model, loader, val_loader=None):
@@ -134,30 +137,6 @@ def crossvalidation(dataset, task, folds=5):
     cv_tracker.summary()  # Print summary    
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
-def explain(model, dataset):
-    model.eval()
-    explainer = Explainer(model)
-    print("\nCALIBRATION")
-    print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
-    print(f"Prediction range: {model.stats['target_min']:.2f} to {model.stats['target_max']:.2f}")
-    print(f"IG top: {explainer.target_std:.2f}")
-    print(f"ATT top: {explainer.att_factor_top:.2f}")
-    intensity = 1
-    for graph in dataset:
-        repeat = True
-        while repeat:
-            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
-            explainer.integrated_gradients(graph.clone(), intensity=intensity)
-            # explain_with_mlp_IG(model, graph, intensity=current_intensity)
-            # user_input = ''
-            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-            plus_count = user_input.count('+')
-            minus_count = user_input.count('-')
-            if plus_count + minus_count > 0:
-                intensity *= (2 ** plus_count) / (2 ** minus_count)
-            else:
-                repeat = False  # Move to next molecule
-    
 class BinaryHingeLoss(torch.nn.Module):
     def forward(self, pred, target):
         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
@@ -208,14 +187,14 @@ def main(dataset_info, model_name=None, cv=False):
         model =  MAG(ATOM_DIM, BOND_DIM, GLOB['layer_types'])
         model_setup(model, task)
         training_loop(model, train_loader)
-        calc_stats(model, train_loader)  # Needed for Explainer
+        # calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
         # loader = DataLoader(trainingset, batch_size=GLOB['batch_size'])
         # evaluate(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/muta_RAND30.pt")
+        # save(model, "MODELS/muta_RAND30.pt")
 
     else:  # Load saved model
 
@@ -234,8 +213,7 @@ def main(dataset_info, model_name=None, cv=False):
     ## Explain
     # explain(model, testset)
 
-    return metric
-
+    return model
 
 if __name__ == "__main__":
     ## CUDA reproducibility
@@ -247,11 +225,28 @@ if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {DEVICE}\n")
+
     model_name = None
     # model_name = 'logp_MMS_100e.pt'
     # model_name = 'muta_MMM_100e.pt'
+    # main(datasets.muta, model_name, cv=False)
 
-    main(datasets.muta, model_name, cv=False)
+    m1 = main(datasets.muta, 'muta_benchmark.pt')
+    pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
+    l1 = torch.cat(m1.statistics.stats[-1]['logits'])
+
+    m2 = main(datasets.muta, 'muta_RAND30.pt')
+    pred2 = torch.cat(m2.statistics.stats[-1]['predictions'])
+    l2 = torch.cat(m2.statistics.stats[-1]['logits'])
+
+    agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
+    logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
+    logit_diff = (l1 - l2).abs()
+    print(f"\nModels agreement: {agree} / {len(pred1)}")
+    print(f"Logits close: {logits_close}")
+    print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
+    c=1
+
 
 
     

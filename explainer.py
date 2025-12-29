@@ -4,19 +4,29 @@ from torch_geometric.data import Batch
 from graphic import *
 
 
-# def sum_bond_weights(edge_index, weights):
-#     # edge_index: shape [2, num_edges]
-#     # weights: shape [num_edges]
-#     src = edge_index[0]
-#     dst = edge_index[1]
-#     # Make undirected: always (min, max)
-#     bond_pairs = torch.stack([torch.minimum(src, dst), torch.maximum(src, dst)], dim=1)  # [num_edges, 2]
-#     # Find unique bonds and sum weights
-#     bond_keys, inverse_indices = torch.unique(bond_pairs, dim=0, return_inverse=True)
-#     summed_weights = torch.zeros(len(bond_keys), dtype=weights.dtype, device=weights.device)
-#     summed_weights.scatter_add_(0, inverse_indices, weights)
-#     return bond_keys, summed_weights
-
+def explain(model, dataset):
+    model.eval()
+    explainer = Explainer(model)
+    print("\nCALIBRATION")
+    print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
+    print(f"Prediction range: {model.stats['target_min']:.2f} to {model.stats['target_max']:.2f}")
+    print(f"IG top: {explainer.target_std:.2f}")
+    print(f"ATT top: {explainer.att_factor_top:.2f}")
+    intensity = 1
+    for graph in dataset:
+        repeat = True
+        while repeat:
+            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
+            explainer.integrated_gradients(graph.clone(), intensity=intensity)
+            # explain_with_mlp_IG(model, graph, intensity=current_intensity)
+            # user_input = ''
+            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+            plus_count = user_input.count('+')
+            minus_count = user_input.count('-')
+            if plus_count + minus_count > 0:
+                intensity *= (2 ** plus_count) / (2 ** minus_count)
+            else:
+                repeat = False  # Move to next molecule
 
 # DEBUG
 def print_weights(weights, average=False):

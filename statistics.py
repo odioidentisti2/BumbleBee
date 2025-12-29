@@ -39,11 +39,11 @@ class R2Tracker(MetricTracker):
     }
 
     def update(self, logits, targets):
-        assert len(targets) == len(logits)
-        self.stats[-1]['total_samples'] += len(targets)
-        self.stats[-1]['targets_sum'] += targets.sum().item()
-        self.stats[-1]['targets_squared_sum'] += (targets ** 2).sum().item()
-        self.stats[-1]['residuals_squared_sum'] += ((targets - logits) ** 2).sum().item()
+        stats = self.stats[-1]
+        stats['total_samples'] += len(targets)
+        stats['targets_sum'] += targets.sum().item()
+        stats['targets_squared_sum'] += (targets ** 2).sum().item()
+        stats['residuals_squared_sum'] += ((targets - logits) ** 2).sum().item()
 
     def metric(self, index=-1):
         run = self.stats[index]
@@ -55,14 +55,21 @@ class AccuracyTracker(MetricTracker):
     
     values = {
         'num_correct': 0,
-        'total_samples': 0
+        'total_samples': 0,
     }
 
+    def __init__(self):
+        super().__init__()
+        self.values['logits'] = []
+        self.values['predictions'] = []
+
     def update(self, logits, targets):
+        stats = self.stats[-1]
         preds = (torch.sigmoid(logits) > 0.5)
-        assert len(targets) == len(logits)
-        self.stats[-1]['total_samples'] += len(targets)
-        self.stats[-1]['num_correct'] += (preds == targets).sum().item()
+        stats['logits'].append(logits)  # debug
+        stats['predictions'].append(preds)  # debug
+        stats['total_samples'] += len(targets)
+        stats['num_correct'] += (preds == targets).sum().item()
 
     def metric(self, index=-1):
         run = self.stats[index]
