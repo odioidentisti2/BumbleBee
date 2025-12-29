@@ -71,6 +71,31 @@ class Trainer:
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
+    
+    @staticmethod  # Experimental
+    def calc_stats(model, calibration_loader):
+        model = model.to('cpu')
+        predictions = []
+        train_attn_weights = []
+        with torch.no_grad():
+            for batch in calibration_loader:
+                batch = batch.to('cpu')
+                preds, attn_weights = model(batch, return_attention=True)
+                predictions.extend(preds)
+                train_attn_weights.extend(attn_weights)
+        import numpy as np
+        model.stats = {}
+        # IG
+        targets = np.array(predictions)
+        model.stats['target_mean'] = float(targets.mean())
+        model.stats['target_std'] = float(targets.std())
+        model.stats['target_min'] = float(targets.min())
+        model.stats['target_max'] = float(targets.max())
+        # Attention
+        att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
+        model.stats['attention_factor_mean'] = float(att_factor.mean())
+        model.stats['attention_factor_std'] = float(att_factor.std())
+
 
 
 class BinaryHingeLoss(torch.nn.Module):

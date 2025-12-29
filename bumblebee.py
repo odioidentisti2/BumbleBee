@@ -13,28 +13,9 @@ import datasets
 from parameters import main_params as PARAMS
 
 
-def calc_stats(model, calibration_loader):
-    model = model.to('cpu')
-    predictions = []
-    train_attn_weights = []
-    with torch.no_grad():
-        for batch in calibration_loader:
-            batch = batch.to('cpu')
-            preds, attn_weights = model(batch, return_attention=True)
-            predictions.extend(preds)
-            train_attn_weights.extend(attn_weights)
-    import numpy as np
-    model.stats = {}
-    # IG
-    targets = np.array(predictions)
-    model.stats['target_mean'] = float(targets.mean())
-    model.stats['target_std'] = float(targets.std())
-    model.stats['target_min'] = float(targets.min())
-    model.stats['target_max'] = float(targets.max())
-    # Attention
-    att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
-    model.stats['attention_factor_mean'] = float(att_factor.mean())
-    model.stats['attention_factor_std'] = float(att_factor.std())
+def set_random_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 def save(model, path=None):
     if not path:
@@ -68,7 +49,7 @@ def crossvalidation(trainer, dataset, folds=5):
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
-        utils.set_random_seed(PARAMS['random_seed'])
+        set_random_seed(PARAMS['random_seed'])
         g = torch.Generator()
         g.manual_seed(PARAMS['random_seed'])
 
@@ -82,7 +63,6 @@ def crossvalidation(trainer, dataset, folds=5):
     cv_tracker.summary()  # Print summary    
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
-
 def main(dataset_info, model_name=None, cv=False):
     print('MODEL PARAMETERS:')
     import parameters, pprint
@@ -90,7 +70,7 @@ def main(dataset_info, model_name=None, cv=False):
         if name.endswith('_params'):
             pprint.pprint(getattr(parameters, name))
     ## Reproducibility
-    utils.set_random_seed(PARAMS['random_seed'])
+    set_random_seed(PARAMS['random_seed'])
 
     path = dataset_info['path']
     trainer = Trainer(dataset_info['task'], DEVICE)
@@ -116,7 +96,7 @@ def main(dataset_info, model_name=None, cv=False):
         train_loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
         model =  MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader)
-        # calc_stats(model, train_loader)  # Needed for Explainer
+        # trainer.calc_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
@@ -144,11 +124,14 @@ def main(dataset_info, model_name=None, cv=False):
 
     return model
 
+
 if __name__ == "__main__":
+
     ## CUDA reproducibility
     import os
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     torch.use_deterministic_algorithms(True)
+
     ## CPU or GPU
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
@@ -157,7 +140,8 @@ if __name__ == "__main__":
     model_name = None
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
-    main(datasets.logp_split, model_name, cv=False)
+    main(datasets.logp, model_name, cv=True)
+
 
     # m1 = main(datasets.muta, 'muta_benchmark.pt')
     # pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
