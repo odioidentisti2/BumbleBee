@@ -1,9 +1,8 @@
-# import numpy as np
 import torch
 from torch_geometric.data import Batch
 from graphic import *
 
-from molecular_data import ATOM_DIM, BOND_DIM
+from molecular_data import ATOM_DIM
 
 
 def explain(model, dataset):
@@ -115,18 +114,18 @@ class Explainer:
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # Shift attributions from baseline to neutral point
-        # neutral_point = 0.0  #  binary prediction?
-        neutral_point = self.target_mean
-        offset = (neutral_point - baseline_pred).item()
-        edge_importance -= offset / edge_importance.shape[0]
-        # VERIFY: Centered property
-        centered_sum = edge_importance.sum().item()
-        print(f"\n=== CENTERED (after shifting to neutral) ===")
-        print(f"Neutral point: {neutral_point:.2f}")
-        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        print(f"Centered attribution sum: {centered_sum:.2f}")
-        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+        # # Shift attributions from baseline to neutral point
+        # # neutral_point = 0.0  #  binary prediction?
+        # neutral_point = self.target_mean
+        # offset = (neutral_point - baseline_pred).item()
+        # edge_importance -= offset / edge_importance.shape[0]
+        # # VERIFY: Centered property
+        # centered_sum = edge_importance.sum().item()
+        # print(f"\n=== CENTERED (after shifting to neutral) ===")
+        # print(f"Neutral point: {neutral_point:.2f}")
+        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        # print(f"Centered attribution sum: {centered_sum:.2f}")
+        # print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
@@ -138,7 +137,6 @@ class Explainer:
 
 
     def backtrack(self, attributions, graph):
-        # NEW: Per-feature attributions
         feature_importance = attributions.detach().cpu()  # shape: [num_edges, num_features_per_edge]
         print("\nPER-FEATURE INTEGRATED GRADIENTS")
         print(f"Shape: {feature_importance.shape}")
@@ -179,28 +177,6 @@ class Explainer:
         print(f"First edge src: {src_attr[0]}")
         print(f"First edge dst: {dst_attr[0]}")
         print(f"First edge bond: {edge_attr[0]}")
-
-        # # --- NEW: Aggregate attributions for each atom and bond ---
-        # # For each atom, sum all attributions where it appears as src or dst
-        # num_atoms = graph.x.shape[0]
-        # atom_importance = torch.zeros(num_atoms)
-        # # src and dst indices for each edge
-        # src_idx, dst_idx = graph.edge_index[0].cpu(), graph.edge_index[1].cpu()
-        # for i in range(src_attr.shape[0]):  # for each edge
-        #     atom_importance[src_idx[i]] += src_attr[i].sum()
-        #     atom_importance[dst_idx[i]] += dst_attr[i].sum()
-
-        # # For each bond type, sum all attributions across edges
-        # bond_importance = edge_attr.sum(dim=0)  # [BOND_DIM]
-
-        # print("\nAGGREGATED ATOM ATTRIBUTIONS")
-        # print(f"Shape: {atom_importance.shape}")
-        # print(f"Example (first atom): {atom_importance[0]}")
-
-        # print("\nAGGREGATED BOND ATTRIBUTIONS")
-        # print(f"Shape: {bond_importance.shape}")
-        # print(f"Example (first bond type): {bond_importance[0]}")
-        # return atom_importance, bond_importance
 
         depict_feat(graph, atom_importance.numpy(), bond_importance.numpy(), attention=False)
 

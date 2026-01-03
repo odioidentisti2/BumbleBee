@@ -18,25 +18,6 @@ class Trainer:
             # self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
             self.statistics =  R2Tracker()
         self.count = 0
-
-    def _injected_batch(self, batch, target, interval=10000):
-        """Deterministically inject synthetic zero-feature samples every N molecules."""
-        global_indices = \
-            torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
-        local_indices = torch.where(global_indices)[0]
-        
-        if len(local_indices) > 0:
-            # Zero features
-            for idx in local_indices:
-                graph_mask = (batch.batch == idx)
-                batch.x[graph_mask] = 0
-                edge_mask = graph_mask[batch.edge_index[0]]
-                batch.edge_attr[edge_mask] = 0            
-            # Set targets for baseline
-            batch.y[local_indices] = target
-        
-        self.count += batch.num_graphs
-        return batch
         
     def _train(self, model, loader):
         model = model.to(self.device)
@@ -45,8 +26,7 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y.view(-1).to(self.device)
-            batch = self._injected_batch(batch, 2.1)  # model.stats['target_mean'])
-            # batch = self._injected_batch(batch, 0.5)  # Classification
+            # batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
             # Learning: zero grad; backward pass; update weights
@@ -91,6 +71,26 @@ class Trainer:
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
+
+    def _injected_batch(self, batch, interval=10000):
+        """Deterministically inject synthetic zero-feature samples every N molecules."""
+        global_indices = \
+            torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
+        local_indices = torch.where(global_indices)[0]
+        
+        if len(local_indices) > 0:
+            # Zero features
+            for idx in local_indices:
+                print("injecting")
+                graph_mask = (batch.batch == idx)
+                batch.x[graph_mask] = 0
+                edge_mask = graph_mask[batch.edge_index[0]]
+                batch.edge_attr[edge_mask] = 0            
+            # Set targets for baseline
+            batch.y[local_indices] = self.mean_target
+        
+        self.count += batch.num_graphs
+        return batch
     
     @staticmethod  # Experimental
     def calc_stats(model, calibration_loader):
@@ -115,7 +115,6 @@ class Trainer:
         att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
         model.stats['attention_factor_mean'] = float(att_factor.mean())
         model.stats['attention_factor_std'] = float(att_factor.std())
-
 
 
 class BinaryHingeLoss(torch.nn.Module):

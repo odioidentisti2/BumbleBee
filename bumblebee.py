@@ -1,6 +1,7 @@
 import time
 import torch
 from torch_geometric.loader import DataLoader
+import numpy as np
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
@@ -85,6 +86,8 @@ def main(device, dataset_info, model_name=None, cv=False):
 
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
+        trainer.mean_target = np.mean(trainingset.targets)  # For injection baseline
+        print(f"\nMean target in training set: {trainer.mean_target:.2f}")
         trainer.train(model, train_loader)
         trainer.calc_stats(model, train_loader)  # Needed for Explainer
 
