@@ -17,25 +17,44 @@ class Trainer:
             self.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
             # self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
             self.statistics =  R2Tracker()
+        self.count = 0
 
+    def _injected_batch(self, batch, interval=100):
+        """Deterministically inject synthetic zero-feature samples every N molecules."""
+        global_indices = \
+            torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
+        local_indices = torch.where(global_indices)[0]
+        
+        if len(local_indices) > 0:
+            # Zero features
+            for idx in local_indices:
+                graph_mask = (batch.batch == idx)
+                batch.x[graph_mask] = 0
+                edge_mask = graph_mask[batch.edge_index[0]]
+                batch.edge_attr[edge_mask] = 0            
+            # Set targets for baseline
+            batch.y[local_indices] = 0  # Classification (target.mean() for regression)
+        
+        self.count += batch.num_graphs
+        return batch
+        
     def _train(self, model, loader):
-        model.train()  # set training mode
         model = model.to(self.device)
         total_loss = 0
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y.view(-1).to(self.device)
+            batch = self._injected_batch(batch)
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
-            # Learning: zero gradients, backward pass, update weights
-            self.opt.zero_grad(), loss.backward(), self.opt.step()
+            # Learning: zero grad; backward pass; update weights
+            self.opt.zero_grad(); loss.backward(); self.opt.step()
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
         return total_loss / total
 
     def _eval(self, model, loader):
-        model.eval()  # set evaluation mode
         self.statistics.init()
         model = model.to(self.device)
         total_loss = 0
@@ -52,7 +71,8 @@ class Trainer:
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
         return total_loss / total
 
-    def train(self, model, loader, val_loader=None):        
+    def train(self, model, loader, val_loader=None):  
+        model.train()  # set training mode      
         self.opt = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
         print("\nTraining...")
         start_time = time.time()
@@ -63,6 +83,7 @@ class Trainer:
                 self.eval(model, val_loader, flag='Validation')
 
     def eval(self, model, loader, flag):
+        model.eval()  # set evaluation mode
         if flag == 'Test': 
             print("\nTesting...")
         loss = self._eval(model, loader)
