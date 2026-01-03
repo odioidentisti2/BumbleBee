@@ -107,14 +107,14 @@ def main(device, dataset_info, model_name=None, cv=False):
     ## Explain
     explain(model, testset)
 
-    return model
+    return trainer.statistics
 
 
 if __name__ == "__main__":
+    print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
 
     ## CPU or GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
     print(f"DEVICE: {device}\n")
 
     ## Reproducibility
@@ -126,20 +126,19 @@ if __name__ == "__main__":
     model_name = None
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
-    main(device, datasets.logp_split, model_name, cv=False)
+    
+    main(device, datasets.muta, model_name, cv=False)
 
 
 
 
+    # m1 = main(device, datasets.muta, 'muta_benchmark.pt')
+    # pred1 = torch.cat(m1.stats[-1]['predictions'])
+    # l1 = torch.cat(m1.stats[-1]['logits'])
 
-
-    # m1 = main(datasets.muta, 'muta_benchmark.pt')
-    # pred1 = torch.cat(m1.statistics.stats[-1]['predictions'])
-    # l1 = torch.cat(m1.statistics.stats[-1]['logits'])
-
-    # m2 = main(datasets.muta, 'muta_RAND30.pt')
-    # pred2 = torch.cat(m2.statistics.stats[-1]['predictions'])
-    # l2 = torch.cat(m2.statistics.stats[-1]['logits'])
+    # m2 = main(device, datasets.muta, 'muta_RAND30.pt')
+    # pred2 = torch.cat(m2.stats[-1]['predictions'])
+    # l2 = torch.cat(m2.stats[-1]['logits'])
 
     # agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
     # logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
@@ -147,11 +146,11 @@ if __name__ == "__main__":
     # print(f"\nModels agreement: {agree} / {len(pred1)}")
     # print(f"Logits close: {logits_close}")
     # print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
-    # c=1
-
-
-
     
+    # diff_idx = (pred1 != pred2).nonzero(as_tuple=True)[0]
+    # print(f"Discordant: {diff_idx.numel()}") or (print("\n".join(
+    #     f"[{i}] p1={int(pred1[i])} p2={int(pred2[i])} l1={l1[i].tolist()} l2={l2[i].tolist()}"
+    #     for i in diff_idx[:20].tolist())))
 
 
 #  TO BE PLACED INSID MAIN TO DEBUG SEED DIVERSITY
