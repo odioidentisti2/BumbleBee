@@ -126,3 +126,89 @@ def depict(graph, weights, attention=True, factor=None, shift=None):
         Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
     print(f"Sum: {sum(bond_weights.values()):.2f}")
+
+
+def depict_feat(graph, atom_importance, bond_importance, attention=True, factor=None, shift=None):
+    graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
+    edge_index = graph.edge_index
+
+    threshold = 0  # not needed anymore? (normalization in explainer)
+    mol = graph.mol
+
+    bond_colors = {}
+    atom_colors = {}
+
+    # --- Aggregate edge attributions to bond instances ---
+    import numpy as np
+    # Expect atom_importance: 1D array length == num_atoms
+    #        bond_importance: 1D array length == num_bonds
+    bond_arr = np.asarray(bond_importance, dtype=float)
+    atom_arr = np.asarray(atom_importance, dtype=float)
+    num_bonds = mol.GetNumBonds()
+    num_atoms = mol.GetNumAtoms()
+    if bond_arr.ndim != 1 or bond_arr.size != num_bonds:
+        raise ValueError(f"bond_importance must be 1D of length {num_bonds}, got {bond_arr.shape}")
+    if atom_arr.ndim != 1 or atom_arr.size != num_atoms:
+        raise ValueError(f"atom_importance must be 1D of length {num_atoms}, got {atom_arr.shape}")
+    bond_instance_importance = bond_arr.tolist()
+    atom_instance_importance = atom_arr.tolist()
+
+    print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
+    print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
+
+
+    # Color bonds
+    for bond in mol.GetBonds():
+        bond_idx = bond.GetIdx()
+        weight = bond_instance_importance[bond_idx]
+        if factor is not None:
+            weight = weight * factor
+        if shift is not None:
+            weight = weight + shift
+        if abs(weight) > abs(threshold):
+            bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
+        bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
+
+    # Color atoms
+    for atom in mol.GetAtoms():
+        atom_idx = atom.GetIdx()
+        weight = atom_instance_importance[atom_idx]
+        if factor is not None:
+            weight = weight * factor
+        if shift is not None:
+            weight = weight + shift
+        if abs(weight) > abs(threshold):
+            atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
+
+    # Create drawer
+    drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
+    
+    # Set drawing options
+    opts = drawer.drawOptions()
+    opts.addStereoAnnotation = True
+    opts.addAtomIndices = False  # Set to True if you want to see atom indices
+    opts.multipleBondOffset = 0.18
+    opts.annotationFontScale = 0.8  # Adjust font size for bond labels
+    opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
+
+    target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
+    legend = f"{graph.smiles}\n{target_label}\n\n{'Attention' if attention else 'Gradients'}"
+
+    # Draw molecule with highlighting
+    drawer.DrawMolecule(mol,
+                        highlightAtoms=atom_colors.keys(),
+                        highlightAtomColors=atom_colors,
+                        highlightBonds=bond_colors.keys(),
+                        highlightBondColors=bond_colors,
+                        legend=legend)
+    drawer.FinishDrawing()
+
+    # Check if running in Google Colab
+    if IN_COLAB:
+        image_bytes = drawer.GetDrawingText()
+        display(Image(data=image_bytes))
+    else:
+        Image.open(io.BytesIO(drawer.GetDrawingText())).show()
+
+    # print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
+    # print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
