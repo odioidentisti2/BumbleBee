@@ -8,7 +8,7 @@ class Trainer:
 
     def __init__(self, task, device):
         self.device = device
-        self.optimizer = None
+        self.opt = None
         if task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
             # self.criterion = torch.nn.BCEWithLogitsLoss()
@@ -25,12 +25,11 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            targets = batch.y.view(-1).to(self.device   )
-            self.optimizer.zero_grad()  # zero gradients
+            targets = batch.y.view(-1).to(self.device)
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
-            loss.backward()  # backward pass
-            self.optimizer.step()  # update weights
+            # Learning: zero gradients, backward pass, update weights
+            self.opt.zero_grad(), loss.backward(), self.opt.step()
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
         return total_loss / total
@@ -54,7 +53,7 @@ class Trainer:
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):        
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
+        self.opt = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
         print("\nTraining...")
         start_time = time.time()
         for epoch in range(1, PARAMS['epochs'] + 1):

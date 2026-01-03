@@ -6,7 +6,7 @@ main_params = {
 
 trainer_params = {
     'lr': 1e-4,
-    'epochs': 5,
+    'epochs': 100,
     # 'weight_decay': 1e-5,
 }
 
