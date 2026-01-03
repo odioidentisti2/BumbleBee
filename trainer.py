@@ -19,7 +19,7 @@ class Trainer:
             self.statistics =  R2Tracker()
         self.count = 0
 
-    def _injected_batch(self, batch, target, interval=1000):
+    def _injected_batch(self, batch, target, interval=10000):
         """Deterministically inject synthetic zero-feature samples every N molecules."""
         global_indices = \
             torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
@@ -45,7 +45,7 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y.view(-1).to(self.device)
-            # batch = self._injected_batch(batch, 2.1)  # model.stats['target_mean'])
+            batch = self._injected_batch(batch, 2.1)  # model.stats['target_mean'])
             # batch = self._injected_batch(batch, 0.5)  # Classification
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
