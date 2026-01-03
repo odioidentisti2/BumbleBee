@@ -45,7 +45,7 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y.view(-1).to(self.device)
-            batch = self._injected_batch(batch, 2.1)  # model.stats['target_mean'])
+            # batch = self._injected_batch(batch, 2.1)  # model.stats['target_mean'])
             # batch = self._injected_batch(batch, 0.5)  # Classification
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
