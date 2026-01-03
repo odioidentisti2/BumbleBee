@@ -3,6 +3,8 @@ import torch
 from torch_geometric.data import Batch
 from graphic import *
 
+from molecular_data import ATOM_DIM, BOND_DIM
+
 
 def explain(model, dataset):
     model.eval()
@@ -44,8 +46,6 @@ class Explainer:
         self.intensity = 1
         self.att_factor_top = model.stats['attention_factor_mean'] + model.stats['attention_factor_std']
         # WARNING: Now I use PREDICTION stats, NOT target stats!
-        # For regression it's probably the same,
-        # for binary class with hinge or BCE no: target.mean = 0.5 but prediction.mean ~ 0
         self.target_std = model.stats['target_std']
         self.target_mean = model.stats['target_mean']
 
@@ -98,6 +98,8 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
 
+        # self.backtrack(attributions, graph)
+
         print("\n\nDEPICT INTEGRATED GRADIENTS")
         print(f"{graph.y.item():.2f}", graph.smiles)
         # Get baseline and final predictions for verification
@@ -114,19 +116,16 @@ class Explainer:
         print(f"PREDICTION: {final_pred.item():.2f}")
 
         # Shift attributions from baseline to neutral point
-        # neutral_point = 0.0  # it should be zero for binary prediction?
+        # neutral_point = 0.0  #  binary prediction?
         neutral_point = self.target_mean
         offset = (neutral_point - baseline_pred).item()
         edge_importance -= offset / edge_importance.shape[0]
         # VERIFY: Centered property
         centered_sum = edge_importance.sum().item()
-        # expected_centered = (final_pred.item() - neutral_point)
         print(f"\n=== CENTERED (after shifting to neutral) ===")
         print(f"Neutral point: {neutral_point:.2f}")
         print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
         print(f"Centered attribution sum: {centered_sum:.2f}")
-        # print(f"Expected (final - neutral): {expected_centered:.4f}")
-        # print(f"Centered property satisfied: {abs(centered_sum - expected_centered) < 0.01}")
         print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
@@ -135,9 +134,75 @@ class Explainer:
         if not hasattr(graph, 'label'):  # regression
             factor = 1 / self.target_std
 
-        # Before depict I should normalize edge_importance by 0.5 - baseline
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
-        # depict(graph, weights.numpy() / (0.5 - baseline_pred.item()), attention=False)
+
+
+    def backtrack(self, attributions, graph):
+        # NEW: Per-feature attributions
+        feature_importance = attributions.detach().cpu()  # shape: [num_edges, num_features_per_edge]
+        print("\nPER-FEATURE INTEGRATED GRADIENTS")
+        print(f"Shape: {feature_importance.shape}")
+        print(f"Example (first edge): {feature_importance[0]}")
+        src_attr = feature_importance[:, :ATOM_DIM]
+        dst_attr = feature_importance[:, ATOM_DIM:2*ATOM_DIM]
+        edge_attr = feature_importance[:, 2*ATOM_DIM:]
+        # Per-edge scalars
+        edge_bond_scalar = edge_attr.sum(dim=1)        # [num_edges]
+        edge_atom_src = src_attr.sum(dim=1)            # [num_edges]
+        edge_atom_dst = dst_attr.sum(dim=1)            # [num_edges]
+
+        # Aggregate to bond instances (one value per RDKit bond)
+        num_bonds = graph.mol.GetNumBonds()
+        bond_importance = torch.zeros(num_bonds)
+        # Aggregate to atom instances (one value per atom index)
+        num_atoms = graph.x.shape[0]
+        atom_importance = torch.zeros(num_atoms)
+
+        src_idx = graph.edge_index[0].cpu()
+        dst_idx = graph.edge_index[1].cpu()
+        for i in range(edge_bond_scalar.shape[0]):
+            src = int(src_idx[i])
+            dst = int(dst_idx[i])
+            # accumulate atom contributions for the specific atom indices
+            atom_importance[src] += edge_atom_src[i].item()
+            atom_importance[dst] += edge_atom_dst[i].item()
+            # find bond instance and accumulate bond contribution
+            bond = graph.mol.GetBondBetweenAtoms(src, dst)
+            if bond is not None:
+                bond_idx = bond.GetIdx()
+                bond_importance[bond_idx] += edge_bond_scalar[i].item()
+
+        print("\nSPLIT FEATURE ATTRIBUTIONS")
+        print(f"Source node attribution shape: {src_attr.shape}")
+        print(f"Destination node attribution shape: {dst_attr.shape}")
+        print(f"Edge (bond) attribution shape: {edge_attr.shape}")
+        print(f"First edge src: {src_attr[0]}")
+        print(f"First edge dst: {dst_attr[0]}")
+        print(f"First edge bond: {edge_attr[0]}")
+
+        # # --- NEW: Aggregate attributions for each atom and bond ---
+        # # For each atom, sum all attributions where it appears as src or dst
+        # num_atoms = graph.x.shape[0]
+        # atom_importance = torch.zeros(num_atoms)
+        # # src and dst indices for each edge
+        # src_idx, dst_idx = graph.edge_index[0].cpu(), graph.edge_index[1].cpu()
+        # for i in range(src_attr.shape[0]):  # for each edge
+        #     atom_importance[src_idx[i]] += src_attr[i].sum()
+        #     atom_importance[dst_idx[i]] += dst_attr[i].sum()
+
+        # # For each bond type, sum all attributions across edges
+        # bond_importance = edge_attr.sum(dim=0)  # [BOND_DIM]
+
+        # print("\nAGGREGATED ATOM ATTRIBUTIONS")
+        # print(f"Shape: {atom_importance.shape}")
+        # print(f"Example (first atom): {atom_importance[0]}")
+
+        # print("\nAGGREGATED BOND ATTRIBUTIONS")
+        # print(f"Shape: {bond_importance.shape}")
+        # print(f"Example (first bond type): {bond_importance[0]}")
+        # return atom_importance, bond_importance
+
+        depict_feat(graph, atom_importance.numpy(), bond_importance.numpy(), attention=False)
 
 
     # def explain_with_mlp_IG(self, graph, steps=50, intensity=1.0):
