@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
     
-    main(device, datasets.muta, model_name, cv=False)
+    main(device, datasets.logp_split, model_name, cv=False)
 
 
 
