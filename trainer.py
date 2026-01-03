@@ -25,7 +25,7 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            targets = batch.y.to(self.device)
+            targets = batch.y  #.to(self.device)
             # batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
