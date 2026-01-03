@@ -43,7 +43,7 @@ class Trainer:
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
-                targets = batch.y.to(self.device)
+                targets = batch.y  # .to(self.device)
                 logits = model(batch)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
