@@ -28,18 +28,18 @@ def yellow(weight):
     if weight < 0: weight = 0
     return (1.0, 1.0, 1.0-weight)
 
-def sum_bond_weights(edge_index, weights):
-    # edge_index: shape [2, num_edges]
-    # weights: shape [num_edges]
-    src = edge_index[0]
-    dst = edge_index[1]
-    # Make undirected: always (min, max)
-    bond_pairs = torch.stack([torch.minimum(src, dst), torch.maximum(src, dst)], dim=1)  # [num_edges, 2]
-    # Find unique bonds and sum weights
-    bond_keys, inverse_indices = torch.unique(bond_pairs, dim=0, return_inverse=True)
-    summed_weights = torch.zeros(len(bond_keys), dtype=weights.dtype, device=weights.device)
-    summed_weights.scatter_add_(0, inverse_indices, weights)
-    return bond_keys, summed_weights
+# def sum_bond_weights(edge_index, weights):
+#     # edge_index: shape [2, num_edges]
+#     # weights: shape [num_edges]
+#     src = edge_index[0]
+#     dst = edge_index[1]
+#     # Make undirected: always (min, max)
+#     bond_pairs = torch.stack([torch.minimum(src, dst), torch.maximum(src, dst)], dim=1)  # [num_edges, 2]
+#     # Find unique bonds and sum weights
+#     bond_keys, inverse_indices = torch.unique(bond_pairs, dim=0, return_inverse=True)
+#     summed_weights = torch.zeros(len(bond_keys), dtype=weights.dtype, device=weights.device)
+#     summed_weights.scatter_add_(0, inverse_indices, weights)
+#     return bond_keys, summed_weights
 
 
 def depict(graph, weights, attention=True, factor=None, shift=None):
