@@ -121,7 +121,7 @@ class GraphDataset(Dataset):
                     target = dataset_info['tox_map'][target]
                 elif self.task == 'regression':
                     target = float(target)                
-                data.y = torch.tensor([target], dtype=torch.float)  # TRY REMOVING BRACKETS AND .view(-1) in Trainer
+                data.y = torch.tensor(target, dtype=torch.float)
                 self.graphs.append(data)
                 self.targets.append(target)
         print(f"Loaded {len(self.graphs)} molecules")

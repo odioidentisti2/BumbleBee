@@ -25,7 +25,7 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            targets = batch.y.view(-1).to(self.device)
+            targets = batch.y.to(self.device)
             batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
@@ -43,7 +43,7 @@ class Trainer:
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
-                targets = batch.y.view(-1).to(self.device)
+                targets = batch.y.to(self.device)
                 logits = model(batch)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
@@ -81,7 +81,6 @@ class Trainer:
         if len(local_indices) > 0:
             # Zero features
             for idx in local_indices:
-                print("injecting")
                 graph_mask = (batch.batch == idx)
                 batch.x[graph_mask] = 0
                 edge_mask = graph_mask[batch.edge_index[0]]
