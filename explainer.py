@@ -28,12 +28,14 @@ class Explainer:
         print(f"IG top: {self.model.training_predictions.std():.2f}")
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         intensity = 1
+        aw = []
+        ig = []
         for graph in dataset:
             repeat = True
             while repeat:
                 repeat = False
-                aw = self._attention(graph.clone(), intensity=intensity)  # why clone()?
-                ig = self._integrated_gradients(graph.clone(), intensity=intensity)
+                aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
+                ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
                 user_input = ''
                 # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -64,7 +66,7 @@ class Explainer:
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
         factor = 1 / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
-        depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
+        # depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
         return weights
 
 
@@ -112,18 +114,18 @@ class Explainer:
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # # Shift attributions from baseline to neutral point
-        # # neutral_point = 0.0  #  binary prediction?
-        # neutral_point = self.training_predictions.mean().item()
-        # offset = (neutral_point - baseline_pred).item()
-        # edge_importance -= offset / edge_importance.shape[0]
-        # # VERIFY: Centered property
-        # centered_sum = edge_importance.sum().item()
-        # print(f"\n=== CENTERED (after shifting to neutral) ===")
-        # print(f"Neutral point: {neutral_point:.2f}")
-        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        # print(f"Centered attribution sum: {centered_sum:.2f}")
-        # print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+        # Shift attributions from baseline to neutral point
+        # neutral_point = 0.0  #  binary prediction?
+        neutral_point = self.training_predictions.mean().item()
+        offset = (neutral_point - baseline_pred).item()
+        edge_importance -= offset / edge_importance.shape[0]
+        # VERIFY: Centered property
+        centered_sum = edge_importance.sum().item()
+        print(f"\n=== CENTERED (after shifting to neutral) ===")
+        print(f"Neutral point: {neutral_point:.2f}")
+        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        print(f"Centered attribution sum: {centered_sum:.2f}")
+        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)
@@ -131,7 +133,7 @@ class Explainer:
         if not hasattr(graph, 'label'):  # regression
             factor = 1 / self.model.training_predictions.std().item()
 
-        depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
+        # depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
         return attributions
 
 
