@@ -100,7 +100,7 @@ class Trainer:
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to('cpu')
-                preds, attn_weights = self.model(batch, return_attention=True)
+                preds, attn_weights = model(batch, return_attention=True)
                 training_predictions.extend(preds)  # DEBUG
                 training_attn_weights.extend(attn_weights)
         training_att_factors = torch.stack([aw.max() * aw.numel() for aw in attn_weights])
