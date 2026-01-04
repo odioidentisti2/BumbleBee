@@ -33,7 +33,6 @@ class Explainer:
         for graph in dataset:
             repeat = True
             while repeat:
-                repeat = False
                 aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
                 ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
@@ -45,7 +44,8 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-        return aw, ig
+                return aw, ig
+        # return aw, ig
 
     def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -114,18 +114,18 @@ class Explainer:
         print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
         print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # Shift attributions from baseline to neutral point
-        # neutral_point = 0.0  #  binary prediction?
-        neutral_point = self.training_predictions.mean().item()
-        offset = (neutral_point - baseline_pred).item()
-        edge_importance -= offset / edge_importance.shape[0]
-        # VERIFY: Centered property
-        centered_sum = edge_importance.sum().item()
-        print(f"\n=== CENTERED (after shifting to neutral) ===")
-        print(f"Neutral point: {neutral_point:.2f}")
-        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        print(f"Centered attribution sum: {centered_sum:.2f}")
-        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+        # # Shift attributions from baseline to neutral point
+        # # neutral_point = 0.0  #  binary prediction?
+        # neutral_point = self.model.training_predictions.mean().item()
+        # offset = (neutral_point - baseline_pred).item()
+        # edge_importance -= offset / edge_importance.shape[0]
+        # # VERIFY: Centered property
+        # centered_sum = edge_importance.sum().item()
+        # print(f"\n=== CENTERED (after shifting to neutral) ===")
+        # print(f"Neutral point: {neutral_point:.2f}")
+        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        # print(f"Centered attribution sum: {centered_sum:.2f}")
+        # print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
         print_weights(weights)

@@ -98,7 +98,7 @@ def main(device, dataset_info, model_name=None, cv=False):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_rand42.pt")
+        save(model, "MODELS/logp_rand42_inj.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
 
     model_name = None
-    # model_name = 'logp_prova.pt'
+    # model_name = 'logp_rand42.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
