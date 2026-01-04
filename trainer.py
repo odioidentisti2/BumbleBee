@@ -92,7 +92,7 @@ class Trainer:
         return batch
     
     @staticmethod
-    def calibration_stats(self, model, loader):
+    def calibration_stats(model, loader):
         """Collect attention weights statistics on training set for Explainer."""
         model = model.to('cpu')
         training_attn_weights = []
