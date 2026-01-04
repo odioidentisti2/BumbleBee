@@ -1,12 +1,12 @@
 # PARAMETERS
 main_params = {
     'batch_size': 32,
-    'random_seed': 15,
+    'random_seed': 42,
 }
 
 trainer_params = {
     'lr': 1e-4,
-    'epochs': 100,
+    'epochs': 1,
     # 'weight_decay': 1e-5,
 }
 

@@ -91,30 +91,21 @@ class Trainer:
         self.count += batch.num_graphs
         return batch
     
-    @staticmethod  # Experimental
-    def train_stats(model, calibration_loader):
+    @staticmethod
+    def calibration_stats(self, model, loader):
+        """Collect attention weights statistics on training set for Explainer."""
         model = model.to('cpu')
-        predictions = []
-        train_attn_weights = []
+        training_attn_weights = []
+        training_predictions = []  # DEBUG
         with torch.no_grad():
-            for batch in calibration_loader:
+            for batch in loader:
                 batch = batch.to('cpu')
-                preds, attn_weights = model(batch, return_attention=True)
-                predictions.extend(preds)
-                train_attn_weights.extend(attn_weights)
-        
-        import numpy as np
-        model.stats = {}
-        # IG
-        targets = np.array(predictions)
-        model.stats['target_mean'] = float(targets.mean())
-        model.stats['target_std'] = float(targets.std())
-        model.stats['target_min'] = float(targets.min())
-        model.stats['target_max'] = float(targets.max())
-        # Attention
-        att_factor = np.array([aw.max() * len(aw) for aw in train_attn_weights])
-        model.stats['attention_factor_mean'] = float(att_factor.mean())
-        model.stats['attention_factor_std'] = float(att_factor.std())
+                preds, attn_weights = self.model(batch, return_attention=True)
+                training_predictions.extend(preds)  # DEBUG
+                training_attn_weights.extend(attn_weights)
+        training_att_factors = torch.stack([aw.max() * aw.numel() for aw in attn_weights])
+        model.att_factor_top = training_att_factors.mean().item() + training_att_factors.std().item()
+        model.training_predictions = torch.tensor(training_predictions)  # DEBUG
 
 
 class BinaryHingeLoss(torch.nn.Module):

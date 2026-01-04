@@ -5,29 +5,6 @@ from graphic import *
 from molecular_data import ATOM_DIM
 
 
-def explain(model, dataset):
-    model.eval()
-    explainer = Explainer(model)
-    print("\nCALIBRATION")
-    print(f"Prediction distribution mean/std: {model.stats['target_mean']:.2f} / {model.stats['target_std']:.2f}")
-    print(f"Prediction range: {model.stats['target_min']:.2f} to {model.stats['target_max']:.2f}")
-    print(f"IG top: {explainer.target_std:.2f}")
-    print(f"ATT top: {explainer.att_factor_top:.2f}")
-    intensity = 1
-    for graph in dataset:
-        repeat = True
-        while repeat:
-            explainer.attention(graph.clone(), intensity=intensity)  # why clone()?
-            explainer.integrated_gradients(graph.clone(), intensity=intensity)
-            # explain_with_mlp_IG(model, graph, intensity=current_intensity)
-            # user_input = ''
-            user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-            plus_count = user_input.count('+')
-            minus_count = user_input.count('-')
-            if plus_count + minus_count > 0:
-                intensity *= (2 ** plus_count) / (2 ** minus_count)
-            else:
-                repeat = False  # Move to next molecule
 
 # DEBUG
 def print_weights(weights, average=False):
@@ -42,11 +19,29 @@ class Explainer:
 
     def __init__(self, model):
         self.model = model.to('cpu')
-        self.intensity = 1
-        self.att_factor_top = model.stats['attention_factor_mean'] + model.stats['attention_factor_std']
-        # WARNING: Now I use PREDICTION stats, NOT target stats!
-        self.target_std = model.stats['target_std']
-        self.target_mean = model.stats['target_mean']
+
+    def explain(self, dataset):
+        self.model.eval()
+        print("\nCALIBRATION")
+        print(f"Prediction distribution mean/std: {self.training_predictions.mean():.2f} / {self.training_predictions.std():.2f}")
+        print(f"Prediction range: {self.training_predictions.min():.2f} to {self.training_predictions.max():.2f}")
+        print(f"IG top: {self.model.training_predictions.std():.2f}")
+        print(f"ATT top: {self.model.att_factor_top:.2f}")
+        intensity = 1
+        for graph in dataset:
+            repeat = True
+            while repeat:
+                self.attention(graph.clone(), intensity=intensity)  # why clone()?
+                self.integrated_gradients(graph.clone(), intensity=intensity)
+                # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
+                # user_input = ''
+                user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                plus_count = user_input.count('+')
+                minus_count = user_input.count('-')
+                if plus_count + minus_count > 0:
+                    intensity *= (2 ** plus_count) / (2 ** minus_count)
+                else:
+                    repeat = False  # Move to next molecule
 
     def attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -66,7 +61,7 @@ class Explainer:
         #   weight * len(weights) == 1  means "average attention"
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
-        factor = 1 / (self.att_factor_top + shift)  # scale so that top attention is at 1
+        factor = 1 / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
         depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
 
 
@@ -116,7 +111,7 @@ class Explainer:
 
         # # Shift attributions from baseline to neutral point
         # # neutral_point = 0.0  #  binary prediction?
-        # neutral_point = self.target_mean
+        # neutral_point = self.training_predictions.mean().item()
         # offset = (neutral_point - baseline_pred).item()
         # edge_importance -= offset / edge_importance.shape[0]
         # # VERIFY: Centered property
@@ -131,7 +126,7 @@ class Explainer:
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.target_std
+            factor = 1 / self.model.training_predictions.std()
 
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
 

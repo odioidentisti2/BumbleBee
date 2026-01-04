@@ -39,7 +39,7 @@ class R2Tracker(MetricTracker):
         'residuals_squared_sum': 0.0,
         'total_samples': 0
     }
-    
+
     def __init__(self):
         super().__init__()
 

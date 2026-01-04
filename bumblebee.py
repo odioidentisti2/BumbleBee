@@ -6,7 +6,7 @@ import numpy as np
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
-from explainer import explain
+from explainer import Explainer
 import utils
 import statistics
 
@@ -23,7 +23,8 @@ def save(model, path=None):
         path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'state_dict': model.state_dict(),
-        'model_stats': getattr(model, 'stats', None),
+        'att_factor_top': getattr(model, 'att_factor_top'),
+        'training_predictions': getattr(model, 'training_predictions', None),  # DEBUG
     }
     torch.save(ckpt, path)
     print(f"\nModel checkpoint saved to: {path}")
@@ -32,7 +33,8 @@ def load(model_path, device):
     print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=device)
     model = MAG(ATOM_DIM, BOND_DIM).to(device)
-    model.stats = ckpt.get('model_stats', None)
+    model.att_factor_top = ckpt.get('att_factor_top')
+    model.training_predictions = ckpt.get('training_predictions')  # DEBUG
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
     return model
@@ -86,17 +88,17 @@ def main(device, dataset_info, model_name=None, cv=False):
 
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
-        trainer.mean_target = np.mean(trainingset.targets)  # For injection baseline
+        trainer.mean_target = np.mean(trainingset.targets)  # For injection baseline  (why np???)
         print(f"\nMean target in training set: {trainer.mean_target:.2f}")
         trainer.train(model, train_loader)
-        trainer.train_stats(model, train_loader)  # Needed for Explainer
+        trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training set
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_INJECT_1000_RAND15.pt")
+        # save(model, "MODELS/logp_INJECT_1000_RAND15.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -108,7 +110,9 @@ def main(device, dataset_info, model_name=None, cv=False):
     trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
-    explain(model, testset)
+    # explain(model, testset)
+    explainer = Explainer(model)
+    explainer.explain(testset)
 
     return trainer.statistics
 
@@ -130,7 +134,7 @@ if __name__ == "__main__":
     # model_name = 'logp_benchmark.pt'
     # model_name = 'muta_benchmark.pt'
     
-    print("RANDOM = 15")
+    # print("RANDOM = 15\n")
     main(device, datasets.logp_split, model_name, cv=False)
 
 
