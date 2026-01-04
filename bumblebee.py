@@ -13,6 +13,8 @@ import statistics
 import datasets
 from parameters import main_params as PARAMS
 
+from scipy.stats import pearsonr
+
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
@@ -155,20 +157,52 @@ def robustness(list1, list2):
     return per_sample_robustness, mean_robustness, std_robustness
 
 
+def robustness_pearson(list1, list2):
+    per_sample_robustness = []
+    for t1, t2 in zip(list1, list2):
+        assert len(t1) == len(t2), f"Length mismatch: {len(t1)} vs {len(t2)}"
+        corr, _ = pearsonr(t1.cpu().numpy(), t2.cpu().numpy())
+        per_sample_robustness.append(corr)
+    
+    mean_robustness = np.mean(per_sample_robustness)
+    std_robustness = np.std(per_sample_robustness)
+    return per_sample_robustness, mean_robustness, std_robustness
+
+
+def robustness_mae(list1, list2):
+    per_sample_robustness = []
+    for t1, t2 in zip(list1, list2):
+        assert len(t1) == len(t2), f"Length mismatch: {len(t1)} vs {len(t2)}"
+        mae = torch.abs(t1 - t2).mean().item()
+        per_sample_robustness.append(mae)
+    
+    mean_robustness = np.mean(per_sample_robustness)
+    std_robustness = np.std(per_sample_robustness)
+    return per_sample_robustness, mean_robustness, std_robustness
+
+
 aw42, ig42 = main(device, datasets.muta, 'logp_rand42.pt')
 aw15, ig15 = main(device, datasets.muta, 'logp_rand15.pt')
 aw42_inj, ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
 aw15_inj, ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
 
-print(ig42)
-print(ig42_inj)
+per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
+per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
+per_sample_mae, mean_mae, std_mae = robustness_mae(ig42, ig15)
 
-per_sample_rob, mean_rob, std_rob = robustness(ig42, ig15)
-per_sample_rob_inj, mean_rob_inj, std_rob_inj = robustness(ig42_inj, ig15_inj)
+per_sample_cos_inj, mean_cos_inj, std_cos_inj = robustness(ig42_inj, ig15_inj)
+per_sample_pearson_inj, mean_pearson_inj, std_pearson_inj = robustness_pearson(ig42_inj, ig15_inj)
+per_sample_mae_inj, mean_mae_inj, std_mae_inj = robustness_mae(ig42_inj, ig15_inj)
 
-print(f"IG robustness (ig42 vs ig15): {mean_rob:.4f}")
-print(f"IG robustness with injection (ig42_inj vs ig15_inj): {mean_rob_inj:.4f}")
-print(f"Per-sample robustness (first 10): {per_sample_rob_inj[:10]}")
+print(f"IG robustness (ig42 vs ig15):")
+print(f"  Cosine Similarity:  {mean_cos:.4f} ± {std_cos:.4f}")
+print(f"  Pearson Correlation: {mean_pearson:.4f} ± {std_pearson:.4f}")
+print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
+
+print(f"\nIG robustness with injection (ig42_inj vs ig15_inj):")
+print(f"  Cosine Similarity:  {mean_cos_inj:.4f} ± {std_cos_inj:.4f}")
+print(f"  Pearson Correlation: {mean_pearson_inj:.4f} ± {std_pearson_inj:.4f}")
+print(f"  MAE:                {mean_mae_inj:.4f} ± {std_mae_inj:.4f}")
 
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')
