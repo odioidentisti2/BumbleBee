@@ -126,7 +126,7 @@ class Explainer:
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.model.training_predictions.std()
+            factor = 1 / self.model.training_predictions.std().item()
 
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
 
