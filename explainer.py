@@ -23,9 +23,9 @@ class Explainer:
     def explain(self, dataset):
         self.model.eval()
         print("\nCALIBRATION")
-        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
+        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std(unbiased=False):.2f}")
         print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f"IG top: {self.model.training_predictions.std():.2f}")
+        print(f"IG top: {self.model.training_predictions.std(unbiased=False):.2f}")
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         intensity = 1
         for graph in dataset:
@@ -126,7 +126,7 @@ class Explainer:
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.model.training_predictions.std().item()
+            factor = 1 / self.model.training_predictions.std(unbiased=False).item()
 
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
 
