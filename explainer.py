@@ -33,7 +33,7 @@ class Explainer:
         for graph in dataset:
             repeat = True
             while repeat:
-                aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
+                # aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
                 ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
                 user_input = ''
@@ -44,8 +44,7 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-                return aw, ig
-        # return aw, ig
+        return aw, ig
 
     def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -99,8 +98,8 @@ class Explainer:
 
         # self.backtrack(attributions, graph)
 
-        print("\n\nDEPICT INTEGRATED GRADIENTS")
-        print(f"{graph.y.item():.2f}", graph.smiles)
+        # print("\n\nDEPICT INTEGRATED GRADIENTS")
+        # print(f"{graph.y.item():.2f}", graph.smiles)
         # Get baseline and final predictions for verification
         with torch.no_grad():
             baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
@@ -109,10 +108,10 @@ class Explainer:
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = edge_importance.sum().item()
         # expected_sum = (final_pred - baseline_pred).item()   
-        print(f"\nBaseline prediction: {baseline_pred.item():.2f}")
-        print(f"Attribution sum: {attribution_sum:.2f}")
-        print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
-        print(f"PREDICTION: {final_pred.item():.2f}")
+        # print(f"\nBaseline prediction: {baseline_pred.item():.2f}")
+        # print(f"Attribution sum: {attribution_sum:.2f}")
+        # print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
+        # print(f"PREDICTION: {final_pred.item():.2f}")
 
         # Shift attributions from baseline to neutral point
         # neutral_point = 0.0  #  binary prediction?
@@ -121,20 +120,20 @@ class Explainer:
         edge_importance -= offset / edge_importance.shape[0]
         # VERIFY: Centered property
         centered_sum = edge_importance.sum().item()
-        print(f"\n=== CENTERED (after shifting to neutral) ===")
-        print(f"Neutral point: {neutral_point:.2f}")
-        print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
-        print(f"Centered attribution sum: {centered_sum:.2f}")
-        print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+        # print(f"\n=== CENTERED (after shifting to neutral) ===")
+        # print(f"Neutral point: {neutral_point:.2f}")
+        # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
+        # print(f"Centered attribution sum: {centered_sum:.2f}")
+        # print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         weights = edge_importance.detach().cpu()
-        print_weights(weights)
+        # print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
             factor = 1 / self.model.training_predictions.std().item()
 
         # depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
-        return attributions
+        return edge_importance
 
 
     def backtrack(self, attributions, graph):

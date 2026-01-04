@@ -134,26 +134,42 @@ if __name__ == "__main__":
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    aw, ig = main(device, datasets.logp_split, model_name, cv=False)
-    print(aw)
-    print(ig)
+    # main(device, datasets.logp_split, model_name, cv=False)
 
 
 
-# import torch.nn.functional as F
+import torch.nn.functional as F
 
-# def attention_robustness(attn1, attn2):
-#     """Cosine similarity between two attention tensors (0 to 1, higher is better)."""
-#     return F.cosine_similarity(attn1.unsqueeze(0), attn2.unsqueeze(0)).item()
+def robustness(list1, list2):
+    """Cosine similarity between two lists of tensors."""
+    assert len(list1) == len(list2), "Lists must have same length"
+    
+    per_sample_robustness = []
+    for t1, t2 in zip(list1, list2):
+        assert len(t1) == len(t2), f"Length mismatch: {len(t1)} vs {len(t2)}"
+        sim = F.cosine_similarity(t1.unsqueeze(0), t2.unsqueeze(0)).item()
+        per_sample_robustness.append(sim)
+    
+    mean_robustness = np.mean(per_sample_robustness)
+    std_robustness = np.std(per_sample_robustness)
+    return per_sample_robustness, mean_robustness, std_robustness
 
-# aw42, ig42 = main(device, datasets.muta, 'logp_rand42.pt')
-# aw15, ig15 = main(device, datasets.muta, 'logp_rand15.pt')
-# aw42_inj, ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
-# aw15_inj, ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
-# robustness = attention_robustness(aw42, aw15)
-# robustness_inj = attention_robustness(aw42_inj, aw15_inj)
-# print(f"Attention robustness (aw42 vs aw15): {robustness:.4f}")
-# print(f"Attention robustness with injection (aw42 vs aw15): {robustness_inj:.4f}")
+
+aw42, ig42 = main(device, datasets.muta, 'logp_rand42.pt')
+aw15, ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+aw42_inj, ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
+aw15_inj, ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
+
+print(ig42)
+print(ig42_inj)
+
+per_sample_rob, mean_rob, std_rob = robustness(ig42, ig15)
+per_sample_rob_inj, mean_rob_inj, std_rob_inj = robustness(ig42_inj, ig15_inj)
+
+print(f"IG robustness (ig42 vs ig15): {mean_rob:.4f}")
+print(f"IG robustness with injection (ig42_inj vs ig15_inj): {mean_rob_inj:.4f}")
+print(f"Per-sample robustness (first 10): {per_sample_rob_inj[:10]}")
+
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')
     # l1 = torch.cat(m1.stats[-1]['logits'])
