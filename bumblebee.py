@@ -98,7 +98,7 @@ def main(device, dataset_info, model_name=None, cv=False):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_prova.pt")
+        save(model, "MODELS/logp_rand42_inj.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -112,10 +112,9 @@ def main(device, dataset_info, model_name=None, cv=False):
     ## Explain
     # explain(model, testset)
     explainer = Explainer(model)
-    explainer.explain(testset)
+    aw, ig = explainer.explain(testset)
 
-    return trainer.statistics
-
+    return aw, ig
 
 if __name__ == "__main__":
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
@@ -131,13 +130,24 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
 
     model_name = None
-    # model_name = 'logp_benchmark.pt'
+    # model_name = 'logp_prova.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
     main(device, datasets.logp_split, model_name, cv=False)
 
 
+
+import torch.nn.functional as F
+
+def attention_robustness(attn1, attn2):
+    """Cosine similarity between two attention tensors (0 to 1, higher is better)."""
+    return F.cosine_similarity(attn1.unsqueeze(0), attn2.unsqueeze(0)).item()
+
+aw42, ig42 = main(device, datasets.muta, 'logp_rand42.pt')
+aw15, ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+aw42_inj, ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
+aw15_inj, ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
 
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')

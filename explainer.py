@@ -23,27 +23,29 @@ class Explainer:
     def explain(self, dataset):
         self.model.eval()
         print("\nCALIBRATION")
-        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std(unbiased=False):.2f}")
+        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
         print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f"IG top: {self.model.training_predictions.std(unbiased=False):.2f}")
+        print(f"IG top: {self.model.training_predictions.std():.2f}")
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         intensity = 1
         for graph in dataset:
             repeat = True
             while repeat:
-                self.attention(graph.clone(), intensity=intensity)  # why clone()?
-                self.integrated_gradients(graph.clone(), intensity=intensity)
+                repeat = False
+                aw = self._attention(graph.clone(), intensity=intensity)  # why clone()?
+                ig = self._integrated_gradients(graph.clone(), intensity=intensity)
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
-                # user_input = ''
-                user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                user_input = ''
+                # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                 plus_count = user_input.count('+')
                 minus_count = user_input.count('-')
                 if plus_count + minus_count > 0:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
+        return aw, ig
 
-    def attention(self, graph, intensity=1):
+    def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
         batched_graph = Batch.from_data_list([graph])
         # edge_feat = model.get_features(batched_graph)
@@ -63,9 +65,10 @@ class Explainer:
         shift = -1  # shift so that average attention is at 0
         factor = 1 / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
         depict(graph, scores.numpy()*intensity, factor=factor, shift=shift, attention=True)
+        return weights
 
 
-    def integrated_gradients(self, graph, steps=100, intensity=1):
+    def _integrated_gradients(self, graph, steps=100, intensity=1):
         """Integrated gradients explanation for edge features"""
         graph = graph.to('cpu')
         batched_graph = Batch.from_data_list([graph])
@@ -126,9 +129,10 @@ class Explainer:
         print_weights(weights)
         factor = None
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.model.training_predictions.std(unbiased=False).item()
+            factor = 1 / self.model.training_predictions.std().item()
 
         depict(graph, weights.numpy() * intensity, attention=False, factor=factor)
+        return attributions
 
 
     def backtrack(self, attributions, graph):
