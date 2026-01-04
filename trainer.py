@@ -92,7 +92,7 @@ class Trainer:
         return batch
     
     @staticmethod  # Experimental
-    def calc_stats(model, calibration_loader):
+    def train_stats(model, calibration_loader):
         model = model.to('cpu')
         predictions = []
         train_attn_weights = []
@@ -102,6 +102,7 @@ class Trainer:
                 preds, attn_weights = model(batch, return_attention=True)
                 predictions.extend(preds)
                 train_attn_weights.extend(attn_weights)
+        
         import numpy as np
         model.stats = {}
         # IG
