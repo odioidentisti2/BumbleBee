@@ -121,3 +121,14 @@ class BinaryHingeLoss(torch.nn.Module):
         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
         return loss.mean()
+
+# # Custom Hinge that handles target=0.5 for baseline injection
+# class BinaryHingeLoss(torch.nn.Module):
+#     def forward(self, pred, target):
+#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
+#         loss = torch.zeros_like(pred)
+#         mask_zero = (y == 0)  # target = 0 -> y = 0
+#         mask_nonzero = ~mask_zero
+#         loss[mask_zero] = pred[mask_zero].abs()
+#         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
+#         return loss.mean()
