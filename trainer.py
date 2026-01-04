@@ -26,7 +26,7 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y  #.to(self.device)
-            # batch = self._injected_batch(batch)  # INJECTION
+            batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
             # Learning: zero grad; backward pass; update weights
@@ -72,7 +72,7 @@ class Trainer:
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
 
-    def _injected_batch(self, batch, interval=10000):
+    def _injected_batch(self, batch, interval=1000):
         """Deterministically inject synthetic zero-feature samples every N molecules."""
         global_indices = \
             torch.arange(self.count, self.count + batch.num_graphs) % interval == 0

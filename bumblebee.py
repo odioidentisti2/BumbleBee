@@ -96,7 +96,7 @@ def main(device, dataset_info, model_name=None, cv=False):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        # save(model, "MODELS/logp_INJECT_1000.pt")
+        save(model, "MODELS/logp_INJECT_1000.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -136,24 +136,25 @@ if __name__ == "__main__":
 
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')
-    # pred1 = torch.cat(m1.stats[-1]['predictions'])
     # l1 = torch.cat(m1.stats[-1]['logits'])
 
     # m2 = main(device, datasets.muta, 'muta_RAND30.pt')
-    # pred2 = torch.cat(m2.stats[-1]['predictions'])
     # l2 = torch.cat(m2.stats[-1]['logits'])
 
-    # agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
     # logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
     # logit_diff = (l1 - l2).abs()
-    # print(f"\nModels agreement: {agree} / {len(pred1)}")
     # print(f"Logits close: {logits_close}")
     # print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
     
+    # Binary predictions
+    # pred1 = torch.cat(m1.stats[-1]['predictions'])
+    # pred2 = torch.cat(m2.stats[-1]['predictions'])
+    # agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
+    # print(f"\nModels agreement: {agree} / {len(pred1)}")
     # diff_idx = (pred1 != pred2).nonzero(as_tuple=True)[0]
     # print(f"Discordant: {diff_idx.numel()}") or (print("\n".join(
-    #     f"[{i}] p1={int(pred1[i])} p2={int(pred2[i])} l1={l1[i].tolist()} l2={l2[i].tolist()}"
-    #     for i in diff_idx[:20].tolist())))
+        # f"[{i}] p1={int(pred1[i])} p2={int(pred2[i])} l1={l1[i].tolist()} l2={l2[i].tolist()}"
+        # for i in diff_idx[:20].tolist())))
 
 
 #  TO BE PLACED INSID MAIN TO DEBUG SEED DIVERSITY

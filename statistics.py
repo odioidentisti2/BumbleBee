@@ -10,6 +10,8 @@ class MetricTracker:
     
     def __init__(self):
         self.stats = []
+        self.values['logits'] = []  # DEBUG
+        self.values['predictions'] = []  # DEBUG
     
     def init(self):
         """Start tracking a new run."""
@@ -17,7 +19,7 @@ class MetricTracker:
     
     def update(self, logits, targets):
         """Update statistics for current run."""
-        pass
+        self.stats[-1]['logits'].append(logits)  # DEBUG
     
     def metric(self, index=-1):
         """Compute metric for specific run. Default: last run."""
@@ -37,8 +39,12 @@ class R2Tracker(MetricTracker):
         'residuals_squared_sum': 0.0,
         'total_samples': 0
     }
+    
+    def __init__(self):
+        super().__init__()
 
     def update(self, logits, targets):
+        super().update(logits, targets)
         stats = self.stats[-1]
         stats['total_samples'] += len(targets)
         stats['targets_sum'] += targets.sum().item()
@@ -60,14 +66,12 @@ class AccuracyTracker(MetricTracker):
 
     def __init__(self):
         super().__init__()
-        self.values['logits'] = []
-        self.values['predictions'] = []
 
     def update(self, logits, targets):
+        super().update(logits, targets)
         stats = self.stats[-1]
         preds = (torch.sigmoid(logits) > 0.5)
-        stats['logits'].append(logits)  # debug
-        stats['predictions'].append(preds)  # debug
+        stats['predictions'].append(preds)  # DEBUG
         stats['total_samples'] += len(targets)
         stats['num_correct'] += (preds == targets).sum().item()
 
