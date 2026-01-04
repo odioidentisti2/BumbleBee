@@ -98,7 +98,7 @@ def main(device, dataset_info, model_name=None, cv=False):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_rand42_inj.pt")
+        save(model, "MODELS/logp_rand15_inj.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
