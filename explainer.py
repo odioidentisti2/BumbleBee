@@ -189,6 +189,7 @@ class Explainer:
         self.count += 1  # DEBUG
         if self.count == 1:
             print("\n\nDEPICT INTEGRATED GRADIENTS")
+            print(f'BONDS: {num_bonds}, ATOMS: {num_atoms}')
             print(f"{graph.y.item():.2f}", graph.smiles)
             # Verify the sum property (CRITICAL for IG correctness)
             attribution_sum = aggregated_importance.sum().item()
