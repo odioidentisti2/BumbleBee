@@ -57,9 +57,11 @@ class Explainer:
             # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
         weights = weights[0].detach().cpu()  # remove batch
 
-        print("\nDEPICT ATTENTION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-        print_weights(weights, average=True)
+        self.count += 1
+        if self.count == 1:
+            print("\nDEPICT ATTENTION")
+            print(f"{graph.y.item():.2f}", graph.smiles)
+            print_weights(weights, average=True)
         # Weights come after softmax (they add up to 1): 
         # => weights.mean() = 1 / len(weights)
         # Therefore:
