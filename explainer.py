@@ -99,6 +99,7 @@ class Explainer:
 
         agg_importance = self.backtrack(attributions, graph)
         edge_importance = agg_importance
+        return edge_importance
 
         # print("\n\nDEPICT INTEGRATED GRADIENTS")
         # print(f"{graph.y.item():.2f}", graph.smiles)
@@ -127,7 +128,6 @@ class Explainer:
         # print(f"Offset distributed: {offset:.4f} / {edge_importance.shape[0]} edges = {offset/edge_importance.shape[0]:.4f} per edge")
         # print(f"Centered attribution sum: {centered_sum:.2f}")
         # print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
-        return edge_importance
 
         weights = edge_importance.detach().cpu()
         # print_weights(weights)
