@@ -131,11 +131,11 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
 
     model_name = None
-    model_name = 'logp_rand42.pt'
+    # model_name = 'logp_rand42.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    main(device, datasets.logp_split, model_name, cv=False)
+    # main(device, datasets.logp_split, model_name, cv=False)
 
 
 
