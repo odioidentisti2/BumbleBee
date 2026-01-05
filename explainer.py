@@ -44,7 +44,7 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-            return ig
+            # return ig
         return ig
 
     def _attention(self, graph, intensity=1):
