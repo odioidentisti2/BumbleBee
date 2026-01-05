@@ -34,8 +34,8 @@ class Explainer:
         for graph in dataset:
             repeat = True
             while repeat:
-                # aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
-                ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
+                aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
+                # ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
                 user_input = ''
                 # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -45,8 +45,8 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-            # return ig
-        return ig
+            # return aw
+        return aw
 
     def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -181,13 +181,13 @@ class Explainer:
         aggregated_importance = torch.cat([atom_importance, bond_importance])        
 
 
-        # Get baseline and final predictions for verification
-        with torch.no_grad():
-            baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
-            final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch)
-
         self.count += 1  # DEBUG
         if self.count == 1:
+            # Get baseline and final predictions for verification
+            with torch.no_grad():
+                baseline_pred = self.model.single_forward(baseline, batched_graph.edge_index, batched_graph.batch)
+                final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch)
+
             print("\n\nDEPICT INTEGRATED GRADIENTS")
             print(f'BONDS: {num_bonds}, ATOMS: {num_atoms}')
             print(f"{graph.y.item():.2f}", graph.smiles)
