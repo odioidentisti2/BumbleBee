@@ -98,8 +98,8 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
 
-        # agg_importance = self.backtrack(attributions, graph)
-        # edge_importance = agg_importance
+        agg_importance = self.backtrack(attributions, graph)
+        edge_importance = agg_importance
         # return edge_importance
 
         # Get baseline and final predictions for verification
