@@ -199,20 +199,20 @@ class Explainer:
             print(f"Baseline + Attribution sum: {baseline_pred.item() + attribution_sum:.2f}")    
             print(f"PREDICTION: {final_pred.item():.2f}")
 
-        # Shift attributions from baseline to neutral point
-        # neutral_point = 0.0  #  binary prediction?
-        neutral_point = self.model.training_predictions.mean().item()
-        offset = (neutral_point - baseline_pred).item()
-        num_elements = num_atoms + num_bonds
-        aggregated_importance -= offset / num_elements
-        if self.count == 1:
-            # VERIFY: Centered property
-            centered_sum = aggregated_importance.sum().item()
-            print(f"\n=== CENTERED (after shifting to neutral) ===")
-            print(f"Neutral point: {neutral_point:.2f}")
-            print(f"Offset distributed: {offset:.4f} / {num_elements} edges = {offset/num_elements:.4f} per edge")
-            print(f"Centered attribution sum: {centered_sum:.2f}")
-            print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+        # # Shift attributions from baseline to neutral point
+        # # neutral_point = 0.0  #  binary prediction?
+        # neutral_point = self.model.training_predictions.mean().item()
+        # offset = (neutral_point - baseline_pred).item()
+        # num_elements = num_atoms + num_bonds
+        # aggregated_importance -= offset / num_elements
+        # if self.count == 1:
+        #     # VERIFY: Centered property
+        #     centered_sum = aggregated_importance.sum().item()
+        #     print(f"\n=== CENTERED (after shifting to neutral) ===")
+        #     print(f"Neutral point: {neutral_point:.2f}")
+        #     print(f"Offset distributed: {offset:.4f} / {num_elements} = {offset/num_elements:.4f} per atom/bond")
+        #     print(f"Centered attribution sum: {centered_sum:.2f}")
+        #     print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
 
         return aggregated_importance
 
