@@ -114,9 +114,8 @@ def main(device, dataset_info, model_name=None, cv=False):
     ## Explain
     # explain(model, testset)
     explainer = Explainer(model)
-    aw, ig = explainer.explain(testset)
-
-    return aw, ig
+    ig = explainer.explain(testset)
+    return ig
 
 if __name__ == "__main__":
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
@@ -132,11 +131,11 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
 
     model_name = None
-    # model_name = 'logp_rand42.pt'
+    model_name = 'logp_rand42.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    # main(device, datasets.logp_split, model_name, cv=False)
+    main(device, datasets.logp_split, model_name, cv=False)
 
 
 
@@ -180,11 +179,12 @@ def robustness_mae(list1, list2):
     std_robustness = np.std(per_sample_robustness)
     return per_sample_robustness, mean_robustness, std_robustness
 
-
-aw42, ig42 = main(device, datasets.muta, 'logp_rand42.pt')
-aw15, ig15 = main(device, datasets.muta, 'logp_rand15.pt')
-aw42_inj, ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
-aw15_inj, ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
+print("\nEvaluating IG robustness aggregating attrubutions over atoms and bonds." \
+    "comparing normal (no shift) to injected baseline.\n")
+ig42 = main(device, datasets.muta, 'logp_rand42.pt')
+ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
+ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
 
 per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
 per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
@@ -203,6 +203,9 @@ print(f"\nIG robustness with injection (ig42_inj vs ig15_inj):")
 print(f"  Cosine Similarity:  {mean_cos_inj:.4f} ± {std_cos_inj:.4f}")
 print(f"  Pearson Correlation: {mean_pearson_inj:.4f} ± {std_pearson_inj:.4f}")
 print(f"  MAE:                {mean_mae_inj:.4f} ± {std_mae_inj:.4f}")
+
+
+
 
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')

@@ -44,7 +44,8 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-        return aw, ig
+            return ig
+        return ig
 
     def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -96,7 +97,9 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
 
-        # self.backtrack(attributions, graph)
+        agg_importance = self.backtrack(attributions, graph)
+        return agg_importance
+
 
         # print("\n\nDEPICT INTEGRATED GRADIENTS")
         # print(f"{graph.y.item():.2f}", graph.smiles)
@@ -170,15 +173,21 @@ class Explainer:
                 bond_idx = bond.GetIdx()
                 bond_importance[bond_idx] += edge_bond_scalar[i].item()
 
-        print("\nSPLIT FEATURE ATTRIBUTIONS")
-        print(f"Source node attribution shape: {src_attr.shape}")
-        print(f"Destination node attribution shape: {dst_attr.shape}")
-        print(f"Edge (bond) attribution shape: {edge_attr.shape}")
-        print(f"First edge src: {src_attr[0]}")
-        print(f"First edge dst: {dst_attr[0]}")
-        print(f"First edge bond: {edge_attr[0]}")
+        # Concatenate into single robustness tensor
+        aggregated_importance = torch.cat([atom_importance, bond_importance])        
+        return aggregated_importance
 
-        depict_feat(graph, atom_importance.numpy(), bond_importance.numpy(), attention=False)
+        # print("\nSPLIT FEATURE ATTRIBUTIONS")
+        # print(f"Source node attribution shape: {src_attr.shape}")
+        # print(f"Destination node attribution shape: {dst_attr.shape}")
+        # print(f"Edge (bond) attribution shape: {edge_attr.shape}")
+        # print(f"First edge src: {src_attr[0]}")
+        # print(f"First edge dst: {dst_attr[0]}")
+        # print(f"First edge bond: {edge_attr[0]}")
+
+        # depict_feat(graph, atom_importance.numpy(), bond_importance.numpy(), attention=False)
+
+
 
 
     # def explain_with_mlp_IG(self, graph, steps=50, intensity=1.0):
