@@ -42,8 +42,8 @@ def robustness_mae(list1, list2):
 
 print("\nEvaluating IG robustness aggregating attrubutions over atoms and bonds.\n")
 
-ig42 = main(device, datasets.muta, 'logp_rand42.pt')
-ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+ig42 = main(device, datasets.logp_split, 'logp_rand42.pt')
+ig15 = main(device, datasets.logp_split, 'logp_rand15.pt')
 per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
 per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
 per_sample_mae, mean_mae, std_mae = robustness_mae(ig42, ig15)
