@@ -141,9 +141,9 @@ class Explainer:
 
     def backtrack(self, attributions, graph):
         feature_importance = attributions.detach().cpu()  # shape: [num_edges, num_features_per_edge]
-        print("\nPER-FEATURE INTEGRATED GRADIENTS")
-        print(f"Shape: {feature_importance.shape}")
-        print(f"Example (first edge): {feature_importance[0]}")
+        # print("\nPER-FEATURE INTEGRATED GRADIENTS")
+        # print(f"Shape: {feature_importance.shape}")
+        # print(f"Example (first edge): {feature_importance[0]}")
         src_attr = feature_importance[:, :ATOM_DIM]
         dst_attr = feature_importance[:, ATOM_DIM:2*ATOM_DIM]
         edge_attr = feature_importance[:, 2*ATOM_DIM:]

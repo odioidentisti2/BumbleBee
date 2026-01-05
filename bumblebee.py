@@ -100,7 +100,7 @@ def main(device, dataset_info, model_name=None, cv=False):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/logp_rand15.pt")
+        # save(model, "MODELS/logp_rand15.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -179,26 +179,23 @@ def robustness_mae(list1, list2):
     std_robustness = np.std(per_sample_robustness)
     return per_sample_robustness, mean_robustness, std_robustness
 
-print("\nEvaluating IG robustness aggregating attrubutions over atoms and bonds." \
-    "comparing normal (no shift) to injected baseline.\n")
-ig42 = main(device, datasets.muta, 'logp_rand42.pt')
-ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+print("\nEvaluating IG robustness aggregating attrubutions over atoms and bonds.\n")
+
+# ig42 = main(device, datasets.muta, 'logp_rand42.pt')
+# ig15 = main(device, datasets.muta, 'logp_rand15.pt')
+# per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
+# per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
+# per_sample_mae, mean_mae, std_mae = robustness_mae(ig42, ig15)
+# print(f"IG robustness (ig42 vs ig15):")
+# print(f"  Cosine Similarity:  {mean_cos:.4f} ± {std_cos:.4f}")
+# print(f"  Pearson Correlation: {mean_pearson:.4f} ± {std_pearson:.4f}")
+# print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
+
 ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
 ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
-
-per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
-per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
-per_sample_mae, mean_mae, std_mae = robustness_mae(ig42, ig15)
-
 per_sample_cos_inj, mean_cos_inj, std_cos_inj = robustness(ig42_inj, ig15_inj)
 per_sample_pearson_inj, mean_pearson_inj, std_pearson_inj = robustness_pearson(ig42_inj, ig15_inj)
 per_sample_mae_inj, mean_mae_inj, std_mae_inj = robustness_mae(ig42_inj, ig15_inj)
-
-print(f"IG robustness (ig42 vs ig15):")
-print(f"  Cosine Similarity:  {mean_cos:.4f} ± {std_cos:.4f}")
-print(f"  Pearson Correlation: {mean_pearson:.4f} ± {std_pearson:.4f}")
-print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
-
 print(f"\nIG robustness with injection (ig42_inj vs ig15_inj):")
 print(f"  Cosine Similarity:  {mean_cos_inj:.4f} ± {std_cos_inj:.4f}")
 print(f"  Pearson Correlation: {mean_pearson_inj:.4f} ± {std_pearson_inj:.4f}")
