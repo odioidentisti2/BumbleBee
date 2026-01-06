@@ -123,13 +123,13 @@ if __name__ == "__main__":
 
     ## Inputs
     dataset_info = datasets.logp_split
-    # model_name = 'logp_rand42_inj.pt'
+    model_name = 'logp_rand42.pt'
     # model_name = 'muta_benchmark.pt'
 
     start_time = time.time()
-    crossvalidation(dataset_info, device)   
+    # crossvalidation(dataset_info, device)   
     # print("RANDOM = 15\n")
-    # main_loop(dataset_info, device, model_name)
+    main_loop(dataset_info, device, model_name)
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 

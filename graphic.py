@@ -44,7 +44,7 @@ def yellow(weight):
 
 def depict(graph, weights, attention=False, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
-    weights = weights.astype(float)
+    weights = weights.numpy().astype(float)
     edge_index = graph.edge_index
 
     threshold = 0  # not needed anymore? (normalization in explainer)
