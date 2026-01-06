@@ -131,11 +131,11 @@ if __name__ == "__main__":
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
 
     model_name = None
-    model_name = 'logp_rand42_inj.pt'
+    # model_name = 'logp_rand42_inj.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    main(device, datasets.logp_split, model_name, cv=False)
+    main(device, datasets.logp_split, model_name, cv=True)
 
 
 
