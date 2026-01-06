@@ -35,7 +35,7 @@ class Explainer:
             repeat = True
             while repeat:
                 aw.append(self._attention(graph.clone(), intensity=intensity))  # why clone()?
-                # ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
+                ig.append(self._integrated_gradients(graph.clone(), intensity=intensity))
                 # self.explain_with_mlp_IG(graph.clone(), intensity=current_intensity)
                 user_input = ''
                 # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -45,8 +45,8 @@ class Explainer:
                     intensity *= (2 ** plus_count) / (2 ** minus_count)
                 else:
                     repeat = False  # Move to next molecule
-            # return aw
-        return aw
+            # return aw, ig
+        return aw, ig
 
     def _attention(self, graph, intensity=1):
         graph = graph.to('cpu')
@@ -175,9 +175,7 @@ class Explainer:
             atom_importance[dst] += edge_atom_dst[i].item()
             # find bond instance and accumulate bond contribution
             bond = graph.mol.GetBondBetweenAtoms(src, dst)
-            if bond is not None:
-                bond_idx = bond.GetIdx()
-                bond_importance[bond_idx] += edge_bond_scalar[i].item()
+            bond_importance[bond.GetIdx()] += edge_bond_scalar[i].item()
 
         # Concatenate into single robustness tensor
         aggregated_importance = torch.cat([atom_importance, bond_importance])        

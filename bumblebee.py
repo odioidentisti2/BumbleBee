@@ -112,8 +112,8 @@ def main(device, dataset_info, model_name=None, cv=False):
     ## Explain
     # explain(model, testset)
     explainer = Explainer(model)
-    ig = explainer.explain(testset)
-    return ig
+    aw, ig = explainer.explain(testset)
+    # return ig
 
 
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    main(device, datasets.logp_split, model_name, cv=False)
+    main(device, datasets.logp_split, model_name, cv=True)
 
 
 
