@@ -42,7 +42,7 @@ def yellow(weight):
 #     return bond_keys, summed_weights
 
 
-def depict(graph, weights, attention=True, factor=None, shift=None):
+def depict(graph, weights, attention=False, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.astype(float)
     edge_index = graph.edge_index

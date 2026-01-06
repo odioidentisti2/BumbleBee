@@ -58,6 +58,7 @@ def crossvalidation(trainer, dataset_info, folds=5):
         test_loader = DataLoader(test_subset, batch_size=PARAMS['batch_size'], generator=g)
         
         model = MAG(ATOM_DIM, BOND_DIM)
+        trainer.set_baseline_target(np.mean(dataset.targets))  # For injection baseline 
         trainer.train(model, train_loader, val_loader=test_loader)   
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
@@ -88,8 +89,7 @@ def main(device, dataset_info, model_name=None, cv=False):
 
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
-        trainer.mean_target = np.mean(trainingset.targets)  # For injection baseline  (why np???)
-        print(f"\nMean target in training set: {trainer.mean_target:.2f}")
+        trainer.set_baseline_target(np.mean(trainingset.targets))  # For injection baseline  (why np???)
         trainer.train(model, train_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
 
     model_name = None
-    # model_name = 'logp_rand42.pt'
+    # model_name = 'logp_rand42_inj.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
