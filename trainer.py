@@ -19,8 +19,8 @@ class Trainer:
             self.statistics =  R2Tracker()
         self.count = 0
 
-    def set_baseline_target(self, mean_target):
-        self.mean_target = mean_target
+    def set_baseline_target(self, targets):
+        self.mean_target = sum(targets) / len(targets)
         print(f"\nMean target in training set: {self.mean_target:.2f}")
         
     def _train(self, model, loader):

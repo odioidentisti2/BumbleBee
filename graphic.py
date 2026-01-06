@@ -128,7 +128,7 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
     print(f"Sum: {sum(bond_weights.values()):.2f}")
 
 
-def depict_feat(graph, atom_importance, bond_importance, attention=True, factor=None, shift=None):
+def depict_feat(graph, atom_importance, bond_importance, attention=False, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     edge_index = graph.edge_index
 

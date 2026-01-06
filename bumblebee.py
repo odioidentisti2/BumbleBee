@@ -39,7 +39,7 @@ def load(model_path, device):
     model.eval()
     return model
 
-def crossvalidation(trainer, dataset_info, folds=5):
+def crossvalidation(dataset_info, device, folds=5):
     print(f"\nCross-Validation on: ", dataset_info['path'])
     dataset = GraphDataset(dataset_info)
     from preprocessing import cv_subsets
@@ -58,7 +58,8 @@ def crossvalidation(trainer, dataset_info, folds=5):
         test_loader = DataLoader(test_subset, batch_size=PARAMS['batch_size'], generator=g)
         
         model = MAG(ATOM_DIM, BOND_DIM)
-        trainer.set_baseline_target(np.mean(dataset.targets))  # For injection baseline 
+        trainer = Trainer(dataset_info['task'], device)
+        trainer.set_baseline_target(dataset.targets)  # WARNING: using full dataset targets!!!!!!
         trainer.train(model, train_loader, val_loader=test_loader)   
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
@@ -76,11 +77,11 @@ def main(device, dataset_info, model_name=None, cv=False):
     ## Reproducibility
     set_random_seed(PARAMS['random_seed'])
 
-    trainer = Trainer(dataset_info['task'], device)
-
     if cv:
-        crossvalidation(trainer, dataset_info)
+        crossvalidation( dataset_info, device)
         return
+    
+    trainer = Trainer(dataset_info['task'], device)
 
     if not model_name:  # Train model
         ## Load training set
@@ -89,7 +90,7 @@ def main(device, dataset_info, model_name=None, cv=False):
 
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
-        trainer.set_baseline_target(np.mean(trainingset.targets))  # For injection baseline  (why np???)
+        trainer.set_baseline_target(trainingset.targets)  # For injection baseline
         trainer.train(model, train_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
@@ -130,11 +131,11 @@ if __name__ == "__main__":
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
 
     model_name = None
-    # model_name = 'logp_rand42_inj.pt'
+    model_name = 'logp_rand42_inj.pt'
     # model_name = 'muta_benchmark.pt'
     
     # print("RANDOM = 15\n")
-    main(device, datasets.logp_split, model_name, cv=True)
+    main(device, datasets.logp_split, model_name, cv=False)
 
 
 
