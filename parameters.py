@@ -1,14 +1,21 @@
+from pprint import pprint
+
+
+parameters = []
+
 # PARAMETERS
 main_params = {
     'batch_size': 32,
     'random_seed': 42,
 }
+parameters.append(main_params)
 
 trainer_params = {
     'lr': 1e-4,
     'epochs': 100,
     # 'weight_decay': 1e-5,
 }
+parameters.append(trainer_params)
 
 model_params = {
     'layer_types': ['M', 'M', 'M', 'P'],
@@ -18,6 +25,7 @@ model_params = {
     'ESA_dropout': 0.0,
     'BATCH_DEBUG': False,  # Debug: use batch Attention even on CPU
 }
+parameters.append(model_params)
 
 attention_params = {
     'heads': 8,
@@ -25,6 +33,14 @@ attention_params = {
     'SAB_dropout': 0.0,
     'PMA_dropout': 0.0,
 }
+parameters.append(attention_params)
+
+
+def print_parameters():
+    print('\nPARAMETERS:')
+    for dict in parameters:
+        pprint(dict)
+
 
 
     ## ESA: README

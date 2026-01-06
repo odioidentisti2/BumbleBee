@@ -1,7 +1,5 @@
-import time
 import torch
 from torch_geometric.loader import DataLoader
-import numpy as np
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
@@ -11,16 +9,20 @@ import utils
 import statistics
 
 import datasets
-from parameters import main_params as PARAMS
+from parameters import print_parameters, main_params as PARAMS
+
+
+## CPU or GPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def save(model, path=None):
-    if not path:
-        path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
+def save(model, path):
+    # if not path:
+    #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'state_dict': model.state_dict(),
         'att_factor_top': getattr(model, 'att_factor_top'),
@@ -40,13 +42,13 @@ def load(model_path, device):
     return model
 
 def crossvalidation(dataset_info, device, folds=5):
+    from preprocessing import cv_subsets
     print(f"\nCross-Validation on: ", dataset_info['path'])
     dataset = GraphDataset(dataset_info)
-    from preprocessing import cv_subsets
     cv_tracker = statistics.CVTracker()
-    start_time = time.time()
     
     for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
+        print_parameters()
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
@@ -64,22 +66,12 @@ def crossvalidation(dataset_info, device, folds=5):
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
     cv_tracker.summary()  # Print summary    
-    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
-
-def main(device, dataset_info, model_name=None, cv=False):
-    print('MODEL PARAMETERS:')
-    import parameters, pprint
-    for name in dir(parameters):
-        if name.endswith('_params'):
-            pprint.pprint(getattr(parameters, name))
+def main_loop(dataset_info, device, model_name=None):
+    print_parameters()
 
     ## Reproducibility
     set_random_seed(PARAMS['random_seed'])
-
-    if cv:
-        crossvalidation( dataset_info, device)
-        return
     
     trainer = Trainer(dataset_info['task'], device)
 
@@ -117,26 +109,28 @@ def main(device, dataset_info, model_name=None, cv=False):
     # return ig
 
 
-
-## CPU or GPU
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"DEVICE: {device}\n")
-## Reproducibility
-# if device.type == 'cuda':
-#     import os
-#     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-# torch.use_deterministic_algorithms(True)
-
 if __name__ == "__main__":
+    import time
     print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
-
+    print(f"DEVICE: {device}")
     model_name = None
+
+    ## Reproducibility
+    # if device.type == 'cuda':
+    #     import os
+    #     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+    # torch.use_deterministic_algorithms(True)
+
+    ## Inputs
+    dataset_info = datasets.logp_split
     # model_name = 'logp_rand42_inj.pt'
     # model_name = 'muta_benchmark.pt'
-    
-    # print("RANDOM = 15\n")
-    main(device, datasets.logp_split, model_name, cv=True)
 
+    start_time = time.time()
+    crossvalidation(dataset_info, device)   
+    # print("RANDOM = 15\n")
+    # main_loop(dataset_info, device, model_name)
+    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
 
