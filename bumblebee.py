@@ -91,7 +91,7 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        # save(model, "MODELS/logp_rand15.pt")
+        save(model, "MODELS/muta.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -122,8 +122,9 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
 
     ## Inputs
-    dataset_info = datasets.logp_split
-    model_name = 'logp_rand42.pt'
+    # dataset_info = datasets.logp_split
+    # model_name = 'logp_rand42.pt'
+    dataset_info = datasets.muta
     # model_name = 'muta_benchmark.pt'
 
     start_time = time.time()
