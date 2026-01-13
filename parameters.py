@@ -14,6 +14,7 @@ trainer_params = {
     'lr': 1e-4,
     'epochs': 100,
     # 'weight_decay': 1e-5,
+    'inject': False,  # Enable baseline injection
 }
 parameters.append(trainer_params)
 
