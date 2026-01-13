@@ -30,7 +30,7 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y  #.to(self.device)
-            batch = self._injected_batch(batch)  # INJECTION
+            # batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # calculate loss
             # Learning: zero grad; backward pass; update weights
@@ -112,19 +112,19 @@ class Trainer:
         model.training_predictions = torch.tensor(training_predictions)  # DEBUG
 
 
-# class BinaryHingeLoss(torch.nn.Module):
-#     def forward(self, pred, target):
-#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-#         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
-#         return loss.mean()
-
-# Custom Hinge that handles target=0.5 for baseline injection
 class BinaryHingeLoss(torch.nn.Module):
     def forward(self, pred, target):
         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-        loss = torch.zeros_like(pred)
-        mask_zero = (y == 0)  # target = 0 -> y = 0
-        mask_nonzero = ~mask_zero
-        loss[mask_zero] = pred[mask_zero].abs()
-        loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
+        loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
         return loss.mean()
+
+# Custom Hinge that handles target=0.5 for baseline injection
+# class BinaryHingeLoss(torch.nn.Module):
+#     def forward(self, pred, target):
+#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
+#         loss = torch.zeros_like(pred)
+#         mask_zero = (y == 0)  # target = 0 -> y = 0
+#         mask_nonzero = ~mask_zero
+#         loss[mask_zero] = pred[mask_zero].abs()
+#         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
+#         return loss.mean()
