@@ -113,14 +113,14 @@ class Explainer:
                 final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch).item()
             _ig_summary(graph, edge_importance, baseline_pred, final_pred)
 
-        # Shift attributions from baseline to neutral point
-        neutral_point = self.model.training_predictions.mean().item()  # Binary -> 0.0 ?
-        offset = neutral_point - baseline_pred
-        num_features = edge_importance.shape[0]
-        edge_importance -= offset / num_features
+        # # Shift attributions from baseline to neutral point
+        # neutral_point = self.model.training_predictions.mean().item()  # Binary -> 0.0 ?
+        # offset = neutral_point - baseline_pred
+        # num_features = edge_importance.shape[0]
+        # edge_importance -= offset / num_features
 
-        if self.count == 1:
-            _shift_summary(edge_importance, num_features, neutral_point, offset)
+        # if self.count == 1:
+        #     _shift_summary(edge_importance, num_features, neutral_point, offset)
 
         weights = edge_importance.detach().cpu()
         factor = None
