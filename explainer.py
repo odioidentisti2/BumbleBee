@@ -188,6 +188,7 @@ class Explainer:
         # print(f"First edge dst: {dst_attr[0]}")
         # print(f"First edge bond: {edge_attr[0]}")
 
+        factor = None
         if not hasattr(graph, 'label'):  # regression
             factor = 1 / self.model.training_predictions.std().item()
 
