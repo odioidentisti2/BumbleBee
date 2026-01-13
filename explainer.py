@@ -113,12 +113,11 @@ class Explainer:
                 final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch).item()
             _ig_summary(graph, edge_importance, baseline_pred, final_pred)
 
-        # # Shift attributions from baseline to neutral point
+        # Shift attributions from baseline to neutral point
         # neutral_point = self.model.training_predictions.mean().item()  # Binary -> 0.0 ?
         # offset = neutral_point - baseline_pred
         # num_features = edge_importance.shape[0]
         # edge_importance -= offset / num_features
-
         # if self.count == 1:
         #     _shift_summary(edge_importance, num_features, neutral_point, offset)
 
@@ -170,15 +169,6 @@ class Explainer:
             with torch.no_grad():
                 final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch).item()
             _ig_summary(graph, aggregated_importance, baseline_pred, final_pred, "FOR ATOMS AND BONDS")
-
-        ## How to share the shift between atoms and bonds? bonds have less features....
-        # neutral_point = self.model.training_predictions.mean().item()  # Binary -> 0.0 ?
-        # offset = neutral_point - baseline_pred
-        # num_features = atom_importance.shape[0] + bond_importance.shape[0]
-        # aggregated_importance -= offset / num_features
-        # if self.count == 1:
-        #     _shift_summary(aggregated_importance, num_features, neutral_point, offset)
-
  
         # print("\nSPLIT FEATURE ATTRIBUTIONS")
         # print(f"Source node attribution shape: {src_attr.shape}")
@@ -196,15 +186,15 @@ class Explainer:
         return aggregated_importance
     
 
-def _shift_summary(attributions, num_att, neutral_point, offset):
-    # VERIFY: Centered property
-    centered_sum = attributions.sum().item()
-    print(f"\n=== CENTERED (after shifting to neutral) ===")
-    print(f"Neutral point: {neutral_point:.2f}")
-    print(f"Offset distributed: {offset:.4f} / {num_att} = {offset/num_att:.4f} per edge")
-    print(f"Centered attribution sum: {centered_sum:.2f}")
-    print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
-    print_weights(attributions)
+# def _shift_summary(attributions, num_att, neutral_point, offset):
+#     # VERIFY: Centered property
+#     centered_sum = attributions.sum().item()
+#     print(f"\n=== CENTERED (after shifting to neutral) ===")
+#     print(f"Neutral point: {neutral_point:.2f}")
+#     print(f"Offset distributed: {offset:.4f} / {num_att} = {offset/num_att:.4f} per edge")
+#     print(f"Centered attribution sum: {centered_sum:.2f}")
+#     print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
+#     print_weights(attributions)
 
 def _ig_summary(graph, attributions, baseline_pred, final_pred, text=''):
     print("\n\nDEPICT INTEGRATED GRADIENTS" + text)
