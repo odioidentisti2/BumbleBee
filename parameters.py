@@ -6,7 +6,7 @@ parameters = []
 # PARAMETERS
 main_params = {
     'batch_size': 32,
-    'random_seed': 42,
+    'random_seed': 15
 }
 parameters.append(main_params)
 
@@ -14,7 +14,7 @@ trainer_params = {
     'lr': 1e-4,
     'epochs': 100,
     # 'weight_decay': 1e-5,
-    'inject': True,  # Enable baseline injection
+    'inject': False,  # Enable baseline injection
 }
 parameters.append(trainer_params)
 
