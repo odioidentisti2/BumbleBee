@@ -91,7 +91,7 @@ class Trainer:
                 edge_mask = graph_mask[batch.edge_index[0]]
                 batch.edge_attr[edge_mask] = 0            
             # Set target for baseline
-            batch.y[local_indices] = self.mean_target
+            batch.y[local_indices] = 0.5  # self.mean_target
         
         self.count += batch.num_graphs
         return batch
