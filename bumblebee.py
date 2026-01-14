@@ -86,7 +86,7 @@ def main_loop(dataset_info, device, model_name=None):
         trainer.train(model, train_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
-        ## Statistics on Training set
+        ## Statistics on Training setset_baseline_target
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 

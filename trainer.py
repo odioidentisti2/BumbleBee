@@ -9,7 +9,8 @@ class Trainer:
     def __init__(self, task, device):
         self.device = device
         self.optim = None
-        if task == 'binary_classification':
+        self.task = task
+        if self.task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
             # self.criterion = torch.nn.BCEWithLogitsLoss()
             self.statistics = AccuracyTracker()
@@ -20,8 +21,12 @@ class Trainer:
         self.count = 0
 
     def set_baseline_target(self, targets):
-        self.mean_target = sum(targets) / len(targets)
-        print(f"\nMean target in training set: {self.mean_target:.2f}")
+        if PARAMS['inject']:
+            if self.task == 'binary_classification':
+                self.baseline_target = 0.5  # Decision boundary
+            else:
+                self.baseline_target = sum(targets) / len(targets)
+            print(f"\nBaseline target: {self.baseline_target:.2f}")
         
     def _train(self, model, loader):
         model = model.to(self.device)
@@ -91,7 +96,7 @@ class Trainer:
                 edge_mask = graph_mask[batch.edge_index[0]]
                 batch.edge_attr[edge_mask] = 0            
             # Set target for baseline
-            batch.y[local_indices] = 0.5  # self.mean_target
+            batch.y[local_indices] = self.baseline_target
         
         self.count += batch.num_graphs
         return batch
@@ -124,10 +129,9 @@ class BinaryHingeLoss(torch.nn.Module):
     def forward(self, pred, target):
         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
         loss = torch.zeros_like(pred)
-        mask_zero = (y == 0)  # target = 0 -> y = 0
+        mask_zero = (y == 0)  # target = 0.5 -> y = 0
         mask_nonzero = ~mask_zero
-        loss[mask_zero] = pred[mask_zero].abs()
-        # Push injected samples toward -1
-        # loss[mask_zero] = (pred[mask_zero] + 1).abs()
+        loss[mask_zero] = pred[mask_zero].abs()  # Push injected samples toward 0       
+        # loss[mask_zero] = (pred[mask_zero] + 1).abs()  # Push injected samples toward -1
         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
         return loss.mean()
