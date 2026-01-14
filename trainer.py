@@ -126,8 +126,8 @@ class BinaryHingeLoss(torch.nn.Module):
         loss = torch.zeros_like(pred)
         mask_zero = (y == 0)  # target = 0 -> y = 0
         mask_nonzero = ~mask_zero
-        # loss[mask_zero] = pred[mask_zero].abs()
+        loss[mask_zero] = pred[mask_zero].abs()
         # Push injected samples toward -1
-        loss[mask_zero] = (pred[mask_zero] + 1).abs()
+        # loss[mask_zero] = (pred[mask_zero] + 1).abs()
         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
         return loss.mean()
