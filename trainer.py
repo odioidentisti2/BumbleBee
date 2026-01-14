@@ -126,6 +126,8 @@ class BinaryHingeLoss(torch.nn.Module):
         loss = torch.zeros_like(pred)
         mask_zero = (y == 0)  # target = 0 -> y = 0
         mask_nonzero = ~mask_zero
-        loss[mask_zero] = pred[mask_zero].abs()
+        # loss[mask_zero] = pred[mask_zero].abs()
+        # Quadratic for smoother gradients near zero, scaled by 0.5
+        loss[mask_zero] = 0.5 * (pred[mask_zero] ** 2)
         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
         return loss.mean()
