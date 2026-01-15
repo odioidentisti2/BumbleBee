@@ -1,4 +1,3 @@
-import torch
 from rdkit.Chem.Draw import rdMolDraw2D
 # from rdkit.Geometry import Point2D
 
@@ -45,7 +44,6 @@ def yellow(weight):
 def depict(graph, weights, attention=False, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
     weights = weights.numpy().astype(float)
-    edge_index = graph.edge_index
 
     threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
@@ -62,7 +60,7 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
     atom_colors = {}
 
     # Populating bond_intensity dict
-    for directional_weight, (src, dst) in zip(weights, edge_index.T):
+    for directional_weight, (src, dst) in zip(weights, graph.edge_index.T):
         bond = mol.GetBondBetweenAtoms(int(src), int(dst))
         bond_idx = bond.GetIdx()
         if bond_idx not in bond_weights:
@@ -95,42 +93,12 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
                     continue
                 atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
     
-    # Create drawer
-    drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
-    
-    # Set drawing options
-    opts = drawer.drawOptions()
-    opts.addStereoAnnotation = True
-    opts.addAtomIndices = False  # Set to True if you want to see atom indices
-    opts.multipleBondOffset = 0.18
-    opts.annotationFontScale = 0.8  # Adjust font size for bond labels
-    opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
-
-    target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}\n\n{'Attention' if attention else 'Gradients'}"
-
-    # Draw molecule with highlighting
-    drawer.DrawMolecule(mol,
-                        highlightAtoms=atom_colors.keys(),
-                        highlightAtomColors=atom_colors,
-                        highlightBonds=bond_colors.keys(),
-                        highlightBondColors=bond_colors,
-                        legend=legend)
-    drawer.FinishDrawing()
-
-    # Check if running in Google Colab
-    if IN_COLAB:
-        image_bytes = drawer.GetDrawingText()
-        display(Image(data=image_bytes))
-    else:
-        Image.open(io.BytesIO(drawer.GetDrawingText())).show()
-
     print(f"Sum: {sum(bond_weights.values()):.2f}")
 
+    draw(graph, atom_colors, bond_colors)
 
 def depict_feat(graph, atom_importance, bond_importance, attention=False, factor=None, shift=None):
     graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
-    edge_index = graph.edge_index
 
     threshold = 0  # not needed anymore? (normalization in explainer)
     mol = graph.mol
@@ -156,7 +124,6 @@ def depict_feat(graph, atom_importance, bond_importance, attention=False, factor
     print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
     print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
 
-
     # Color bonds
     for bond in mol.GetBonds():
         bond_idx = bond.GetIdx()
@@ -179,8 +146,11 @@ def depict_feat(graph, atom_importance, bond_importance, attention=False, factor
             weight = weight + shift
         if abs(weight) > abs(threshold):
             atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
+            
+    draw(graph, atom_colors, bond_colors)
 
-    # Create drawer
+
+def draw(graph, atom_colors, bond_colors):  
     drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
     
     # Set drawing options
@@ -192,10 +162,10 @@ def depict_feat(graph, atom_importance, bond_importance, attention=False, factor
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
     target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}\n\n{'Attention' if attention else 'Gradients'}"
+    legend = f"{graph.smiles}\n{target_label}\n"
 
     # Draw molecule with highlighting
-    drawer.DrawMolecule(mol,
+    drawer.DrawMolecule(graph.mol,
                         highlightAtoms=atom_colors.keys(),
                         highlightAtomColors=atom_colors,
                         highlightBonds=bond_colors.keys(),
@@ -210,5 +180,3 @@ def depict_feat(graph, atom_importance, bond_importance, attention=False, factor
     else:
         Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
-    # print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
-    # print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")

@@ -25,10 +25,10 @@ class Explainer:
     def explain(self, dataset):
         self.model.eval()
         print("\nCALIBRATION")
-        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
-        print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f"IG top: {self.model.training_predictions.std():.2f}")
-        print(f"ATT top: {self.model.att_factor_top:.2f}")
+        print(f" Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
+        print(f" Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
+        print(f" IG top: {self.model.training_predictions.std():.2f}")
+        print(f" ATT top: {self.model.att_factor_top:.2f}")
         aw = []
         ig = []
         for graph in dataset:
@@ -99,6 +99,8 @@ class Explainer:
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
+
+        print("PRED:", prediction.item())
 
         self._edge_importance(attributions, graph, baseline_pred, batched_graph, edge_feat)
         self._atom_bond_importance(attributions, graph, baseline_pred, batched_graph, edge_feat)

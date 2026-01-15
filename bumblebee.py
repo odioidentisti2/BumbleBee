@@ -91,7 +91,7 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ## Save model
-        save(model, "MODELS/muta.pt")
+        save(model, "MODELS/logp.pt")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     ## Inputs
     # dataset_info = datasets.logp_split
-    # model_name = 'logp_rand42.pt'
+    # model_name = 'logp_benchmark.pt'
     dataset_info = datasets.logp_split
     # model_name = 'muta_benchmark.pt'
 
