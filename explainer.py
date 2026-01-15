@@ -1,5 +1,6 @@
 import torch
 from torch_geometric.data import Batch
+import utils
 from graphic import *
 
 from molecular_data import ATOM_DIM
@@ -7,12 +8,13 @@ from molecular_data import ATOM_DIM
 
 
 # DEBUG
-def print_weights(weights, average=False):
-    print("\nWEIGHTS:")
+def print_weights(weights, average=False, title="WEIGHTS:"):
+    print(f"\n{title}")
     print(weights)
     print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
     if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
     print(f"Weight sum: {weights.sum():.2f}")
+    print()
 
 
 class Explainer:
@@ -24,11 +26,11 @@ class Explainer:
 
     def explain(self, dataset):
         self.model.eval()
-        print("\nCALIBRATION")
-        print(f" Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
-        print(f" Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f" IG top: {self.model.training_predictions.std():.2f}")
-        print(f" ATT top: {self.model.att_factor_top:.2f}")
+        utils.print_header("CALIBRATION")
+        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
+        print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
+        print(f"IG top: {self.model.training_predictions.std():.2f}")
+        print(f"ATT top: {self.model.att_factor_top:.2f}")
         aw = []
         ig = []
         for graph in dataset:
@@ -59,7 +61,7 @@ class Explainer:
         weights = weights[0].detach()  # remove batch
 
         if self.count == 1:
-            print("\nDEPICT ATTENTION")
+            utils.print_header("ATTENTION-BASED EXPLANATION")
             print(f"{graph.y.item():.2f}", graph.smiles)
             print_weights(weights, average=True)
 
@@ -70,12 +72,11 @@ class Explainer:
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
         factor = self.intensity / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
-        depict(graph, scores, factor=factor, shift=shift, attention=True)
+        depict(graph, scores, factor=factor, shift=shift, positive_only=True)
         return weights
 
 
     def _integrated_gradients(self, graph, steps=100):
-        """Integrated gradients explanation for edge features"""
         graph = graph.cpu()
         batched_graph = Batch.from_data_list([graph])
         edge_feat = self.model.get_features(batched_graph)   
@@ -92,30 +93,40 @@ class Explainer:
                                 create_graph=False
                             )[0]
             if alpha == 0:
-                baseline_pred = prediction.item()        
+                baseline_pred = prediction.item()
+            elif alpha == 1:
+                final_pred = prediction.item()
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
-        self._edge_importance(attributions.detach(), graph, baseline_pred, prediction.item())
-        self._atom_bond_importance(attributions.detach(), graph, baseline_pred, prediction.item())
-
-
-    def _edge_importance(self, attributions, graph, baseline_pred, final_pred):
-        edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
-
         if self.count == 1:
-            _ig_summary(graph, edge_importance, baseline_pred, final_pred)
+            _ig_summary(graph, attributions, baseline_pred, final_pred)
 
         factor = self.intensity
         if not hasattr(graph, 'label'):  # regression
             factor *= 1 / self.model.training_predictions.std().item()
 
+        graph.prediction = final_pred  # DEBUG
+
+        edge_importance = self._edge_importance(attributions.detach(), graph)
         depict(graph, edge_importance, factor=factor)
+
+        atom_importance, bond_importance = self._atom_bond_importance(attributions.detach(), graph)
+        depict_feat(graph, atom_importance, bond_importance, factor=factor)
+        # aggregated_importance = torch.cat([atom_importance, bond_importance])
+        # return aggregated_importance
+
+
+    def _edge_importance(self, attributions, graph):
+        print("\n\nEDGE INTEGRATED GRADIENTS")
+        edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
+        print_weights(edge_importance)
         return edge_importance
 
 
-    def _atom_bond_importance(self, attributions, graph, baseline_pred, final_pred):
+    def _atom_bond_importance(self, attributions, graph):
+        print("\n\nATOM/BOND INTEGRATED GRADIENTS")
         feature_importance = attributions  # shape: [num_edges, num_features_per_edge]
         # print("\nPER-FEATURE INTEGRATED GRADIENTS")
         # print(f"Shape: {feature_importance.shape}")
@@ -147,10 +158,8 @@ class Explainer:
             bond = graph.mol.GetBondBetweenAtoms(src, dst)
             bond_importance[bond.GetIdx()] += edge_bond_scalar[i].item()
 
-        aggregated_importance = torch.cat([atom_importance, bond_importance])
-
-        if self.count == 1:
-            _ig_summary(graph, aggregated_importance, baseline_pred, final_pred, "FOR ATOMS AND BONDS")
+        print_weights(atom_importance, title="ATOM IMPORTANCE:")
+        print_weights(bond_importance, title="BOND IMPORTANCE:")
  
         # print("\nSPLIT FEATURE ATTRIBUTIONS")
         # print(f"Source node attribution shape: {src_attr.shape}")
@@ -160,17 +169,12 @@ class Explainer:
         # print(f"First edge dst: {dst_attr[0]}")
         # print(f"First edge bond: {edge_attr[0]}")
 
-        factor = self.intensity
-        if not hasattr(graph, 'label'):  # regression
-            factor *= 1 / self.model.training_predictions.std().item()
-
-        depict_feat(graph, atom_importance * self.intensity, bond_importance * self.intensity, factor=factor)
-        return aggregated_importance
+        return atom_importance, bond_importance
     
 
-def _ig_summary(graph, attributions, baseline_pred, final_pred, text=''):
-    print("\n\nDEPICT INTEGRATED GRADIENTS" + text)
-    print(f"{graph.y.item():.2f}", graph.smiles)
+def _ig_summary(graph, attributions, baseline_pred, final_pred):
+    utils.print_header("INTEGRATED GRADIENTS EXPLAINATION   ")
+    print(f" {graph.y.item():.2f}", graph.smiles)
     # Verify the sum property (CRITICAL for IG correctness)
     attribution_sum = attributions.sum().item()
     # expected_sum = (final_pred - baseline_pred).item()   
@@ -178,7 +182,6 @@ def _ig_summary(graph, attributions, baseline_pred, final_pred, text=''):
     print(f"Attribution sum: {attribution_sum:.2f}")
     print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
     print(f"PREDICTION: {final_pred:.2f}")
-    print_weights(attributions)
 
 
 

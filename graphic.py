@@ -41,7 +41,7 @@ def yellow(weight):
 #     return bond_keys, summed_weights
 
 
-def depict(graph, weights, attention=False, factor=None, shift=None):
+def depict(graph, weights, positive_only=False, factor=None, shift=None):
     graph = graph.detach()
     weights = weights.numpy().astype(float)
 
@@ -80,7 +80,7 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
         if abs(weight) > abs(threshold):  # Only highlight important bonds 
-            bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
+            bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
 
             # Atoms connected by this bond
             for atom in (bond.GetBeginAtom(), bond.GetEndAtom()):
@@ -91,13 +91,13 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
                     atom_weights[atom_idx] = weight
                 else:
                     continue
-                atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
+                atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
     
     print(f"Sum: {sum(bond_weights.values()):.2f}")
 
     draw(graph, atom_colors, bond_colors)
 
-def depict_feat(graph, atom_importance, bond_importance, attention=False, factor=None, shift=None):
+def depict_feat(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
     graph = graph.detach()
 
     threshold = 0  # not needed anymore? (normalization in explainer)
@@ -125,44 +125,57 @@ def depict_feat(graph, atom_importance, bond_importance, attention=False, factor
     print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
 
     # Color bonds
+    print("\nBonds:")
     for bond in mol.GetBonds():
         bond_idx = bond.GetIdx()
         weight = bond_instance_importance[bond_idx]
+        original_weight = weight
         if factor is not None:
             weight = weight * factor
         if shift is not None:
             weight = weight + shift
         if abs(weight) > abs(threshold):
-            bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
+            bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
+        # Print bond details like in depict()
+        if factor is None and shift is None:
+            print(f"Bond {bond_idx}: {weight:.2f}")
+        else:
+            print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
 
     # Color atoms
+    print("\nAtoms:")
     for atom in mol.GetAtoms():
         atom_idx = atom.GetIdx()
         weight = atom_instance_importance[atom_idx]
+        original_weight = weight
         if factor is not None:
             weight = weight * factor
         if shift is not None:
             weight = weight + shift
         if abs(weight) > abs(threshold):
-            atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
-            
-    draw(graph, atom_colors, bond_colors)
+            atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
+        if factor is None and shift is None:
+            print(f"Atom {atom_idx}: {weight:.2f}")
+        else:
+            print(f"Atom {atom_idx}: {weight:.2f} <- {original_weight:.2f}")
+
+    draw(graph, atom_colors, bond_colors, atom_indices=True)
 
 
-def draw(graph, atom_colors, bond_colors):  
+def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
     drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
     
     # Set drawing options
     opts = drawer.drawOptions()
-    opts.addStereoAnnotation = True
-    opts.addAtomIndices = False  # Set to True if you want to see atom indices
+    opts.addStereoAnnotation = bond_indices
+    opts.addAtomIndices = atom_indices
     opts.multipleBondOffset = 0.18
     opts.annotationFontScale = 0.8  # Adjust font size for bond labels
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
     target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}\n"
+    legend = f"{graph.smiles}\n{target_label}\nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
 
     # Draw molecule with highlighting
     drawer.DrawMolecule(graph.mol,

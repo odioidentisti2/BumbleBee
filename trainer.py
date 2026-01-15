@@ -34,7 +34,7 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            targets = batch.y  #.to(self.device)
+            targets = batch.y
             if PARAMS['inject']:
                 batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
@@ -53,7 +53,7 @@ class Trainer:
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
-                targets = batch.y  # .to(self.device)
+                targets = batch.y
                 logits = model(batch)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
