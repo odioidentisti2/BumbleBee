@@ -124,7 +124,7 @@ if __name__ == "__main__":
     ## Inputs
     # dataset_info = datasets.logp_split
     # model_name = 'logp_rand42.pt'
-    dataset_info = datasets.muta
+    dataset_info = datasets.logp_split
     # model_name = 'muta_benchmark.pt'
 
     start_time = time.time()
