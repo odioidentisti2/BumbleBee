@@ -18,7 +18,7 @@ def print_weights(weights, average=False):
 class Explainer:
 
     def __init__(self, model):
-        self.model = model.to('cpu')
+        self.model = model.cpu()
         self.intensity = 1
         self.count = 0  # DEBUG
 
@@ -50,13 +50,13 @@ class Explainer:
         return aw, ig
 
     def _attention(self, graph):
-        graph = graph.to('cpu')
+        graph = graph.cpu()
         batched_graph = Batch.from_data_list([graph])
         # edge_feat = model.get_features(batched_graph)
         with torch.no_grad():
             _, weights = self.model(batched_graph, return_attention=True)
             # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
-        weights = weights[0].detach().cpu()  # remove batch
+        weights = weights[0].detach()  # remove batch
 
         if self.count == 1:
             print("\nDEPICT ATTENTION")
@@ -69,24 +69,22 @@ class Explainer:
         #   weight * len(weights) == 1  means "average attention"
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
-        factor = 1 / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
-        depict(graph, scores * self.intensity, factor=factor, shift=shift, attention=True)
+        factor = self.intensity / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
+        depict(graph, scores, factor=factor, shift=shift, attention=True)
         return weights
 
 
     def _integrated_gradients(self, graph, steps=100):
         """Integrated gradients explanation for edge features"""
-        graph = graph.to('cpu')
+        graph = graph.cpu()
         batched_graph = Batch.from_data_list([graph])
         edge_feat = self.model.get_features(batched_graph)   
-        baseline = torch.zeros_like(edge_feat)    # TRY MEANINGFUL BASELINE!
+        baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)
 
-        for alpha in torch.linspace(0, 1, steps):  # alpha on cpu by default
-            # Interpolate between baseline and input
+        for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input            
             interp_feat = baseline + alpha * (edge_feat - baseline)
             interp_feat.requires_grad_(True)
-            # Forward pass
             prediction = self.model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
             integrated_grads += torch.autograd.grad(
                                 outputs=prediction,
@@ -94,46 +92,31 @@ class Explainer:
                                 create_graph=False
                             )[0]
             if alpha == 0:
-                baseline_pred = prediction.item()
-        
+                baseline_pred = prediction.item()        
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
-        print("PRED:", prediction.item())
-
-        self._edge_importance(attributions, graph, baseline_pred, batched_graph, edge_feat)
-        self._atom_bond_importance(attributions, graph, baseline_pred, batched_graph, edge_feat)
+        self._edge_importance(attributions.detach(), graph, baseline_pred, prediction.item())
+        self._atom_bond_importance(attributions.detach(), graph, baseline_pred, prediction.item())
 
 
-    def _edge_importance(self, attributions, graph, baseline_pred, batched_graph, edge_feat):
+    def _edge_importance(self, attributions, graph, baseline_pred, final_pred):
         edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
 
         if self.count == 1:
-            # Get final predictions for verification
-            with torch.no_grad():
-                final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch).item()
             _ig_summary(graph, edge_importance, baseline_pred, final_pred)
 
-        # Shift attributions from baseline to neutral point
-        # neutral_point = self.model.training_predictions.mean().item()  # Binary -> 0.0 ?
-        # offset = neutral_point - baseline_pred
-        # num_features = edge_importance.shape[0]
-        # edge_importance -= offset / num_features
-        # if self.count == 1:
-        #     _shift_summary(edge_importance, num_features, neutral_point, offset)
-
-        weights = edge_importance.detach().cpu()
-        factor = None
+        factor = self.intensity
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.model.training_predictions.std().item()
+            factor *= 1 / self.model.training_predictions.std().item()
 
-        depict(graph, weights * self.intensity, factor=factor)
+        depict(graph, edge_importance, factor=factor)
         return edge_importance
 
 
-    def _atom_bond_importance(self, attributions, graph, baseline_pred, batched_graph, edge_feat):
-        feature_importance = attributions.detach().cpu()  # shape: [num_edges, num_features_per_edge]
+    def _atom_bond_importance(self, attributions, graph, baseline_pred, final_pred):
+        feature_importance = attributions  # shape: [num_edges, num_features_per_edge]
         # print("\nPER-FEATURE INTEGRATED GRADIENTS")
         # print(f"Shape: {feature_importance.shape}")
         # print(f"Example (first edge): {feature_importance[0]}")
@@ -167,9 +150,6 @@ class Explainer:
         aggregated_importance = torch.cat([atom_importance, bond_importance])
 
         if self.count == 1:
-            # Get final predictions for verification
-            with torch.no_grad():
-                final_pred = self.model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch).item()
             _ig_summary(graph, aggregated_importance, baseline_pred, final_pred, "FOR ATOMS AND BONDS")
  
         # print("\nSPLIT FEATURE ATTRIBUTIONS")
@@ -180,23 +160,13 @@ class Explainer:
         # print(f"First edge dst: {dst_attr[0]}")
         # print(f"First edge bond: {edge_attr[0]}")
 
-        factor = None
+        factor = self.intensity
         if not hasattr(graph, 'label'):  # regression
-            factor = 1 / self.model.training_predictions.std().item()
+            factor *= 1 / self.model.training_predictions.std().item()
 
         depict_feat(graph, atom_importance * self.intensity, bond_importance * self.intensity, factor=factor)
         return aggregated_importance
     
-
-# def _shift_summary(attributions, num_att, neutral_point, offset):
-#     # VERIFY: Centered property
-#     centered_sum = attributions.sum().item()
-#     print(f"\n=== CENTERED (after shifting to neutral) ===")
-#     print(f"Neutral point: {neutral_point:.2f}")
-#     print(f"Offset distributed: {offset:.4f} / {num_att} = {offset/num_att:.4f} per edge")
-#     print(f"Centered attribution sum: {centered_sum:.2f}")
-#     print(f"Neutral + Centered sum): {neutral_point + centered_sum:.2f}")
-#     print_weights(attributions)
 
 def _ig_summary(graph, attributions, baseline_pred, final_pred, text=''):
     print("\n\nDEPICT INTEGRATED GRADIENTS" + text)

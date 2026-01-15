@@ -42,7 +42,7 @@ def yellow(weight):
 
 
 def depict(graph, weights, attention=False, factor=None, shift=None):
-    graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
+    graph = graph.detach()
     weights = weights.numpy().astype(float)
 
     threshold = 0  # not needed anymore? (normalization in explainer)
@@ -98,7 +98,7 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
     draw(graph, atom_colors, bond_colors)
 
 def depict_feat(graph, atom_importance, bond_importance, attention=False, factor=None, shift=None):
-    graph = graph.to('cpu').detach()  # Ensure data is on CPU for RDKit
+    graph = graph.detach()
 
     threshold = 0  # not needed anymore? (normalization in explainer)
     mol = graph.mol
