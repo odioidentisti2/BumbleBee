@@ -1,5 +1,7 @@
 import torch
 from torch_geometric.data import Batch
+from torch_geometric.utils import degree
+import shap
 import utils
 from graphic import *
 
@@ -107,22 +109,25 @@ class Explainer:
         if not hasattr(graph, 'label'):  # regression
             factor *= 1 / self.model.training_predictions.std().item()
 
-        graph.prediction = final_pred  # DEBUG
+        graph.prediction = final_pred  # DEBUG (check if it's the same of trainer prediction)
 
-        edge_importance = self._edge_importance(attributions.detach(), graph)
-        depict(graph, edge_importance, factor=factor)
+        # edge_importance = self._edge_importance(attributions.detach(), graph)
+        # depict(graph, edge_importance, factor=factor)
 
         atom_importance, bond_importance = self._atom_bond_importance(attributions.detach(), graph)
         depict_feat(graph, atom_importance, bond_importance, factor=factor)
         # aggregated_importance = torch.cat([atom_importance, bond_importance])
         # return aggregated_importance
 
+        edge_importance = self._edge_importance_from_atom_bond(atom_importance, bond_importance, graph)
+        depict(graph, edge_importance, factor=factor)
 
-    def _edge_importance(self, attributions, graph):
-        print("\n\nEDGE INTEGRATED GRADIENTS")
-        edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
-        print_weights(edge_importance)
-        return edge_importance
+
+    # def _edge_importance(self, attributions, graph):
+    #     print("\n\nEDGE INTEGRATED GRADIENTS")
+    #     edge_importance = attributions.sum(dim=1)  # Sum across feature dimensions
+    #     print_weights(edge_importance)
+    #     return edge_importance
 
 
     def _atom_bond_importance(self, attributions, graph):
@@ -170,6 +175,45 @@ class Explainer:
         # print(f"First edge bond: {edge_attr[0]}")
 
         return atom_importance, bond_importance
+        
+    def _edge_importance_from_atom_bond(self, atom_importance, bond_importance, graph):
+        """
+        Reconstruct edge-level importance from atom/bond importance.
+        Applies averaging to handle duplication consistently.
+        Uses graph structure to compute appearance counts efficiently.
+        """
+        print("\n\nEDGE-LEVEL IMPORTANCE (from atom/bond)")
+        
+        src_idx = graph.edge_index[0].cpu()
+        dst_idx = graph.edge_index[1].cpu()
+        num_edges = src_idx.shape[0]
+        
+        # Compute atom appearance counts from degree
+        # Each atom appears in (degree × 2) edges (bidirectional)
+        atom_count = degree(src_idx, num_nodes=graph.x.shape[0]) + \
+                    degree(dst_idx, num_nodes=graph.x.shape[0])
+        
+        # All bonds appear exactly twice (bidirectional)
+        bond_count = 2
+        
+        # Build edge importance with averaged components (single pass)
+        edge_importance = torch.zeros(num_edges)
+        
+        for i in range(num_edges):
+            src = int(src_idx[i])
+            dst = int(dst_idx[i])
+            bond = graph.mol.GetBondBetweenAtoms(src, dst)
+            bond_idx = bond.GetIdx()
+            
+            # Each component divided by its count
+            edge_importance[i] = (
+                atom_importance[src] / atom_count[src] + 
+                atom_importance[dst] / atom_count[dst] + 
+                bond_importance[bond_idx] / bond_count
+            )
+        
+        print_weights(edge_importance, title="EDGE IMPORTANCE (averaged components):")
+        return edge_importance
     
 
 def _ig_summary(graph, attributions, baseline_pred, final_pred):
