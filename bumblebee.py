@@ -99,8 +99,8 @@ def main_loop(dataset_info, device, model_name=None):
 
     ## Test
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
-    trainer.eval(model, test_loader, flag="Test")
+    # test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
+    # trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
     # explain(model, testset)
@@ -122,10 +122,10 @@ if __name__ == "__main__":
     torch.use_deterministic_algorithms(True)
 
     ## Inputs
-    # dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
-    dataset_info = datasets.muta
-    model_name = 'muta.pt'
+    dataset_info = datasets.logp_split
+    model_name = 'logp.pt'
+    # dataset_info = datasets.muta
+    # model_name = 'muta.pt'
 
     start_time = time.time()
     # crossvalidation(dataset_info, device)   
