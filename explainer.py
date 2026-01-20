@@ -10,22 +10,54 @@ from molecular_data import ATOM_DIM
 
 
 
-# DEBUG
-def print_weights(weights, average=False, title="WEIGHTS:"):
-    print(f"\n{title}")
-    print(weights)
-    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
-    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
-    print(f"Weight sum: {weights.sum():.2f}")
-    print()
 
 
 class Explainer:
 
     def __init__(self, model):
-        self.model = model.cpu()
-        self.intensity = 1
         self.count = 0  # DEBUG
+        self.model = model
+        self.task = model.task
+        self.intensity = 1
+        # Attention
+        self.att_shift = -1  # shift so that average attention is at 0
+        self.att_factor = 1 / (self.model.att_factor_top + self.att_shift)  # scale so that top attention is at 1
+        # Integrated Gradients
+        self.ig_factor =  1 / self.model.training_predictions.std().item()
+
+    def batch_explain(self, loader):
+        self.model.eval()
+        utils.print_header("CALIBRATION")
+        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
+        print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
+        print(f"IG top: {self.model.training_predictions.std():.2f}")
+        print(f"IG factor: {self.ig_factor:.2f}")
+        print(f"ATT top: {self.model.att_factor_top:.2f}")
+        print(f"ATT factor: {self.att_factor:.2f}")
+        att_list = []
+        ig_list = []
+        for batch in loader:
+            batch_attention = self.attention(batch.clone())
+            for i, graph in enumerate(batch.to_data_list()):
+                attention = batch_attention[i]
+                att_list.append(attention)
+                ig = self._integrated_gradients(graph.clone())
+                ig_list.append(ig)
+                repeat = True
+                while repeat:
+                    depict(graph, attention, factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
+                    depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
+                    # user_input = ''
+                    user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                    plus_count = user_input.count('+')
+                    minus_count = user_input.count('-')
+                    if plus_count + minus_count > 0:
+                        self.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                    else:
+                        repeat = False  # Move to next molecule
+            # return att_list, ig_list
+        return att_list, ig_list
+    
 
     def explain(self, dataset):
         self.model.eval()
@@ -36,14 +68,12 @@ class Explainer:
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         aw = []
         ig = []
-        shap = []
         for graph in dataset:
             self.count = 1  # DEBUG
             repeat = True
             while repeat:
                 aw.append(self._attention(graph.clone()))  # why clone()?
-                ig.append(self._integrated_gradients(graph.clone()))
-                # shap.append(self._shap(graph.clone()))
+                # ig.append(self._integrated_gradients(graph.clone()))
                 # user_input = ''
                 user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                 plus_count = user_input.count('+')
@@ -54,6 +84,16 @@ class Explainer:
                     repeat = False  # Move to next molecule
             # return aw, ig
         return aw, ig
+    
+    
+    def attention(self, batch):
+        with torch.no_grad():
+            weights = self.model(batch, return_attention=True)  # [batch_size, seq_len]
+        weight_list = []  # to return weights without padding
+        for i, graph in enumerate(batch.to_data_list()):
+            num_weights = graph.edge_index.size(1)
+            weight_list.append(weights[i, :num_weights])  # Remove padding
+        return weight_list
 
     def _attention(self, graph):
         graph = graph.cpu()
@@ -76,7 +116,7 @@ class Explainer:
         scores = weights * len(weights)  # visualize the proportion to average attention
         shift = -1  # shift so that average attention is at 0
         factor = self.intensity / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
-        depict(graph, scores, factor=factor, shift=shift, positive_only=True)
+        depict(graph, scores, factor=factor, shift=shift, attention=True)
         return weights
 
 
@@ -104,13 +144,13 @@ class Explainer:
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
-        if self.count == 1:
+        if self.count == 0:
             utils.print_header("INTEGRATED GRADIENTS EXPLAINATION")
-            _summary(graph, attributions, baseline_pred, final_pred)
+            _summary(attributions, baseline_pred, final_pred)
 
-        factor = self.intensity
-        if not hasattr(graph, 'label'):  # regression
-            factor *= 1 / self.model.training_predictions.std().item()
+        # factor = self.intensity
+        # if not hasattr(graph, 'label'):  # regression
+        #     factor *= 1 / self.model.training_predictions.std().item()
 
         graph.prediction = final_pred  # DEBUG (check if it's the same of trainer prediction)
 
@@ -121,11 +161,12 @@ class Explainer:
         atom_importance, bond_importance = self.aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance)
         # aggregated_importance = torch.cat([atom_importance, bond_importance])
         # return aggregated_importance
-        depict_feat(graph, atom_importance, bond_importance, factor=factor)
+        # depict_feat(graph, atom_importance, bond_importance, factor=factor)
 
         # STEP 3: Redistribute to edge-level
         edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
-        depict(graph, edge_importance, factor=factor)
+        # depict(graph, edge_importance, factor=factor)
+        return edge_importance
 
 
     def aggregate_per_feature(self, attributions, graph):
@@ -182,7 +223,7 @@ class Explainer:
         return atom_importance, bond_importance
   
     def aggregate_per_edge(self, atom_importance, bond_importance, graph):
-        print("\n\nEDGE IMPORTANCE:")
+        # print("\n\nEDGE IMPORTANCE:")
         
         src_idx = graph.edge_index[0].cpu()
         dst_idx = graph.edge_index[1].cpu()
@@ -212,99 +253,11 @@ class Explainer:
                 bond_importance[bond_idx] / bond_count
             )
         
-        print_weights(edge_importance, title="EDGE IMPORTANCE (averaged components):")
+        
         return edge_importance
     
-    def _shap(self, graph, background_size=1):  # Changed to 1
-        """
-        SHAP explanation using KernelExplainer (model-agnostic).
-        Uses same aggregation logic as IG for consistency.
-        """
-        import numpy as np
-        import shap
-        
-        utils.print_header("SHAP EXPLANATION")
-        graph = graph.cpu()
-        batched_graph = Batch.from_data_list([graph])
-        
-        # Get edge features
-        edge_feat = self.model.get_features(batched_graph)
-        num_edges = edge_feat.shape[0]
-        
-        # Use zero baseline (like your IG) - single sample
-        background = torch.zeros_like(edge_feat).unsqueeze(0).numpy()  # [1, num_edges, num_features]
-        background = background.reshape(1, -1)  # [1, num_edges*num_features]
-        
-        # Wrap model for SHAP
-        def model_fn(x):
-            """Takes numpy array, returns numpy array"""
-            x_tensor = torch.tensor(x, dtype=torch.float32, device=edge_feat.device)
-            
-            # Reshape from flat to [num_coalitions, num_edges, num_features]
-            num_coalitions = x_tensor.shape[0]
-            x_tensor = x_tensor.reshape(num_coalitions, num_edges, -1)
-            
-            predictions = []
-            for i in range(num_coalitions):
-                coalition_feat = x_tensor[i]  # [num_edges, num_features]
-                
-                with torch.no_grad():
-                    output = self.model.single_forward(
-                        coalition_feat,
-                        batched_graph.edge_index, 
-                        batched_graph.batch
-                    )
-                predictions.append(output.cpu().item())
-            
-            return np.array(predictions)
-    
-        # Create SHAP explainer
-        explainer = shap.KernelExplainer(
-            model_fn,
-            background
-        )
-        
-        # Flatten edge_feat for SHAP
-        edge_feat_flat = edge_feat.cpu().numpy().reshape(1, -1)  # [1, num_edges*num_features]
-        
-        # Compute SHAP values
-        shap_values = explainer.shap_values(edge_feat_flat, nsamples=1000)
-        
-        # Reshape back to [num_edges, num_features]
-        attributions = torch.tensor(shap_values, dtype=torch.float32).reshape(num_edges, -1).cpu().detach()
-        
-        if self.count == 1:
-            baseline_pred = self.model.single_forward(
-                torch.zeros_like(edge_feat), 
-                batched_graph.edge_index, 
-                batched_graph.batch
-            ).item()
-            final_pred = self.model.single_forward(
-                edge_feat, 
-                batched_graph.edge_index, 
-                batched_graph.batch
-            ).item()
-            _summary(graph, attributions, baseline_pred, final_pred)
-        
-        factor = self.intensity
-        if not hasattr(graph, 'label'):  # regression
-            factor *= 1 / self.model.training_predictions.std().item()
-        
-        graph.prediction = final_pred
-        
-        # First: atom/bond visualization (raw sums)
-        atom_importance, bond_importance = self._atom_bond_importance(attributions, graph)
-        depict_feat(graph, atom_importance, bond_importance, factor=factor)
-        
-        # Second: edge visualization (with averaging to handle duplication)
-        edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
-        depict(graph, edge_importance, factor=factor)
-        
-        return attributions
-    
 
-def _summary(graph, attributions, baseline_pred, final_pred):
-    print(f" {graph.y.item():.2f}", graph.smiles)
+def _summary(attributions, baseline_pred, final_pred):
     # Verify the sum property (CRITICAL for IG correctness)
     attribution_sum = attributions.sum().item()
     # expected_sum = (final_pred - baseline_pred).item()   
@@ -314,5 +267,90 @@ def _summary(graph, attributions, baseline_pred, final_pred):
     print(f"PREDICTION: {final_pred:.2f}")
 
 
-
-
+    
+    # def _shap(self, graph, background_size=1):  # Changed to 1
+    #     """
+    #     SHAP explanation using KernelExplainer (model-agnostic).
+    #     Uses same aggregation logic as IG for consistency.
+    #     """
+    #     import numpy as np
+    #     import shap
+        
+    #     utils.print_header("SHAP EXPLANATION")
+    #     graph = graph.cpu()
+    #     batched_graph = Batch.from_data_list([graph])
+        
+    #     # Get edge features
+    #     edge_feat = self.model.get_features(batched_graph)
+    #     num_edges = edge_feat.shape[0]
+        
+    #     # Use zero baseline (like your IG) - single sample
+    #     background = torch.zeros_like(edge_feat).unsqueeze(0).numpy()  # [1, num_edges, num_features]
+    #     background = background.reshape(1, -1)  # [1, num_edges*num_features]
+        
+    #     # Wrap model for SHAP
+    #     def model_fn(x):
+    #         """Takes numpy array, returns numpy array"""
+    #         x_tensor = torch.tensor(x, dtype=torch.float32, device=edge_feat.device)
+            
+    #         # Reshape from flat to [num_coalitions, num_edges, num_features]
+    #         num_coalitions = x_tensor.shape[0]
+    #         x_tensor = x_tensor.reshape(num_coalitions, num_edges, -1)
+            
+    #         predictions = []
+    #         for i in range(num_coalitions):
+    #             coalition_feat = x_tensor[i]  # [num_edges, num_features]
+                
+    #             with torch.no_grad():
+    #                 output = self.model.single_forward(
+    #                     coalition_feat,
+    #                     batched_graph.edge_index, 
+    #                     batched_graph.batch
+    #                 )
+    #             predictions.append(output.cpu().item())
+            
+    #         return np.array(predictions)
+    
+    #     # Create SHAP explainer
+    #     explainer = shap.KernelExplainer(
+    #         model_fn,
+    #         background
+    #     )
+        
+    #     # Flatten edge_feat for SHAP
+    #     edge_feat_flat = edge_feat.cpu().numpy().reshape(1, -1)  # [1, num_edges*num_features]
+        
+    #     # Compute SHAP values
+    #     shap_values = explainer.shap_values(edge_feat_flat, nsamples=1000)
+        
+    #     # Reshape back to [num_edges, num_features]
+    #     attributions = torch.tensor(shap_values, dtype=torch.float32).reshape(num_edges, -1).cpu().detach()
+        
+    #     if self.count == 1:
+    #         baseline_pred = self.model.single_forward(
+    #             torch.zeros_like(edge_feat), 
+    #             batched_graph.edge_index, 
+    #             batched_graph.batch
+    #         ).item()
+    #         final_pred = self.model.single_forward(
+    #             edge_feat, 
+    #             batched_graph.edge_index, 
+    #             batched_graph.batch
+    #         ).item()
+    #         _summary(graph, attributions, baseline_pred, final_pred)
+        
+    #     factor = self.intensity
+    #     if not hasattr(graph, 'label'):  # regression
+    #         factor *= 1 / self.model.training_predictions.std().item()
+        
+    #     graph.prediction = final_pred
+        
+    #     # First: atom/bond visualization (raw sums)
+    #     atom_importance, bond_importance = self._atom_bond_importance(attributions, graph)
+    #     depict_feat(graph, atom_importance, bond_importance, factor=factor)
+        
+    #     # Second: edge visualization (with averaging to handle duplication)
+    #     edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
+    #     depict(graph, edge_importance, factor=factor)
+        
+    #     return attributions

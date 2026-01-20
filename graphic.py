@@ -1,5 +1,6 @@
 from rdkit.Chem.Draw import rdMolDraw2D
-# from rdkit.Geometry import Point2D
+
+import utils
 
 # Check if running in Google Colab
 # I think if I use matplotlib I won't need this
@@ -40,8 +41,35 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
+def print_weights(weights, average=False, title="WEIGHTS:"):
+    print(f"\n{title}")
+    print(weights)
+    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
+    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
+    print(f"Weight sum: {weights.sum():.2f}")
+    print()
 
-def depict(graph, weights, positive_only=False, factor=None, shift=None):
+def att_scores(weights):
+    # Weights come after softmax (they add up to 1): 
+    # => weights.mean() = 1 / len(weights)
+    # Therefore:
+    #   weight * len(weights) == 1  means "average attention"
+    scores = weights * weights.shape[0]  # visualize the proportion to average attention
+    return scores
+
+def depict(graph, weights, attention=False, factor=None, shift=None):
+
+    if attention:
+        utils.print_header("ATTENTION-BASED EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+        weights = att_scores(weights)
+    else:
+        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+
+
     graph = graph.detach()
     weights = weights.numpy().astype(float)
 
@@ -80,7 +108,7 @@ def depict(graph, weights, positive_only=False, factor=None, shift=None):
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
         if abs(weight) > abs(threshold):  # Only highlight important bonds 
-            bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
+            bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
 
             # Atoms connected by this bond
             for atom in (bond.GetBeginAtom(), bond.GetEndAtom()):
@@ -91,7 +119,7 @@ def depict(graph, weights, positive_only=False, factor=None, shift=None):
                     atom_weights[atom_idx] = weight
                 else:
                     continue
-                atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
+                atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
     
     print(f"Sum: {sum(bond_weights.values()):.2f}")
 

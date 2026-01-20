@@ -5,7 +5,7 @@ parameters = []
 
 # PARAMETERS
 main_params = {
-    'batch_size': 32,
+    'batch_size': 16,
     'random_seed': 42,
 }
 parameters.append(main_params)
@@ -24,7 +24,7 @@ model_params = {
     'hidden_dim': 128,
     'mlp_expansion': 2,
     'ESA_dropout': 0.0,
-    'BATCH_DEBUG': False,  # Debug: use batch Attention even on CPU
+    'BATCH_DEBUG': True,  # Debug: use batch Attention even on CPU
 }
 parameters.append(model_params)
 

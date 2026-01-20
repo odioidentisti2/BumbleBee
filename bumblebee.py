@@ -95,18 +95,20 @@ def main_loop(dataset_info, device, model_name=None):
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
-        # assert model.task == trainer.task
+        # there should be task inside model......    
+
+    model.task = dataset_info['task']
 
     ## Test
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    # test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
+    test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
     # trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
     # explain(model, testset)
     explainer = Explainer(model)
-    aw, ig = explainer.explain(testset)
-    # return ig
+    return explainer.batch_explain(test_loader)
+    # return explainer.explain(testset)
 
 
 if __name__ == "__main__":
