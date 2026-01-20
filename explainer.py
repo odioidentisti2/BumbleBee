@@ -35,6 +35,7 @@ class Explainer:
         self.model.eval()        
         att_list = []
         ig_list = []
+        c = 0
         for batch in loader:
             batch = batch.to(self.device)
             att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
@@ -43,7 +44,7 @@ class Explainer:
                 ig_list.append(ig)
                 repeat = True
                 while repeat:
-                    depict(graph, att_list[i], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
+                    depict(graph, att_list[c], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
                     depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -53,6 +54,7 @@ class Explainer:
                         self.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
+                c += 1
             # return att_list, ig_list
         return att_list, ig_list
     
