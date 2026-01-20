@@ -12,7 +12,6 @@ from molecular_data import ATOM_DIM
 class Explainer:
 
     def __init__(self, model, device):
-        self.count = 0  # DEBUG
         self.model = model
         self.device = device
         self.intensity = 1
@@ -91,15 +90,16 @@ class Explainer:
 
     def _integrated_gradients(self, graph, steps=100):
         graph = graph.cpu()
+        model = self.model.cpu()
         batched_graph = Batch.from_data_list([graph])
-        edge_feat = self.model.get_features(batched_graph)   
+        edge_feat = model.get_features(batched_graph)   
         baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)
 
         for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input            
             interp_feat = baseline + alpha * (edge_feat - baseline)
             interp_feat.requires_grad_(True)
-            prediction = self.model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
+            prediction = model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
             integrated_grads += torch.autograd.grad(
                                 outputs=prediction,
                                 inputs=interp_feat,
@@ -113,9 +113,8 @@ class Explainer:
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
-        if self.count == 0:
-            utils.print_header("INTEGRATED GRADIENTS EXPLAINATION")
-            _summary(attributions, baseline_pred, final_pred)
+        utils.print_header("INTEGRATED GRADIENTS EXPLAINATION")
+        _summary(attributions, baseline_pred, final_pred)
 
         graph.prediction = final_pred  # DEBUG (check if it's the same of trainer prediction)
 
