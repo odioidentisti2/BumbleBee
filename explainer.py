@@ -42,8 +42,8 @@ class Explainer:
                 ig_list.append(ig)
                 repeat = True
                 while repeat:
-                    depict(graph, att_list[i], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
-                    depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
+                    # depict(graph, att_list[i], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
+                    # depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
