@@ -9,24 +9,20 @@ from graphic import *
 from molecular_data import ATOM_DIM
 
 
-
-
-
 class Explainer:
 
     def __init__(self, model):
         self.count = 0  # DEBUG
         self.model = model
-        self.task = model.task
         self.intensity = 1
         # Attention
         self.att_shift = -1  # shift so that average attention is at 0
         self.att_factor = 1 / (self.model.att_factor_top + self.att_shift)  # scale so that top attention is at 1
         # Integrated Gradients
-        self.ig_factor =  1 / self.model.training_predictions.std().item()
+        self.ig_factor =  1 / self.model.training_predictions.std().item()  # using PREDICTION std (not actual target)
+        self.calibration_summary()
 
-    def batch_explain(self, loader):
-        self.model.eval()
+    def calibration_summary(self):
         utils.print_header("CALIBRATION")
         print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
         print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
@@ -34,18 +30,19 @@ class Explainer:
         print(f"IG factor: {self.ig_factor:.2f}")
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         print(f"ATT factor: {self.att_factor:.2f}")
+
+    def batch_explain(self, loader):
+        self.model.eval()        
         att_list = []
         ig_list = []
         for batch in loader:
-            batch_attention = self.attention(batch.clone())
+            att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
             for i, graph in enumerate(batch.to_data_list()):
-                attention = batch_attention[i]
-                att_list.append(attention)
                 ig = self._integrated_gradients(graph.clone())
                 ig_list.append(ig)
                 repeat = True
                 while repeat:
-                    depict(graph, attention, factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
+                    depict(graph, att_list[i], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
                     depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
@@ -58,67 +55,37 @@ class Explainer:
             # return att_list, ig_list
         return att_list, ig_list
     
-
-    def explain(self, dataset):
-        self.model.eval()
-        utils.print_header("CALIBRATION")
-        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
-        print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f"IG top: {self.model.training_predictions.std():.2f}")
-        print(f"ATT top: {self.model.att_factor_top:.2f}")
-        aw = []
-        ig = []
-        for graph in dataset:
-            self.count = 1  # DEBUG
-            repeat = True
-            while repeat:
-                aw.append(self._attention(graph.clone()))  # why clone()?
-                # ig.append(self._integrated_gradients(graph.clone()))
-                # user_input = ''
-                user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-                plus_count = user_input.count('+')
-                minus_count = user_input.count('-')
-                if plus_count + minus_count > 0:
-                    self.intensity *= (2 ** plus_count) / (2 ** minus_count)
-                else:
-                    repeat = False  # Move to next molecule
-            # return aw, ig
-        return aw, ig
-    
+    # def explain(self, dataset):
+    #     self.model.eval()
+    #     utils.print_header("CALIBRATION")
+    #     print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
+    #     print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
+    #     print(f"IG top: {self.model.training_predictions.std():.2f}")
+    #     print(f"ATT top: {self.model.att_factor_top:.2f}")
+    #     aw = []
+    #     ig = []
+    #     for graph in dataset:
+    #         self.count = 1  # DEBUG
+    #         repeat = True
+    #         while repeat:
+    #             aw.append(self._attention(graph.clone()))  # why clone()?
+    #             # ig.append(self._integrated_gradients(graph.clone()))
+    #             # user_input = ''
+    #             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+    #             plus_count = user_input.count('+')
+    #             minus_count = user_input.count('-')
+    #             if plus_count + minus_count > 0:
+    #                 self.intensity *= (2 ** plus_count) / (2 ** minus_count)
+    #             else:
+    #                 repeat = False  # Move to next molecule
+    #         # return aw, ig
+    #     return aw, ig    
     
     def attention(self, batch):
         with torch.no_grad():
             weights = self.model(batch, return_attention=True)  # [batch_size, seq_len]
-        weight_list = []  # to return weights without padding
-        for i, graph in enumerate(batch.to_data_list()):
-            num_weights = graph.edge_index.size(1)
-            weight_list.append(weights[i, :num_weights])  # Remove padding
+        weight_list = [weights[i, :graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
         return weight_list
-
-    def _attention(self, graph):
-        graph = graph.cpu()
-        batched_graph = Batch.from_data_list([graph])
-        # edge_feat = model.get_features(batched_graph)
-        with torch.no_grad():
-            _, weights = self.model(batched_graph, return_attention=True)
-            # _, weights = model.single_forward(edge_feat, batched_graph.edge_index, batched_graph.batch, return_attention=True)[0]  # remove batch
-        weights = weights[0].detach()  # remove batch
-
-        if self.count == 1:
-            utils.print_header("ATTENTION-BASED EXPLANATION")
-            print(f"{graph.y.item():.2f}", graph.smiles)
-            print_weights(weights, average=True)
-
-        # Weights come after softmax (they add up to 1): 
-        # => weights.mean() = 1 / len(weights)
-        # Therefore:
-        #   weight * len(weights) == 1  means "average attention"
-        scores = weights * len(weights)  # visualize the proportion to average attention
-        shift = -1  # shift so that average attention is at 0
-        factor = self.intensity / (self.model.att_factor_top + shift)  # scale so that top attention is at 1
-        depict(graph, scores, factor=factor, shift=shift, attention=True)
-        return weights
-
 
     def _integrated_gradients(self, graph, steps=100):
         graph = graph.cpu()
@@ -147,10 +114,6 @@ class Explainer:
         if self.count == 0:
             utils.print_header("INTEGRATED GRADIENTS EXPLAINATION")
             _summary(attributions, baseline_pred, final_pred)
-
-        # factor = self.intensity
-        # if not hasattr(graph, 'label'):  # regression
-        #     factor *= 1 / self.model.training_predictions.std().item()
 
         graph.prediction = final_pred  # DEBUG (check if it's the same of trainer prediction)
 
