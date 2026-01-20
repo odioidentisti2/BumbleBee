@@ -71,7 +71,7 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
 
 
     graph = graph.detach()
-    weights = weights.numpy().astype(float)
+    weights = weights.cpu().numpy().astype(float)
 
     threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
