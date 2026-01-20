@@ -36,6 +36,7 @@ class Explainer:
         att_list = []
         ig_list = []
         for batch in loader:
+            batch = batch.to(self.model.device)
             att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
             for i, graph in enumerate(batch.to_data_list()):
                 ig = self._integrated_gradients(graph.clone())
