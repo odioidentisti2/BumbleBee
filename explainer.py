@@ -11,9 +11,10 @@ from molecular_data import ATOM_DIM
 
 class Explainer:
 
-    def __init__(self, model):
+    def __init__(self, model, device):
         self.count = 0  # DEBUG
         self.model = model
+        self.device = device
         self.intensity = 1
         # Attention
         self.att_shift = -1  # shift so that average attention is at 0
@@ -36,9 +37,9 @@ class Explainer:
         att_list = []
         ig_list = []
         for batch in loader:
-            batch = batch.to(self.model.device)
+            batch = batch.to(self.device)
             att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
-            for i, graph in enumerate(batch.to_data_list()):
+            for graph in batch.to_data_list():
                 ig = self._integrated_gradients(graph.clone())
                 ig_list.append(ig)
                 repeat = True
