@@ -173,8 +173,8 @@ class Explainer:
         
         # Accumulate feature vectors for each unique atom/bond
         for i in range(attributions.shape[0]):
-            src = int(src_idx[i])
-            dst = int(dst_idx[i])
+            src = src_idx[i].item()
+            dst = dst_idx[i].item()
             
             # Accumulate atom feature attributions
             atom_feat_importance[src] += src_attr[i]
@@ -193,15 +193,12 @@ class Explainer:
         return atom_feat_importance, bond_feat_importance
     
     def aggregate_per_atom_bond(self, atom_feat_importance, bond_feat_importance):
-        # print("\n\nATOM/BOND IMPORTANCE:")
-        
+        # print("\n\nATOM/BOND IMPORTANCE:")        
         # Sum across feature dimension
         atom_importance = atom_feat_importance.sum(dim=1)  # [num_atoms]
         bond_importance = bond_feat_importance.sum(dim=1)  # [num_bonds]
-        
         # print_weights(atom_importance, 
-        # title="BOND IMPORTANCE:")
-        
+        # title="BOND IMPORTANCE:")        
         return atom_importance, bond_importance
   
     def aggregate_per_edge(self, atom_importance, bond_importance, graph):
@@ -223,8 +220,8 @@ class Explainer:
         edge_importance = torch.zeros(num_edges)
         
         for i in range(num_edges):
-            src = int(src_idx[i])
-            dst = int(dst_idx[i])
+            src = src_idx[i].item()
+            dst = dst_idx[i].item()
             bond = graph.mol.GetBondBetweenAtoms(src, dst)
             bond_idx = bond.GetIdx()
             
