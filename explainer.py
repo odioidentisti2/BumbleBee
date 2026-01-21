@@ -1,7 +1,6 @@
 import torch
 from torch_geometric.utils import degree
 # import shap
-# import numpy as np
 import utils
 from graphic import *
 
