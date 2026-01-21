@@ -20,9 +20,9 @@ class Explainer:
         self.att_factor = 1 / (self.model.att_factor_top + self.att_shift)  # scale so that top attention is at 1
         # Integrated Gradients
         self.ig_factor =  1 / self.model.training_predictions.std().item()  # using PREDICTION std (not actual target)
-        self.calibration_summary()
-
-    def calibration_summary(self):
+        self.baseline_pred = None  # DEBUG
+        self.predictions = []  # DEBUG
+        #SUMMARY
         utils.print_header("CALIBRATION")
         print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
         print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
@@ -31,7 +31,31 @@ class Explainer:
         print(f"ATT top: {self.model.att_factor_top:.2f}")
         print(f"ATT factor: {self.att_factor:.2f}")
 
-    def batch_explain(self, loader):
+    def header(self, graph, weights, attention=False, count=None):
+        if attention:
+            utils.print_header("ATTENTION-BASED EXPLANATION")
+            print(f"{graph.y.item():.2f}", graph.smiles)
+            print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+        else:
+            utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
+            print(f"{graph.y.item():.2f}", graph.smiles)
+
+            # if weights.sum().item() != sum_verification[0]:
+            #     print("WARNING: Attribution sum does not match verification value!")
+            #     print(f"Attribution sum: {weights.sum().item()}, Verification value: {sum_verification[0]}")
+
+            # Verify the sum property (CRITICAL for IG correctness)
+            attribution_sum = weights.sum().item()
+            baseline_pred = self.baseline_pred
+            final_pred = self.predictions[count]
+            print(f"\nBaseline prediction: {baseline_pred:.2f}")
+            print(f"Attribution sum: {attribution_sum:.2f}")
+            print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
+            print(f"PREDICTION: {final_pred:.2f}")
+
+            print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+
+    def explain(self, loader):
         self.model.eval()        
         att_list = []
         ig_list = []
@@ -39,13 +63,14 @@ class Explainer:
         for batch in loader:
             batch = batch.to(self.device)
             att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
+            ig_list.extend(self.integrated_gradients(batch.clone()))
             for graph in batch.to_data_list():
-                ig = self._integrated_gradients(graph.clone())
-                ig_list.append(ig)
                 repeat = True
                 while repeat:
+                    self.header(graph, att_list[c], attention=True)
                     depict(graph, att_list[c], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
-                    depict(graph, ig, factor=self.ig_factor * self.intensity, attention=False)
+                    self.header(graph, ig_list[c], count=c)
+                    depict(graph, ig_list[c], factor=self.ig_factor * self.intensity)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
@@ -58,85 +83,75 @@ class Explainer:
             # return att_list, ig_list
         return att_list, ig_list
     
-    # def explain(self, dataset):
-    #     self.model.eval()
-    #     utils.print_header("CALIBRATION")
-    #     print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
-    #     print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-    #     print(f"IG top: {self.model.training_predictions.std():.2f}")
-    #     print(f"ATT top: {self.model.att_factor_top:.2f}")
-    #     aw = []
-    #     ig = []
-    #     for graph in dataset:
-    #         self.count = 1  # DEBUG
-    #         repeat = True
-    #         while repeat:
-    #             aw.append(self._attention(graph.clone()))  # why clone()?
-    #             # ig.append(self._integrated_gradients(graph.clone()))
-    #             # user_input = ''
-    #             user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-    #             plus_count = user_input.count('+')
-    #             minus_count = user_input.count('-')
-    #             if plus_count + minus_count > 0:
-    #                 self.intensity *= (2 ** plus_count) / (2 ** minus_count)
-    #             else:
-    #                 repeat = False  # Move to next molecule
-    #         # return aw, ig
-    #     return aw, ig    
-    
     def attention(self, batch):
         with torch.no_grad():
             weights = self.model(batch, return_attention=True)  # [batch_size, seq_len]
         weight_list = [weights[i, :graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
-        return weight_list
+        return weight_list    
 
-    def _integrated_gradients(self, graph, steps=100):
-        graph = graph.cpu()
-        model = self.model.cpu()
-        batched_graph = Batch.from_data_list([graph])
-        edge_feat = model.get_features(batched_graph)   
+    def integrated_gradients(self, batch, steps=100):
+        edge_feat = self.model.get_features(batch)   
         baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)
 
-        for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input            
+        for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input
+            alpha = alpha.to(self.device)        
             interp_feat = baseline + alpha * (edge_feat - baseline)
             interp_feat.requires_grad_(True)
-            prediction = model.single_forward(interp_feat, batched_graph.edge_index, batched_graph.batch)
+            prediction = self.model.batch_forward(interp_feat, batch.edge_index, batch.batch)
             integrated_grads += torch.autograd.grad(
-                                outputs=prediction,
+                                outputs=prediction.sum(),
                                 inputs=interp_feat,
                                 create_graph=False
                             )[0]
             if alpha == 0:
-                baseline_pred = prediction.item()
+                baseline_pred = prediction.detach()
             elif alpha == 1:
-                final_pred = prediction.item()
+                final_pred = prediction.detach()
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
-        utils.print_header("INTEGRATED GRADIENTS EXPLAINATION")
-        _summary(attributions, baseline_pred, final_pred)
+        # DEBUG: Sanity checks
+        assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
+        if self.baseline_pred is not None:
+            assert torch.abs(baseline_pred.mean() - self.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
+        else:
+            self.baseline_pred = baseline_pred.mean().item()
+        self.predictions.extend(final_pred.tolist())  # DEBUG
 
-        graph.prediction = final_pred  # DEBUG (check if it's the same of trainer prediction)
+        # Process each graph in the batch
+        feat_importance_list = []
+        atom_bond_importance_list = []
+        edge_importance_list = []
 
-        # STEP 1: Aggregate per-feature attributions (NEW)
-        atom_feat_importance, bond_feat_importance = self.aggregate_per_feature(attributions.detach(), graph)
+        # Split attributions by graph
+        edge_count = 0
+        for graph in batch.to_data_list():
+            # Slice per-graph attributions
+            num_edges = graph.edge_index.size(1)
+            graph_attributions = attributions[edge_count:edge_count + num_edges]
+            edge_count += num_edges
+            
+            # Aggregate for this graph
+            atom_feat_importance, bond_feat_importance = self.aggregate_per_feature(
+                graph_attributions.detach(), graph
+            )
+            feat_importance_list.append((atom_feat_importance, bond_feat_importance))
+
+            atom_importance, bond_importance = self.aggregate_per_atom_bond(
+                atom_feat_importance, bond_feat_importance
+            )
+            atom_bond_importance_list.append((atom_importance, bond_importance))
+
+            edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
+            edge_importance_list.append(edge_importance)
         
-        # STEP 2: Sum features to get per-atom/bond importance
-        atom_importance, bond_importance = self.aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance)
-        # aggregated_importance = torch.cat([atom_importance, bond_importance])
-        # return aggregated_importance
-        # depict_feat(graph, atom_importance, bond_importance, factor=factor)
-
-        # STEP 3: Redistribute to edge-level
-        edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
-        # depict(graph, edge_importance, factor=factor)
-        return edge_importance
-
+        return edge_importance_list
+ 
 
     def aggregate_per_feature(self, attributions, graph):
-        print("\n\nFEATURE IMPORTANCE:")
+        # print("\n\nFEATURE IMPORTANCE:")
         
         # Split attributions by type
         src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
@@ -169,22 +184,22 @@ class Explainer:
             bond_idx = bond.GetIdx()
             bond_feat_importance[bond_idx] += edge_attr[i]
         
-        print(f"Atom feature importance shape: {atom_feat_importance.shape}")
-        print(f"Bond feature importance shape: {bond_feat_importance.shape}")
-        print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
-        print(f"Example bond features (bond 0): {bond_feat_importance[0]}")
+        # print(f"Atom feature importance shape: {atom_feat_importance.shape}")
+        # print(f"Bond feature importance shape: {bond_feat_importance.shape}")
+        # print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
+        # print(f"Example bond features (bond 0): {bond_feat_importance[0]}")
         
         return atom_feat_importance, bond_feat_importance
     
     def aggregate_per_atom_bond(self, atom_feat_importance, bond_feat_importance):
-        print("\n\nATOM/BOND IMPORTANCE:")
+        # print("\n\nATOM/BOND IMPORTANCE:")
         
         # Sum across feature dimension
         atom_importance = atom_feat_importance.sum(dim=1)  # [num_atoms]
         bond_importance = bond_feat_importance.sum(dim=1)  # [num_bonds]
         
-        print_weights(atom_importance, title="ATOM IMPORTANCE:")
-        print_weights(bond_importance, title="BOND IMPORTANCE:")
+        # print_weights(atom_importance, 
+        # title="BOND IMPORTANCE:")
         
         return atom_importance, bond_importance
   
@@ -222,15 +237,6 @@ class Explainer:
         
         return edge_importance
     
-
-def _summary(attributions, baseline_pred, final_pred):
-    # Verify the sum property (CRITICAL for IG correctness)
-    attribution_sum = attributions.sum().item()
-    # expected_sum = (final_pred - baseline_pred).item()   
-    print(f"\nBaseline prediction: {baseline_pred:.2f}")
-    print(f"Attribution sum: {attribution_sum:.2f}")
-    print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-    print(f"PREDICTION: {final_pred:.2f}")
 
 
     

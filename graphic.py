@@ -60,17 +60,7 @@ def att_scores(weights):
 def depict(graph, weights, attention=False, factor=None, shift=None):
 
     if attention:
-        utils.print_header("ATTENTION-BASED EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
         weights = att_scores(weights)
-    else:
-        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
-
-
-    graph = graph.detach()
     weights = weights.cpu().numpy().astype(float)
 
     threshold = 0  # not needed anymore? (normalization in explainer)
