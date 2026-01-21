@@ -1,5 +1,4 @@
 import torch
-from torch_geometric.data import Batch
 from torch_geometric.utils import degree
 # import shap
 # import numpy as np
@@ -11,66 +10,32 @@ from molecular_data import ATOM_DIM
 
 class Explainer:
 
-    def __init__(self, model, device):
-        self.model = model
-        self.device = device
+    def __init__(self, model):
         self.intensity = 1
-        # Attention
-        self.att_shift = -1  # shift so that average attention is at 0
-        self.att_factor = 1 / (self.model.att_factor_top + self.att_shift)  # scale so that top attention is at 1
-        # Integrated Gradients
-        self.ig_factor =  1 / self.model.training_predictions.std().item()  # using PREDICTION std (not actual target)
-        self.baseline_pred = None  # DEBUG
-        self.predictions = []  # DEBUG
         #SUMMARY
         utils.print_header("CALIBRATION")
-        print(f"Prediction distribution mean/std: {self.model.training_predictions.mean():.2f} / {self.model.training_predictions.std():.2f}")
-        print(f"Prediction range: {self.model.training_predictions.min():.2f} to {self.model.training_predictions.max():.2f}")
-        print(f"IG top: {self.model.training_predictions.std():.2f}")
-        print(f"IG factor: {self.ig_factor:.2f}")
-        print(f"ATT top: {self.model.att_factor_top:.2f}")
-        print(f"ATT factor: {self.att_factor:.2f}")
+        print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
+        print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
+        self.attention_exp = Att_Explainer(top=model.att_factor_top)
+        self.ig_exp = IG_Explainer(top=model.training_predictions.std().item())  # using PREDICTION std (not actual target)
 
-    def header(self, graph, weights, attention=False, count=None):
-        if attention:
-            utils.print_header("ATTENTION-BASED EXPLANATION")
-            print(f"{graph.y.item():.2f}", graph.smiles)
-            print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
-        else:
-            utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
-            print(f"{graph.y.item():.2f}", graph.smiles)
-
-            # if weights.sum().item() != sum_verification[0]:
-            #     print("WARNING: Attribution sum does not match verification value!")
-            #     print(f"Attribution sum: {weights.sum().item()}, Verification value: {sum_verification[0]}")
-
-            # Verify the sum property (CRITICAL for IG correctness)
-            attribution_sum = weights.sum().item()
-            baseline_pred = self.baseline_pred
-            final_pred = self.predictions[count]
-            print(f"\nBaseline prediction: {baseline_pred:.2f}")
-            print(f"Attribution sum: {attribution_sum:.2f}")
-            print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-            print(f"PREDICTION: {final_pred:.2f}")
-
-            print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
-
-    def explain(self, loader):
-        self.model.eval()        
+    def explain(self, model, loader):
+        device = next(model.parameters()).device
+        model.eval()
         att_list = []
         ig_list = []
         c = 0
         for batch in loader:
-            batch = batch.to(self.device)
-            att_list.extend(self.attention(batch.clone()))  # why clone()? for random seed consistency?
-            ig_list.extend(self.integrated_gradients(batch.clone()))
+            batch = batch.to(device)
+            att_list.extend(self.attention_exp.attributions(model, batch.clone()))  # why clone()? for random seed consistency?
+            ig_list.extend(self.ig_exp.attributions(model, batch.clone()))
             for graph in batch.to_data_list():
                 repeat = True
                 while repeat:
-                    self.header(graph, att_list[c], attention=True)
-                    depict(graph, att_list[c], factor=self.att_factor * self.intensity, shift=self.att_shift, attention=True)
-                    self.header(graph, ig_list[c], count=c)
-                    depict(graph, ig_list[c], factor=self.ig_factor * self.intensity)
+                    self.attention_exp.header(graph, att_list[c])
+                    depict_tokens(graph, att_list[c], factor=self.attention_exp.factor * self.intensity, shift=self.attention_exp.shift, attention=True)
+                    self.ig_exp.header(graph, ig_list[c], count=c)
+                    depict_tokens(graph, ig_list[c], factor=self.ig_exp.factor * self.intensity)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
@@ -82,23 +47,63 @@ class Explainer:
                 c += 1
             # return att_list, ig_list
         return att_list, ig_list
-    
-    def attention(self, batch):
+
+
+class Att_Explainer():
+
+    def __init__(self, top):
+        self.shift = -1  # shift so that average attention is at 0
+        self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
+        print(f"ATT top: {top:.2f}")
+        print(f"ATT factor: {self.factor:.2f}")
+
+    def header(self, graph, weights):
+        utils.print_header("ATTENTION-BASED EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+
+    def attributions(self, model, batch):
         with torch.no_grad():
-            weights = self.model(batch, return_attention=True)  # [batch_size, seq_len]
+            weights = model(batch, return_attention=True)  # [batch_size, seq_len]
         weight_list = [weights[i, :graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
         return weight_list    
 
-    def integrated_gradients(self, batch, steps=100):
-        edge_feat = self.model.get_features(batch)   
+
+class IG_Explainer():
+    
+    def __init__(self, top):
+        self.shift = 0 
+        self.factor =  1 / (top + self.shift)
+        print(f"IG top: {top:.2f}")
+        print(f"IG factor: {self.factor:.2f}")
+        self.baseline_pred = None  # DEBUG
+        self.predictions = []  # DEBUG
+
+    def header(self, graph, weights, count=None):
+        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+
+        # Verify the sum property (CRITICAL for IG correctness)
+        attribution_sum = weights.sum().item()
+        baseline_pred = self.baseline_pred
+        final_pred = self.predictions[count]
+        print(f"\nBaseline prediction: {baseline_pred:.2f}")
+        print(f"Attribution sum: {attribution_sum:.2f}")
+        print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
+        print(f"PREDICTION: {final_pred:.2f}")
+
+        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+
+    def attributions(self, model, batch, steps=100):
+        edge_feat = model.get_features(batch)   
         baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)
 
         for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input
-            alpha = alpha.to(self.device)        
+            alpha = alpha.to(edge_feat.device)        
             interp_feat = baseline + alpha * (edge_feat - baseline)
             interp_feat.requires_grad_(True)
-            prediction = self.model.batch_forward(interp_feat, batch.edge_index, batch.batch)
+            prediction = model.batch_forward(interp_feat, batch.edge_index, batch.batch)
             integrated_grads += torch.autograd.grad(
                                 outputs=prediction.sum(),
                                 inputs=interp_feat,
@@ -149,8 +154,8 @@ class Explainer:
         
         return edge_importance_list
  
-
-    def aggregate_per_feature(self, attributions, graph):
+    @staticmethod
+    def aggregate_per_feature(attributions, graph):
         # print("\n\nFEATURE IMPORTANCE:")
         device = attributions.device
         
@@ -192,7 +197,8 @@ class Explainer:
         
         return atom_feat_importance, bond_feat_importance
     
-    def aggregate_per_atom_bond(self, atom_feat_importance, bond_feat_importance):
+    @staticmethod
+    def aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance):
         # print("\n\nATOM/BOND IMPORTANCE:")        
         # Sum across feature dimension
         atom_importance = atom_feat_importance.sum(dim=1)  # [num_atoms]
@@ -201,7 +207,8 @@ class Explainer:
         # title="BOND IMPORTANCE:")        
         return atom_importance, bond_importance
   
-    def aggregate_per_edge(self, atom_importance, bond_importance, graph):
+    @staticmethod
+    def aggregate_per_edge(atom_importance, bond_importance, graph):
         # print("\n\nEDGE IMPORTANCE:")
         
         src_idx = graph.edge_index[0]

@@ -57,7 +57,7 @@ def att_scores(weights):
     scores = weights * weights.shape[0]  # visualize the proportion to average attention
     return scores
 
-def depict(graph, weights, attention=False, factor=None, shift=None):
+def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
 
     if attention:
         weights = att_scores(weights)
@@ -115,7 +115,8 @@ def depict(graph, weights, attention=False, factor=None, shift=None):
 
     draw(graph, atom_colors, bond_colors)
 
-def depict_feat(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
+
+def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
     graph = graph.detach()
 
     threshold = 0  # not needed anymore? (normalization in explainer)

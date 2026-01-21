@@ -106,8 +106,8 @@ def main_loop(dataset_info, device, model_name=None):
 
     ## Explain
     # explain(model, testset)
-    explainer = Explainer(model, device)
-    return explainer.explain(test_loader)
+    explainer = Explainer(model)
+    return explainer.explain(model, test_loader)
     # return explainer.explain(testset)
 
 
