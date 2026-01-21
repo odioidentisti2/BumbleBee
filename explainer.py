@@ -167,8 +167,8 @@ class Explainer:
         atom_feat_importance = torch.zeros(num_atoms, num_atom_features)
         bond_feat_importance = torch.zeros(num_bonds, num_bond_features)
         
-        src_idx = graph.edge_index[0].cpu()
-        dst_idx = graph.edge_index[1].cpu()
+        src_idx = graph.edge_index[0]
+        dst_idx = graph.edge_index[1]
         
         # Accumulate feature vectors for each unique atom/bond
         for i in range(attributions.shape[0]):
@@ -206,8 +206,8 @@ class Explainer:
     def aggregate_per_edge(self, atom_importance, bond_importance, graph):
         # print("\n\nEDGE IMPORTANCE:")
         
-        src_idx = graph.edge_index[0].cpu()
-        dst_idx = graph.edge_index[1].cpu()
+        src_idx = graph.edge_index[0]
+        dst_idx = graph.edge_index[1]
         num_edges = src_idx.shape[0]
         
         # Compute atom appearance counts from degree

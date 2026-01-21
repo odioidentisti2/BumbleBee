@@ -193,7 +193,7 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
     target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}\nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
+    legend = f"{graph.smiles}\n{target_label}"  # \nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
 
     # Draw molecule with highlighting
     drawer.DrawMolecule(graph.mol,
