@@ -1,6 +1,6 @@
 from rdkit.Chem.Draw import rdMolDraw2D
-
 import utils
+
 
 # Check if running in Google Colab
 # I think if I use matplotlib I won't need this
@@ -17,6 +17,67 @@ else:
     from PIL import Image
     import io
 
+
+class Att_Depicter():
+
+    def __init__(self, top):
+        self.intensity = 1
+        self.shift = -1  # shift so that average attention is at 0
+        self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
+        print(f"ATT top: {top:.2f}")
+        print(f"ATT factor: {self.factor:.2f}")
+
+    def depict(self, graph, weights):
+        utils.print_header("ATTENTION-BASED EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+        depict_tokens(graph, self.att_scores(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+
+    @staticmethod
+    def att_scores(weights):
+        # Weights come after softmax (they add up to 1): 
+        # => weights.mean() = 1 / len(weights)
+        # Therefore:
+        #   weight * len(weights) == 1  means "average attention"
+        scores = weights * weights.shape[0]  # visualize the proportion to average attention
+        return scores
+  
+
+class IG_Depicter():
+    
+    def __init__(self, top):
+        self.intensity = 1
+        self.shift = 0 
+        self.factor =  1 / (top + self.shift)
+        print(f"IG top: {top:.2f}")
+        print(f"IG factor: {self.factor:.2f}")
+        self.baseline_pred = None  # DEBUG
+        self.predictions = []  # DEBUG
+
+    def depict(self, graph, weights, count=None):
+        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
+        print(f"{graph.y.item():.2f}", graph.smiles)
+
+        # Verify the sum property (CRITICAL for IG correctness)
+        attribution_sum = weights.sum().item()
+        baseline_pred = self.baseline_pred
+        final_pred = self.predictions[count]
+        print(f"\nBaseline prediction: {baseline_pred:.2f}")
+        print(f"Attribution sum: {attribution_sum:.2f}")
+        print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
+        print(f"PREDICTION: {final_pred:.2f}")
+
+        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+        depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
+
+
+def print_weights(weights, average=False, title="WEIGHTS:"):
+    print(f"\n{title}")
+    print(weights)
+    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
+    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
+    print(f"Weight sum: {weights.sum():.2f}")
+    print()
 
 def red_or_green(weight):
     if weight > 0:
@@ -41,26 +102,8 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def print_weights(weights, average=False, title="WEIGHTS:"):
-    print(f"\n{title}")
-    print(weights)
-    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
-    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
-    print(f"Weight sum: {weights.sum():.2f}")
-    print()
-
-def att_scores(weights):
-    # Weights come after softmax (they add up to 1): 
-    # => weights.mean() = 1 / len(weights)
-    # Therefore:
-    #   weight * len(weights) == 1  means "average attention"
-    scores = weights * weights.shape[0]  # visualize the proportion to average attention
-    return scores
-
 def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
 
-    if attention:
-        weights = att_scores(weights)
     weights = weights.cpu().numpy().astype(float)
 
     threshold = 0  # not needed anymore? (normalization in explainer)

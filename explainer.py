@@ -1,7 +1,6 @@
 import torch
 from torch_geometric.utils import degree
 # import shap
-import utils
 from graphic import *
 
 from molecular_data import ATOM_DIM
@@ -9,14 +8,9 @@ from molecular_data import ATOM_DIM
 
 class Explainer:
 
-    def __init__(self, model):
-        self.intensity = 1
-        #SUMMARY
-        utils.print_header("CALIBRATION")
-        print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
-        print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
-        self.attention_exp = Att_Explainer(top=model.att_factor_top)
-        self.ig_exp = IG_Explainer(top=model.training_predictions.std().item())  # using PREDICTION std (not actual target)
+    def __init__(self, att_top, ig_top):
+        self.att_depicter = Att_Depicter(top=att_top)
+        self.ig_depicter = IG_Depicter(top=ig_top)  # using PREDICTION std (not actual target)
 
     def explain(self, model, loader):
         device = next(model.parameters()).device
@@ -26,74 +20,33 @@ class Explainer:
         c = 0
         for batch in loader:
             batch = batch.to(device)
-            att_list.extend(self.attention_exp.attributions(model, batch.clone()))  # why clone()? for random seed consistency?
-            ig_list.extend(self.ig_exp.attributions(model, batch.clone()))
+            att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
+            ig_list.extend(self.ig_attributions(model, batch.clone()))
             for graph in batch.to_data_list():
                 repeat = True
                 while repeat:
-                    self.attention_exp.header(graph, att_list[c])
-                    depict_tokens(graph, att_list[c], factor=self.attention_exp.factor * self.intensity, shift=self.attention_exp.shift, attention=True)
-                    self.ig_exp.header(graph, ig_list[c], count=c)
-                    depict_tokens(graph, ig_list[c], factor=self.ig_exp.factor * self.intensity)
+                    self.att_depicter.depict(graph, att_list[c])
+                    self.ig_depicter.depict(graph, ig_list[c], count=c)
                     # user_input = ''
                     user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
                     minus_count = user_input.count('-')
                     if plus_count + minus_count > 0:
-                        self.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                        self.att_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                        self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
                 c += 1
             # return att_list, ig_list
-        return att_list, ig_list
+        return att_list, ig_list    
 
-
-class Att_Explainer():
-
-    def __init__(self, top):
-        self.shift = -1  # shift so that average attention is at 0
-        self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
-        print(f"ATT top: {top:.2f}")
-        print(f"ATT factor: {self.factor:.2f}")
-
-    def header(self, graph, weights):
-        utils.print_header("ATTENTION-BASED EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
-
-    def attributions(self, model, batch):
+    def att_attributions(self, model, batch):
         with torch.no_grad():
             weights = model(batch, return_attention=True)  # [batch_size, seq_len]
         weight_list = [weights[i, :graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
         return weight_list    
 
-
-class IG_Explainer():
-    
-    def __init__(self, top):
-        self.shift = 0 
-        self.factor =  1 / (top + self.shift)
-        print(f"IG top: {top:.2f}")
-        print(f"IG factor: {self.factor:.2f}")
-        self.baseline_pred = None  # DEBUG
-        self.predictions = []  # DEBUG
-
-    def header(self, graph, weights, count=None):
-        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-
-        # Verify the sum property (CRITICAL for IG correctness)
-        attribution_sum = weights.sum().item()
-        baseline_pred = self.baseline_pred
-        final_pred = self.predictions[count]
-        print(f"\nBaseline prediction: {baseline_pred:.2f}")
-        print(f"Attribution sum: {attribution_sum:.2f}")
-        print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-        print(f"PREDICTION: {final_pred:.2f}")
-
-        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
-
-    def attributions(self, model, batch, steps=100):
+    def ig_attributions(self, model, batch, steps=100):
         edge_feat = model.get_features(batch)   
         baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)
@@ -118,11 +71,11 @@ class IG_Explainer():
 
         # DEBUG: Sanity checks
         assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
-        if self.baseline_pred is not None:
-            assert torch.abs(baseline_pred.mean() - self.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
+        if self.ig_depicter.baseline_pred is not None:
+            assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
         else:
-            self.baseline_pred = baseline_pred.mean().item()
-        self.predictions.extend(final_pred.tolist())  # DEBUG
+            self.ig_depicter.baseline_pred = baseline_pred.mean().item()
+        self.ig_depicter.predictions.extend(final_pred.tolist())  # DEBUG
 
         # Process each graph in the batch
         feat_importance_list = []

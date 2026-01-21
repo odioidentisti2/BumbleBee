@@ -105,8 +105,11 @@ def main_loop(dataset_info, device, model_name=None):
     # trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
-    # explain(model, testset)
-    explainer = Explainer(model)
+    #SUMMARY
+    utils.print_header("CALIBRATION")
+    print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
+    print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
+    explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
     return explainer.explain(model, test_loader)
     # return explainer.explain(testset)
 
@@ -124,10 +127,10 @@ if __name__ == "__main__":
     torch.use_deterministic_algorithms(True)
 
     ## Inputs
-    dataset_info = datasets.logp_split
-    model_name = 'logp.pt'
-    # dataset_info = datasets.muta
-    # model_name = 'muta.pt'
+    # dataset_info = datasets.logp_split
+    # model_name = 'logp.pt'
+    dataset_info = datasets.muta
+    model_name = 'muta.pt'
 
     start_time = time.time()
     # crossvalidation(dataset_info, device)   
