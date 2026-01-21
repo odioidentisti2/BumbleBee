@@ -104,8 +104,9 @@ def main_loop(dataset_info, device, model_name=None):
     test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
     # trainer.eval(model, test_loader, flag="Test")
 
+    # TEST IF WITH BATCH = 1, EXPLAIN IS FASTER ON CPU
+
     ## Explain
-    #SUMMARY
     utils.print_header("CALIBRATION")
     print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
     print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 
     ## Inputs
     dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
+    model_name = 'logp.pt'
     # dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
