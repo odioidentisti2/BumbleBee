@@ -152,6 +152,7 @@ class Explainer:
 
     def aggregate_per_feature(self, attributions, graph):
         # print("\n\nFEATURE IMPORTANCE:")
+        device = attributions.device
         
         # Split attributions by type
         src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
@@ -164,8 +165,8 @@ class Explainer:
         num_bond_features = edge_attr.shape[1]
         
         # Initialize feature-level importance tensors
-        atom_feat_importance = torch.zeros(num_atoms, num_atom_features)
-        bond_feat_importance = torch.zeros(num_bonds, num_bond_features)
+        atom_feat_importance = torch.zeros(num_atoms, num_atom_features, device=device)
+        bond_feat_importance = torch.zeros(num_bonds, num_bond_features, device=device)
         
         src_idx = graph.edge_index[0]
         dst_idx = graph.edge_index[1]
@@ -233,7 +234,6 @@ class Explainer:
                 atom_importance[dst] / atom_count[dst] + 
                 bond_importance[bond_idx] / bond_count
             )
-        
         
         return edge_importance
     
