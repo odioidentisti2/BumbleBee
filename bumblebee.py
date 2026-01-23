@@ -100,13 +100,14 @@ def main_loop(dataset_info, device, model_name=None):
     model.task = dataset_info['task']
 
     ## Test
-    start_time = time.time()
-    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    test_loader = DataLoader(testset, batch_size=PARAMS['batch_size'])
-    trainer.eval(model, test_loader, flag="Test")
-    print(f"TEST TIME: {time.time() - start_time:.0f}s")
+    if device.type == 'cuda':
+        batch_size = 64
+    else:
+        batch_size = 8
 
-    # TEST IF WITH BATCH = 1, EXPLAIN IS FASTER ON CPU
+    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
+    test_loader = DataLoader(testset, batch_size=batch_size)
+    trainer.eval(model, test_loader, flag="Test")
 
     ## Explain
     utils.print_header("CALIBRATION")

@@ -5,8 +5,6 @@ from graphic import *
 
 from molecular_data import ATOM_DIM
 
-import time
-
 
 class Explainer:
 
@@ -20,7 +18,6 @@ class Explainer:
         att_list = []
         ig_list = []
         c = 0
-        start = time.time()
         for batch in loader:
             batch = batch.to(device)
             att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
@@ -30,8 +27,8 @@ class Explainer:
                 while repeat:
                     self.att_depicter.depict(graph, att_list[c])
                     self.ig_depicter.depict(graph, ig_list[c], count=c)
-                    user_input = ''
-                    # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                    # user_input = ''
+                    user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
                     minus_count = user_input.count('-')
                     if plus_count + minus_count > 0:
@@ -41,8 +38,6 @@ class Explainer:
                         repeat = False  # Move to next molecule
                 c += 1
             # return att_list, ig_list
-            print(f"Elapsed time: {time.time() - start} seconds")
-            print(f"{c} Time: : {(time.time() - start)/c} seconds for molecule")
         return att_list, ig_list
 
     def att_attributions(self, model, batch):

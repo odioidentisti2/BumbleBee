@@ -18,7 +18,7 @@ else:
     import io
 
 
-verbose = False
+verbose = True
 
 
 class Att_Depicter():
