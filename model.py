@@ -32,18 +32,19 @@ class MAG(nn.Module):
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
-            return attention
+            attention_list = [attention[i] for i in range(batch_size)]  # For compatibility with graph_forward
+            return attention_list
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
 
-    def single_forward(self, edge_features, edge_index, node_batch, return_attention=False):
+    def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
         batch_size = node_batch.max().item() + 1
         src, dst = edge_index
-        attn_weights = []
+        attention_list = []
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         for i in range(batch_size):
             graph_mask = (edge_batch == i)  # mask for graph i
@@ -55,13 +56,13 @@ class MAG(nn.Module):
             out[i] = self.esa(h, adj_mask)  # [hidden_dim]            
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
-                attn = self.esa.get_attention().squeeze(0)  # Remove batch dimension
-                attn_weights.append(attn)
+                attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
+                attention_list.append(attention)
+        if return_attention:
+            return attention_list
         # DROPOUT?
         out = self.output_mlp(out)    # [batch_size, output_dim]
         logits = torch.flatten(out)    # [batch_size]
-        if return_attention:
-            return logits, attn_weights
         return logits 
     
     def forward(self, batch, return_attention=False):
@@ -75,19 +76,22 @@ class MAG(nn.Module):
         """
         edge_feat = MAG.get_features(batch)
 
-        if PARAMS['BATCH_DEBUG'] or edge_feat.device.type == 'cuda':  # GPU: batch Attention
+        if (not PARAMS['BATCH_DEBUG'] and
+            edge_feat.device.type == 'cpu' and
+            batch.num_graphs > 16):  # CPU: per-graph Attention (faster)
+            return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+        else:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
-        else:  # per-graph Attention (faster on CPU)
-            return self.single_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
         
-    # @staticmethod
-    # def get_features(batch):
-    #     # Concatenate node (src and dst) and edge features
-    #     src, dst = batch.edge_index
-    #     return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+    @staticmethod
+    def get_features(batch):
+        # Concatenate node (src and dst) and edge features
+        src, dst = batch.edge_index
+        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
 
     @staticmethod
     def _edge_batch(edge_index, node_batch):
@@ -97,15 +101,15 @@ class MAG(nn.Module):
         return node_batch[edge_index[0]]
     
 
-    @staticmethod
-    def get_features(batch_or_graph):
-        if not isinstance(batch_or_graph, Batch):  # single graph
-            batch = Batch.from_data_list([batch_or_graph])
-        else:
-            batch = batch_or_graph
-        # Concatenate node (src and dst) and edge features
-        src, dst = batch.edge_index
-        return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
+    # @staticmethod
+    # def get_features(batch_or_graph):
+    #     if not isinstance(batch_or_graph, Batch):  # single graph
+    #         batch = Batch.from_data_list([batch_or_graph])
+    #     else:
+    #         batch = batch_or_graph
+    #     # Concatenate node (src and dst) and edge features
+    #     src, dst = batch.edge_index
+    #     return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
     
     
     # def get_encoder_output(self, batch, BATCH_DEBUG=False):

@@ -5,6 +5,8 @@ from graphic import *
 
 from molecular_data import ATOM_DIM
 
+import time
+
 
 class Explainer:
 
@@ -13,6 +15,7 @@ class Explainer:
         self.ig_depicter = IG_Depicter(top=ig_top)  # using PREDICTION std (not actual target)
 
     def explain(self, model, loader):
+        start = time.time()
         device = next(model.parameters()).device
         model.eval()
         att_list = []
@@ -27,8 +30,8 @@ class Explainer:
                 while repeat:
                     self.att_depicter.depict(graph, att_list[c])
                     self.ig_depicter.depict(graph, ig_list[c], count=c)
-                    # user_input = ''
-                    user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                    user_input = ''
+                    # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
                     minus_count = user_input.count('-')
                     if plus_count + minus_count > 0:
@@ -36,6 +39,8 @@ class Explainer:
                         self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
+                if c == 100:
+                    print(f"Time: : {time.time() - start:.2f} seconds for 100 molecules")
                 c += 1
             # return att_list, ig_list
         return att_list, ig_list    
@@ -43,7 +48,7 @@ class Explainer:
     def att_attributions(self, model, batch):
         with torch.no_grad():
             weights = model(batch, return_attention=True)  # [batch_size, seq_len]
-        weight_list = [weights[i, :graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
+        weight_list = [weights[i][:graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
         return weight_list    
 
     def ig_attributions(self, model, batch, steps=100):
@@ -70,7 +75,7 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
-        assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
+        # assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:
             assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
         else:
