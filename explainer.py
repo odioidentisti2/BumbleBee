@@ -20,8 +20,8 @@ class Explainer:
         att_list = []
         ig_list = []
         c = 0
+        start = time.time()
         for batch in loader:
-            start = time.time()
             batch = batch.to(device)
             att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
             ig_list.extend(self.ig_attributions(model, batch.clone()))
@@ -41,9 +41,9 @@ class Explainer:
                         repeat = False  # Move to next molecule
                 c += 1
             # return att_list, ig_list
-            print(f"Batch time: {time.time() - start} seconds")
-            print(f"Time: : {(time.time() - start)/batch.num_graphs} seconds for molecule")
-        return att_list, ig_list    
+            print(f"Elapsed time: {time.time() - start} seconds")
+            print(f"{c} Time: : {(time.time() - start)/c} seconds for molecule")
+        return att_list, ig_list
 
     def att_attributions(self, model, batch):
         with torch.no_grad():
