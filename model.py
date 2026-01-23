@@ -83,6 +83,7 @@ class MAG(nn.Module):
         else:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
 
+        # DEBUG: Compare batch vs single graph Attention
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
         #     print("WARNING: Batch and Single logits differ!")
         # return batch_logits
