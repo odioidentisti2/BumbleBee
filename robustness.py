@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from scipy.stats import pearsonr
 import numpy as np
 import utils
+import time
 
 def robustness(list1, list2):
     """Cosine similarity between two lists of tensors."""
@@ -55,6 +56,7 @@ def compare(sample1, sample2):
     print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
 
 if __name__ == "__main__":
+    start = time.time()
     aw42, ig42 = main_loop(datasets.logp_split, device, 'logp_rand42_inj.pt')
     aw15, ig15 = main_loop(datasets.logp_split, device, 'logp_rand15_inj.pt')
     utils.print_header("ATTENTION")
@@ -65,11 +67,7 @@ if __name__ == "__main__":
     compare(ig42[1], ig15[1])
     utils.print_header("IG EDGES")
     compare(ig42[2], ig15[2])
-
-    # Check actual magnitude differences
-    for i in range(min(5, len(ig42[2]))):  # First 5 molecules
-        diff = torch.abs(ig42[2][i] - ig15[2][i])
-        print(f"Molecule {i}: mean={diff.mean():.6f}, max={diff.max():.6f}")
+    print(f"\nTOTAL TIME FOR ROBUSTNESS: {time.time() - start:.0f}s")
 
 # ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
 # ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
