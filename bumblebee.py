@@ -104,7 +104,6 @@ def main_loop(dataset_info, device, model_name=None):
         batch_size = 64
     else:
         batch_size = 8
-
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     test_loader = DataLoader(testset, batch_size=batch_size)
     trainer.eval(model, test_loader, flag="Test")

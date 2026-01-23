@@ -70,7 +70,8 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
-        # assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
+        if baseline_pred.shape[0] > 1:
+            assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:
             assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
         else:

@@ -163,8 +163,7 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     
     if verbose:
         print(f"Sum: {sum(bond_weights.values()):.2f}")
-
-    # draw(graph, atom_colors, bond_colors)
+        draw(graph, atom_colors, bond_colors)
 
 
 def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
@@ -232,7 +231,8 @@ def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=Fals
         elif verbose:
             print(f"Atom {atom_idx}: {weight:.2f} <- {original_weight:.2f}")
 
-    # draw(graph, atom_colors, bond_colors, atom_indices=True)
+    if verbose:
+        draw(graph, atom_colors, bond_colors, atom_indices=True)
 
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  

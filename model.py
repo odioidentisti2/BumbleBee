@@ -78,7 +78,7 @@ class MAG(nn.Module):
 
         if (not PARAMS['BATCH_DEBUG'] and
             edge_feat.device.type == 'cpu' and
-            batch.num_graphs > 16):  # CPU: per-graph Attention (faster)
+            batch.num_graphs > 16):  # CPU: per-graph Attention (FASTER)
             return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
         else:  # GPU: batch Attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
@@ -99,17 +99,6 @@ class MAG(nn.Module):
         # return edge_batch [num_edges] where each edge takes the batch idx of its src node
         # (assumes all edges within a graph)
         return node_batch[edge_index[0]]
-    
-
-    # @staticmethod
-    # def get_features(batch_or_graph):
-    #     if not isinstance(batch_or_graph, Batch):  # single graph
-    #         batch = Batch.from_data_list([batch_or_graph])
-    #     else:
-    #         batch = batch_or_graph
-    #     # Concatenate node (src and dst) and edge features
-    #     src, dst = batch.edge_index
-    #     return torch.cat([batch.x[src], batch.x[dst], batch.edge_attr], dim=1)
     
     
     # def get_encoder_output(self, batch, BATCH_DEBUG=False):
