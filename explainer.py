@@ -15,13 +15,13 @@ class Explainer:
         self.ig_depicter = IG_Depicter(top=ig_top)  # using PREDICTION std (not actual target)
 
     def explain(self, model, loader):
-        start = time.time()
         device = next(model.parameters()).device
         model.eval()
         att_list = []
         ig_list = []
         c = 0
         for batch in loader:
+            start = time.time()
             batch = batch.to(device)
             att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
             ig_list.extend(self.ig_attributions(model, batch.clone()))
@@ -39,10 +39,9 @@ class Explainer:
                         self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
-                if c == 100:
-                    print(f"Time: : {time.time() - start:.2f} seconds for 100 molecules")
                 c += 1
             # return att_list, ig_list
+            print(f"Time: : {(time.time() - start)/batch.num_graphs} seconds for molecule")
         return att_list, ig_list    
 
     def att_attributions(self, model, batch):
