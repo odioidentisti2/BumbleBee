@@ -5,7 +5,7 @@ parameters = []
 
 # PARAMETERS
 main_params = {
-    'batch_size': 128,
+    'batch_size': 32,
     'random_seed': 42,
 }
 parameters.append(main_params)
