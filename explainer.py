@@ -41,6 +41,7 @@ class Explainer:
                         repeat = False  # Move to next molecule
                 c += 1
             # return att_list, ig_list
+            print(f"Batch time: {time.time() - start} seconds")
             print(f"Time: : {(time.time() - start)/batch.num_graphs} seconds for molecule")
         return att_list, ig_list    
 
