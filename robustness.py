@@ -1,6 +1,8 @@
 from bumblebee import *
 import torch.nn.functional as F
 from scipy.stats import pearsonr
+import numpy as np
+import utils
 
 def robustness(list1, list2):
     """Cosine similarity between two lists of tensors."""
@@ -42,15 +44,32 @@ def robustness_mae(list1, list2):
 
 print("\nEvaluating IG robustness aggregating attrubutions over atoms and bonds.\n")
 
-ig42 = main_loop(device, datasets.logp_split, 'logp_rand42.pt')
-ig15 = main_loop(device, datasets.logp_split, 'logp_rand15.pt')
-per_sample_cos, mean_cos, std_cos = robustness(ig42, ig15)
-per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(ig42, ig15)
-per_sample_mae, mean_mae, std_mae = robustness_mae(ig42, ig15)
-print(f"IG robustness (ig42 vs ig15):")
-print(f"  Cosine Similarity:  {mean_cos:.4f} ± {std_cos:.4f}")
-print(f"  Pearson Correlation: {mean_pearson:.4f} ± {std_pearson:.4f}")
-print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
+
+def compare(sample1, sample2):
+    per_sample_cos, mean_cos, std_cos = robustness(sample1, sample2)
+    per_sample_pearson, mean_pearson, std_pearson = robustness_pearson(sample1, sample2)
+    per_sample_mae, mean_mae, std_mae = robustness_mae(sample1, sample2)
+    print(f"Robustness (42 vs 15):")
+    print(f"  Cosine Similarity:  {mean_cos:.4f} ± {std_cos:.4f}")
+    print(f"  Pearson Correlation: {mean_pearson:.4f} ± {std_pearson:.4f}")
+    print(f"  MAE:                {mean_mae:.4f} ± {std_mae:.4f}")
+
+if __name__ == "__main__":
+    aw42, ig42 = main_loop(datasets.logp_split, device, 'logp_rand42_inj.pt')
+    aw15, ig15 = main_loop(datasets.logp_split, device, 'logp_rand15_inj.pt')
+    utils.print_header("ATTENTION")
+    compare(aw42, aw15)
+    utils.print_header("IG FEATURES")
+    compare(ig42[0], ig15[0])
+    utils.print_header("IG ATOMS & BONDS")
+    compare(ig42[1], ig15[1])
+    utils.print_header("IG EDGES")
+    compare(ig42[2], ig15[2])
+
+    # Check actual magnitude differences
+    for i in range(min(5, len(ig42[2]))):  # First 5 molecules
+        diff = torch.abs(ig42[2][i] - ig15[2][i])
+        print(f"Molecule {i}: mean={diff.mean():.6f}, max={diff.max():.6f}")
 
 # ig42_inj = main(device, datasets.logp_split, 'logp_rand42_inj.pt')
 # ig15_inj = main(device, datasets.logp_split, 'logp_rand15_inj.pt')
