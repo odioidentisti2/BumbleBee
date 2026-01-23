@@ -18,6 +18,9 @@ else:
     import io
 
 
+verbose = False
+
+
 class Att_Depicter():
 
     def __init__(self, top):
@@ -28,9 +31,10 @@ class Att_Depicter():
         print(f"ATT factor: {self.factor:.2f}")
 
     def depict(self, graph, weights):
-        utils.print_header("ATTENTION-BASED EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
-        print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+        if verbose:
+            utils.print_header("ATTENTION-BASED EXPLANATION")
+            print(f"{graph.y.item():.2f}", graph.smiles)
+            print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
         depict_tokens(graph, self.att_scores(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
@@ -49,25 +53,27 @@ class IG_Depicter():
         self.intensity = 1
         self.shift = 0 
         self.factor =  1 / (top + self.shift)
-        print(f"IG top: {top:.2f}")
-        print(f"IG factor: {self.factor:.2f}")
+        if verbose:
+            print(f"IG top: {top:.2f}")
+            print(f"IG factor: {self.factor:.2f}")
         self.baseline_pred = None  # DEBUG
         self.predictions = []  # DEBUG
 
     def depict(self, graph, weights, count=None):
-        utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
-        print(f"{graph.y.item():.2f}", graph.smiles)
+        if verbose:
+            utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
+            print(f"{graph.y.item():.2f}", graph.smiles)
 
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = weights.sum().item()
         baseline_pred = self.baseline_pred
         final_pred = self.predictions[count]
-        print(f"\nBaseline prediction: {baseline_pred:.2f}")
-        print(f"Attribution sum: {attribution_sum:.2f}")
-        print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-        print(f"PREDICTION: {final_pred:.2f}")
-
-        print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+        if verbose:
+            print(f"\nBaseline prediction: {baseline_pred:.2f}")
+            print(f"Attribution sum: {attribution_sum:.2f}")
+            print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
+            print(f"PREDICTION: {final_pred:.2f}")
+            print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
         depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
 
 
@@ -128,7 +134,7 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
             bond_weights[bond_idx] = directional_weight
             continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
         weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
-        if factor is None and shift is None:
+        if verbose and factor is None and shift is None:
             print(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
         else:
             original_weight = weight
@@ -136,7 +142,8 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
                 weight = weight + shift * 2  # sum of 2 weights (clipping in yellow() for attention)
             if factor is not None:
                 weight = weight * factor
-            print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")            
+            if verbose:
+                print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
         bond_weights[bond_idx] = weight
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
@@ -154,9 +161,10 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
                     continue
                 atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
     
-    print(f"Sum: {sum(bond_weights.values()):.2f}")
+    if verbose:
+        print(f"Sum: {sum(bond_weights.values()):.2f}")
 
-    draw(graph, atom_colors, bond_colors)
+    # draw(graph, atom_colors, bond_colors)
 
 
 def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
@@ -182,12 +190,13 @@ def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=Fals
         raise ValueError(f"atom_importance must be 1D of length {num_atoms}, got {atom_arr.shape}")
     bond_instance_importance = bond_arr.tolist()
     atom_instance_importance = atom_arr.tolist()
-
-    print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
-    print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
+    if verbose:
+        print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
+        print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
 
     # Color bonds
-    print("\nBonds:")
+    if verbose:
+        print("\nBonds:")
     for bond in mol.GetBonds():
         bond_idx = bond.GetIdx()
         weight = bond_instance_importance[bond_idx]
@@ -200,13 +209,14 @@ def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=Fals
             bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
         # Print bond details like in depict()
-        if factor is None and shift is None:
+        if verbose and factor is None and shift is None:
             print(f"Bond {bond_idx}: {weight:.2f}")
-        else:
+        elif verbose:
             print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
 
     # Color atoms
-    print("\nAtoms:")
+    if verbose:
+        print("\nAtoms:")
     for atom in mol.GetAtoms():
         atom_idx = atom.GetIdx()
         weight = atom_instance_importance[atom_idx]
@@ -217,12 +227,12 @@ def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=Fals
             weight = weight + shift
         if abs(weight) > abs(threshold):
             atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
-        if factor is None and shift is None:
+        if verbose and factor is None and shift is None:
             print(f"Atom {atom_idx}: {weight:.2f}")
-        else:
+        elif verbose:
             print(f"Atom {atom_idx}: {weight:.2f} <- {original_weight:.2f}")
 
-    draw(graph, atom_colors, bond_colors, atom_indices=True)
+    # draw(graph, atom_colors, bond_colors, atom_indices=True)
 
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
