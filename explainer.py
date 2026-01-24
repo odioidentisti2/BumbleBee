@@ -23,28 +23,33 @@ class Explainer:
         c = 0
         for batch in loader:
             batch = batch.to(device)
+            ## Attention
             att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
+            
+            ## Integrated Gradients
+            ig_list.extend(self.ig_attributions(model, batch.clone()))
+            for graph in batch.to_data_list():
+                repeat = True
+                while repeat:
+                    self.att_depicter.depict(graph, att_list[c])
+                    self.ig_depicter.depict(graph, ig_list[c], count=c)
+                    # user_input = ''
+                    user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                    plus_count = user_input.count('+')
+                    minus_count = user_input.count('-')
+                    if plus_count + minus_count > 0:
+                        self.att_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                        self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                    else:
+                        repeat = False  # Move to next molecule
+
             # Unpack and extend the three lists
             feat_batch, atom_bond_batch, edge_batch = self.ig_attributions(model, batch.clone())
             ig_feat_list.extend(feat_batch)
             ig_atom_bond_list.extend(atom_bond_batch)
             ig_edge_list.extend(edge_batch)
             ig_list = (ig_feat_list, ig_atom_bond_list, ig_edge_list)
-            # ig_list.extend(self.ig_attributions(model, batch.clone()))
-            # for graph in batch.to_data_list():
-            #     repeat = True
-            #     while repeat:
-            #         self.att_depicter.depict(graph, att_list[c])
-            #         self.ig_depicter.depict(graph, ig_list[c], count=c)
-            #         # user_input = ''
-            #         user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-            #         plus_count = user_input.count('+')
-            #         minus_count = user_input.count('-')
-            #         if plus_count + minus_count > 0:
-            #             self.att_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
-            #             self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
-            #         else:
-            #             repeat = False  # Move to next molecule
+
             c += 1
             if c == 1:
                 print(f"Baseline: {self.ig_depicter.baseline_pred}")
@@ -116,9 +121,8 @@ class Explainer:
             atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
             edge_importance_list.append(edge_importance)
 
-        # return edge_importance_list        
-        
-        return feat_importance_list, atom_bond_importance_list, edge_importance_list
+        return edge_importance_list
+        # return feat_importance_list, atom_bond_importance_list, edge_importance_list
  
     @staticmethod
     def aggregate_per_feature(attributions, graph):
