@@ -39,7 +39,6 @@ class MAG(nn.Module):
             attention_list = attention.detach().unbind(dim=0)
             repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
             att_list.extend(attention_list)
-            return list(attention_list)
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         logits = torch.flatten(logits)    # [batch_size]
