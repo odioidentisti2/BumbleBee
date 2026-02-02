@@ -59,7 +59,7 @@ class Explainer:
 
     def att_attributions(self, model, batch):
         with torch.no_grad():
-            weights = model(batch, return_attention=True)  # [batch_size, seq_len]
+            _, weights = model(batch, return_attention=True)  # [batch_size, seq_len]
         weight_list = [weights[i][:graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
         return weight_list    
 
