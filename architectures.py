@@ -31,11 +31,12 @@ class TransformerBlock(nn.Module):
         self.mlp = mlp(hidden_dim, hidden_dim * mlp_expansion, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
-        mask = None
         if self.layer_type == 'M':
-            mask = adj_mask
+            mask = adj_mask  # [batch, seq_len, seq_len]
         elif self.layer_type == 'S':
-            if pad_mask is not None:
+            if pad_mask is None:
+                mask = None
+            else:
                 mask = pad_mask.unsqueeze(1) & pad_mask.unsqueeze(2)  # [batch, seq_len, seq_len] 
         else:  # 'P'
             mask = pad_mask  # [batch, seq_len]
@@ -46,14 +47,14 @@ class TransformerBlock(nn.Module):
             out= self.attention(self.norm(X), mask=mask)
         if self.layer_type != 'P':
             out = X + out  # Residual connection
-            # Zero out output for padded positions after each layer
+            # Zero out output for padded positions before MLP (except PMA)
             # if pad_mask is not None:
             #     out = out * pad_mask.unsqueeze(-1)
 
         # MLP
         out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
         out = out + out_mlp  # Residual connection
-        # Zero out output for padded positions after MLP
+        # Zero out output for padded positions after MLP (except PMA)
         # if pad_mask is not None and self.layer_type != 'P':
         #     out = out * pad_mask.unsqueeze(-1)
         return out
@@ -65,7 +66,7 @@ class ESA(nn.Module):
 
     Args:
         hidden_dim (int): The dimensionality of the hidden representations.
-        layer_types (str): Specify the order and type of layers.
+        layer_types (list): Specify the order and type of layers.
             - 'S': Self-attention layer.
             - 'M': Masked self-attention layer.
             - 'P': PMA (Pooling by Multihead Attention) decoder layer.
@@ -78,7 +79,7 @@ class ESA(nn.Module):
 
     Returns:
         torch.Tensor: Output graph-level representation after pooling and non-linearity.
-        torch.Tensor (optional): Attention scores from the 'P' layer if `return_attention` is True.
+        torch.Tensor (optional): Attention weights from the 'P' layer if `return_attention` is True.
     """
 
     def __init__(self, hidden_dim, layer_types, mlp_expansion):
@@ -89,7 +90,7 @@ class ESA(nn.Module):
         enc_layers = layer_types[:layer_types.index('P')]
         self.encoder = nn.ModuleList()
         for layer_type in enc_layers:
-            assert layer_type[0] in ['M', 'S']
+            assert layer_type in ['M', 'S']
             self.encoder.append(TransformerBlock(hidden_dim, layer_type, mlp_expansion))
         # Decoder
         dec_layers = layer_types[layer_types.index('P') + 1:]
@@ -111,6 +112,7 @@ class ESA(nn.Module):
             dec = layer(dec, pad_mask=pad_mask)
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
+        self.out = out  # DEBUG
         out = F.mish(out)
         return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))

@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 from torch_geometric.utils import to_dense_batch
-from torch_geometric.data import Batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
 from parameters import model_params as PARAMS
+
+
+repr_list = []
 
 
 class MAG(nn.Module):
@@ -30,6 +32,7 @@ class MAG(nn.Module):
         batch_size = node_batch.max().item() + 1
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
+        repr_list.extend(self.esa.out.detach().unbind(dim=0))
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
             attention_list = [attention[i] for i in range(batch_size)]  # For compatibility with graph_forward
