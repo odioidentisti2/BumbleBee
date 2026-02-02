@@ -8,6 +8,7 @@ from parameters import model_params as PARAMS
 
 
 repr_list = []
+att_list = []
 
 
 class MAG(nn.Module):
@@ -32,11 +33,13 @@ class MAG(nn.Module):
         batch_size = node_batch.max().item() + 1
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
-        repr_list.extend(self.esa.out.detach().unbind(dim=0))
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
-            attention_list = [attention[i] for i in range(batch_size)]  # For compatibility with graph_forward
-            return attention_list
+            # attention_list = [attention[i] for i in range(batch_size)]  # For compatibility with graph_forward
+            attention_list = attention.detach().unbind(dim=0)
+            repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
+            att_list.extend(attention_list)
+            return list(attention_list)
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
         return torch.flatten(logits)     # [batch_size] 
@@ -59,8 +62,12 @@ class MAG(nn.Module):
             out[i] = self.esa(h, adj_mask)  # [hidden_dim]            
             # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
             if return_attention:
-                attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
-                attention_list.append(attention)
+                attention = self.esa.get_attention()
+                attention_list.append(attention.squeeze(0))  # Remove batch dimension
+                att_list.extend(attention.detach().unbind(dim=0))
+                repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
+                # attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
+                # attention_list.append(attention)
         if return_attention:
             return attention_list
         # DROPOUT?

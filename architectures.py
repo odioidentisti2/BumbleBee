@@ -106,13 +106,14 @@ class ESA(nn.Module):
         enc = X
         for layer in self.encoder:
             enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
+        self.enc_out = enc  # DEBUG
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
             dec = layer(dec, pad_mask=pad_mask)
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
-        self.out = out  # DEBUG
+        self.dec_out = out  # DEBUG
         out = F.mish(out)
         return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
