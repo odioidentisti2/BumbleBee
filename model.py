@@ -42,7 +42,10 @@ class MAG(nn.Module):
             return list(attention_list)
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         logits = self.output_mlp(out)    # [batch_size, output_dim]
-        return torch.flatten(logits)     # [batch_size] 
+        logits = torch.flatten(logits)    # [batch_size]
+        if return_attention:
+            return logits, list(attention_list)
+        return logits     # [batch_size] 
 
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
@@ -68,11 +71,11 @@ class MAG(nn.Module):
                 repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
                 # attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 # attention_list.append(attention)
-        if return_attention:
-            return attention_list
         # DROPOUT?
         out = self.output_mlp(out)    # [batch_size, output_dim]
         logits = torch.flatten(out)    # [batch_size]
+        if return_attention:
+            return logits, attention_list
         return logits 
     
     def forward(self, batch, return_attention=False):
