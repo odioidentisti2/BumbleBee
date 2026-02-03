@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     ## Inputs
     dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
+    model_name = 'logp.pt'
     # dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
