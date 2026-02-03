@@ -11,9 +11,10 @@ def mlp(in_dim, inter_dim, out_dim):
     return nn.Sequential(
             nn.Linear(in_dim, inter_dim),
             nn.Mish(),
-            nn.Dropout(PARAMS['ESA_dropout']),  # automatic check for training mode (identity function in eval mode)
+            # DROPOUT: it can be before or after the last Linear
+            # (automatic check for training mode => identity function in eval mode)
+            nn.Dropout(PARAMS['ESA_dropout']),
             nn.Linear(inter_dim, out_dim),
-            # nn.Dropout(dropout)
         )
 
 
@@ -21,19 +22,20 @@ class TransformerBlock(nn.Module):
 
     def __init__(self, hidden_dim, layer_type, mlp_expansion):
         super(TransformerBlock, self).__init__()
-        self.layer_type = layer_type
+        self.type = layer_type
         self.norm = nn.LayerNorm(hidden_dim, eps=1e-8)
         self.norm_mlp = nn.LayerNorm(hidden_dim, eps=1e-8)
-        if layer_type == 'P':
+        if self.type == 'P':
             self.attention = PMA(hidden_dim)
         else:
             self.attention = SetAttention(hidden_dim, hidden_dim)
         self.mlp = mlp(hidden_dim, hidden_dim * mlp_expansion, hidden_dim)
 
     def forward(self, X, adj_mask=None, pad_mask=None):
-        if self.layer_type == 'M':
+        # Mask
+        if self.type == 'M':
             mask = adj_mask  # [batch, seq_len, seq_len]
-        elif self.layer_type == 'S':
+        elif self.type == 'S':
             if pad_mask is None:
                 mask = None
             else:
@@ -44,20 +46,18 @@ class TransformerBlock(nn.Module):
         if hasattr(self, 'attn_weights'):
             out, self.attn_weights = self.attention(self.norm(X), mask=mask, return_attention=True)
         else:
-            out= self.attention(self.norm(X), mask=mask)
-        if self.layer_type != 'P':
-            out = X + out  # Residual connection
-            # Zero out output for padded positions before MLP (except PMA)
-            # if pad_mask is not None:
-            #     out = out * pad_mask.unsqueeze(-1)
-
+            out = self.attention(self.norm(X), mask=mask)
+        # Residual connection
+        if self.type != 'P':
+            out = X + out
         # MLP
-        out_mlp = self.mlp(self.norm_mlp(out))  # Pre-LayerNorm
-        out = out + out_mlp  # Residual connection
-        # Zero out output for padded positions after MLP (except PMA)
-        # if pad_mask is not None and self.layer_type != 'P':
-        #     out = out * pad_mask.unsqueeze(-1)
+        out = out + self.mlp(self.norm_mlp(out)) 
         return out
+    
+    # def clean_out(self, out, pad_mask):
+    #     # Zero out output for padded positions (except PMA) before and after MLP
+    #     if pad_mask is not None and self.layer_type != 'P':
+    #         return out * pad_mask.unsqueeze(-1)
     
 
 class ESA(nn.Module):
@@ -128,8 +128,8 @@ class ESA(nn.Module):
                     delattr(layer, 'attn_weights')
 
     def get_attention(self, index=-1):
-        # Aggregate seeds by mean (try sum?)
-        return self.decoder[index].attn_weights.mean(dim=1)  # [batch, seq_len]
+        attention = self.decoder[index].attn_weights  # [batch, num_seeds, seq_len]
+        return attention.mean(dim=1)  # [batch, seq_len] Aggregate seeds by mean
     
 
 
