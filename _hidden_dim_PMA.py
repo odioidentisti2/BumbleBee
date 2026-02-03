@@ -17,17 +17,13 @@ trainer = Trainer(dataset_info['task'], device)
 model = load(f"MODELS/{model_name}", device)
 
 ## Test
-if device.type == 'cuda':
-    batch_size = 64
-else:
-    batch_size = 8
 testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-test_loader = DataLoader(testset, batch_size=batch_size)
+test_loader = DataLoader(testset, batch_size=optimal_batch_size)
 trainer.eval(model, test_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
 
-from model import repr_list
+from model import repr_list, att_list
 
 print(f"\nCollected {len(repr_list)} molecule representations")
 print(f"Representation dimension: {repr_list[0].shape[0]}")

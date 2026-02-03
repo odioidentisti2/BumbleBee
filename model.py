@@ -37,7 +37,7 @@ class MAG(nn.Module):
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
             batch_attention = attention.unbind(dim=0)
-            repr_list.extend(self.esa.enc_out.unbind(dim=0))
+            repr_list.extend(self.esa.dec_out.unbind(dim=0))
             att_list.extend(batch_attention)
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         # <- DROPOUT here if needed
@@ -67,7 +67,7 @@ class MAG(nn.Module):
                 graph_attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 batch_attention.append(graph_attention)
                 att_list.extend(graph_attention.unbind(dim=0))
-                repr_list.extend(self.esa.enc_out.unbind(dim=0))
+                repr_list.extend(self.esa.dec_out.unbind(dim=0))
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
         return (logits, batch_attention) if return_attention else logits

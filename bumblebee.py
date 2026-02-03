@@ -14,6 +14,7 @@ from parameters import print_parameters, main_params as PARAMS
 
 ## CPU or GPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+optimal_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # for speed/memory tradeoff
 
 
 def set_random_seed(seed):
@@ -65,7 +66,7 @@ def crossvalidation(dataset_info, device, folds=5):
         trainer.train(model, train_loader, val_loader=test_loader)   
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
-    cv_tracker.summary()  # Print summary    
+    cv_tracker.summary()  # Print summary
 
 def main_loop(dataset_info, device, model_name=None):
     print_parameters()
@@ -78,7 +79,7 @@ def main_loop(dataset_info, device, model_name=None):
     if not model_name:  # Train model
         ## Load training set
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
-        train_loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
+        train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
 
         ## Train model
         model =  MAG(ATOM_DIM, BOND_DIM)
@@ -100,12 +101,8 @@ def main_loop(dataset_info, device, model_name=None):
     model.task = dataset_info['task']
 
     ## Test
-    if device.type == 'cuda':
-        batch_size = 64
-    else:
-        batch_size = 8
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    test_loader = DataLoader(testset, batch_size=batch_size)
+    test_loader = DataLoader(testset, batch_size=optimal_batch_size)
     trainer.eval(model, test_loader, flag="Test")
 
 
