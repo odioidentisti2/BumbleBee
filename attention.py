@@ -42,18 +42,18 @@ class MultiHeadAttention(nn.Module):
     def _sdpa_with_weights(self, Q, K, V, mask):  
         scale = Q.size(-1) ** -0.5  # head_dim = Q.size(-1)
         attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-        if mask is not None:  # MASK: set masked positions to -inf before softmax
+        if mask is not None:  # Set masked positions to -inf before softmax
             attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
-        attn_weights = F.softmax(attn_scores, dim=-1)
+        attn_weights = F.softmax(attn_scores, dim=-1)  # [batch_size, num_heads, num_seeds, num_tokens]
         # attn_weights = torch.nan_to_num(attn_weights, nan=0.0)  # fix NaN
+        # Aggregate heads by mean (SHOULD I INSPECT fc_o WEIGHTS?)
+        attn_weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
 
         # # DROPOUT for debug only, this method is used in eval mode only!!!     
         # if self.training and self.dropout > 0:
         #     attn_weights = F.dropout(attn_weights, p=self.dropout)
     
         out = torch.matmul(attn_weights, V)
-        # Averaging attention across heads (I SHOULD INSPECT fc_o WEIGHTS INSTEAD)
-        attn_weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
         return out, attn_weights
 
     def forward(self, Q, K, mask=None, return_attention=False):
@@ -104,7 +104,6 @@ class MultiHeadAttention(nn.Module):
                 #     print(f"   Attention outputs differ:")
                 #     print(f"   Max diff: {diff.max():.2e} | Mean diff: {diff.mean():.2e}")
 
-        
         # Transpose back and flatten (concatenate) head dimension
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
