@@ -23,10 +23,10 @@ trainer.eval(model, dataset_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
 
-from model import repr_list
+from model import enc_repr
 
-print(f"\nCollected {len(repr_list)} molecule representations")
-print(f"Representation dimension: {repr_list[0].shape[0]}")
+print(f"\nCollected {len(enc_repr)} molecule representations")
+print(f"Representation dimension: {enc_repr[0].shape[0]}")
 
 import copy
 all_predictions = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['predictions'])).cpu()
@@ -133,7 +133,7 @@ def visualize_similar_molecules(query_idx, similar_indices, dataset,
 # ============================================================================
 
 # Stack representations for efficient batch processing
-repr_tensor = torch.stack(repr_list)  # [num_molecules, hidden_dim]
+repr_tensor = torch.stack(enc_repr)  # [num_molecules, hidden_dim]
 print(f"Representation tensor shape: {repr_tensor.shape}")
 
 # Choose a query molecule (e.g., first one)
@@ -145,7 +145,7 @@ print(f"Query SMILES: {dataset[query_idx].smiles}")
 print(f"{'='*60}\n")
 
 # Find similar molecules
-similar = find_similar_molecules(query_idx, repr_list, top_k=10, metric='cosine')
+similar = find_similar_molecules(query_idx, enc_repr, top_k=10, metric='cosine')
 
 print(f"Query molecule:")
 print(f"  Target: {all_targets[query_idx].item():.3f}")
@@ -221,6 +221,6 @@ def analyze_similarity_distribution(representations, num_samples=100):
 print(f"\n{'='*60}")
 print("Analyzing overall similarity distribution...")
 print(f"{'='*60}\n")
-analyze_similarity_distribution(repr_list, num_samples=50)
+analyze_similarity_distribution(enc_repr, num_samples=50)
 
 print(f"\n\nTOTAL TIME: {time.time() - start_time:.0f}s")

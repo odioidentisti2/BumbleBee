@@ -7,7 +7,8 @@ from adj_mask_utils import edge_adjacency, edge_mask
 from parameters import model_params as PARAMS
 
 # # to be detached
-repr_list = []
+enc_repr = []
+dec_repr = []   
 att_list = []
 
 
@@ -38,7 +39,8 @@ class MAG(nn.Module):
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
             batch_attention = attention.unbind(dim=0)
             att_list.extend(batch_attention)
-            repr_list.extend(self.esa.enc_out.unbind(dim=0))
+            enc_repr.extend(self.esa.enc_out.unbind(dim=0))
+            dec_repr.extend(self.esa.dec_out.unbind(dim=0))
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         # <- DROPOUT here if needed
         # MLP
@@ -67,7 +69,8 @@ class MAG(nn.Module):
                 graph_attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
                 batch_attention.append(graph_attention)
                 att_list.extend(graph_attention.unbind(dim=0))
-                repr_list.extend(self.esa.enc_out.unbind(dim=0))
+                enc_repr.extend(self.esa.enc_out.unbind(dim=0))
+                dec_repr.extend(self.esa.dec_out.unbind(dim=0))
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
         return (logits, batch_attention) if return_attention else logits

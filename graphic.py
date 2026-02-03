@@ -35,16 +35,16 @@ class Att_Depicter():
             utils.print_header("ATTENTION-BASED EXPLANATION")
             print(f"{graph.y.item():.2f}", graph.smiles)
             print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
-        depict_tokens(graph, self.att_scores(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+        depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
-    def att_scores(weights):
+    def att_ratios(weights):
         # Weights come after softmax (they add up to 1): 
         # => weights.mean() = 1 / len(weights)
         # Therefore:
         #   weight * len(weights) == 1  means "average attention"
-        scores = weights * weights.shape[0]  # visualize the proportion to average attention
-        return scores
+        ratios = weights * weights.shape[0]  # visualize the ratio to average attention
+        return ratios
   
 
 class IG_Depicter():
