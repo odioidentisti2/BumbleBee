@@ -37,7 +37,7 @@ class MAG(nn.Module):
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
             batch_attention = attention.unbind(dim=0)
-            att_list.extend(batch_attention)
+            # att_list.extend(batch_attention)
             # repr_list.extend(self.esa.dec_out.unbind(dim=0))
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
         # <- DROPOUT here if needed
