@@ -1,3 +1,16 @@
+
+        # # # Mask out attention weights below their mean (per query)
+        # non_zero_mask = attn_weights > 0
+        # sum_non_zero = (attn_weights * non_zero_mask.float()).sum(dim=-1, keepdim=True)
+        # count_non_zero = non_zero_mask.sum(dim=-1, keepdim=True).float()
+        # count_non_zero = torch.clamp(count_non_zero, min=1.0)
+        # mean_attn = sum_non_zero / count_non_zero
+        # mask_high = attn_weights >= mean_attn
+        # attn_scores = attn_scores.masked_fill(~mask_high, float('-inf'))
+        # new_attn_weights = F.softmax(attn_scores, dim=-1)
+        # attn_weights = new_attn_weights
+
+
 from bumblebee import *
 import time
 import torch
@@ -23,10 +36,10 @@ trainer.eval(model, dataset_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
 
-from model import enc_repr
+from model import dec_repr
 
-print(f"\nCollected {len(enc_repr)} molecule representations")
-print(f"Representation dimension: {enc_repr[0].shape[0]}")
+print(f"\nCollected {len(dec_repr)} molecule representations")
+print(f"Representation dimension: {dec_repr[0].shape[0]}")
 
 import copy
 all_predictions = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['predictions'])).cpu()
@@ -133,11 +146,11 @@ def visualize_similar_molecules(query_idx, similar_indices, dataset,
 # ============================================================================
 
 # Stack representations for efficient batch processing
-repr_tensor = torch.stack(enc_repr)  # [num_molecules, hidden_dim]
+repr_tensor = torch.stack(dec_repr)  # [num_molecules, hidden_dim]
 print(f"Representation tensor shape: {repr_tensor.shape}")
 
 # Choose a query molecule (e.g., first one)
-query_idx = 1
+query_idx = 0
 
 print(f"\n{'='*60}")
 print(f"Finding molecules similar to molecule #{query_idx}")
@@ -145,7 +158,7 @@ print(f"Query SMILES: {dataset[query_idx].smiles}")
 print(f"{'='*60}\n")
 
 # Find similar molecules
-similar = find_similar_molecules(query_idx, enc_repr, top_k=10, metric='cosine')
+similar = find_similar_molecules(query_idx, dec_repr, top_k=10, metric='cosine')
 
 print(f"Query molecule:")
 print(f"  Target: {all_targets[query_idx].item():.3f}")
@@ -169,7 +182,7 @@ img = visualize_similar_molecules(
     similar_indices, 
     dataset, 
     similarities,
-    save_path=f"{query_idx}_similar_molecules.png"
+    save_path=f"{query_idx}_decoder_similarity.png"
 )
 
 # Display in notebook (if using Jupyter)
@@ -221,6 +234,6 @@ def analyze_similarity_distribution(representations, num_samples=100):
 print(f"\n{'='*60}")
 print("Analyzing overall similarity distribution...")
 print(f"{'='*60}\n")
-analyze_similarity_distribution(enc_repr, num_samples=50)
+analyze_similarity_distribution(dec_repr, num_samples=50)
 
 print(f"\n\nTOTAL TIME: {time.time() - start_time:.0f}s")

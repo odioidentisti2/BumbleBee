@@ -132,6 +132,8 @@ if __name__ == "__main__":
     dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
+    print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
+
     start_time = time.time()
     # crossvalidation(dataset_info, device)   
     # print("RANDOM = 15\n")

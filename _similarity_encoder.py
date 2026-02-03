@@ -27,7 +27,6 @@ from model import enc_repr, att_list
 print(f"\nCollected {len(enc_repr)} molecule encoder representations")
 print(f"Collected {len(att_list)} molecule attention weights")
 print(f"First molecule: {enc_repr[0].shape[0]} tokens, dimension {enc_repr[0].shape[1]}")
-
 import copy
 all_predictions = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['predictions'])).cpu()
 all_targets = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['targets'])).cpu()
@@ -71,7 +70,7 @@ def extract_important_tokens(enc_tokens, pma_attention, threshold='mean'):
     important_attention = pma_attention[high_attn_mask]
     selected_indices = high_attn_mask.nonzero(as_tuple=True)[0]
     
-    # Sort by attention (descending) - for inspection
+    # Sort by attention (descendec_reprding) - for inspection
     sort_idx = important_attention.argsort(descending=True)
     important_tokens = important_tokens[sort_idx]
     important_attention = important_attention[sort_idx]
