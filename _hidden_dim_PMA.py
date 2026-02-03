@@ -16,10 +16,10 @@ start_time = time.time()
 trainer = Trainer(dataset_info['task'], device)
 model = load(f"MODELS/{model_name}", device)
 
-## Test
-testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-test_loader = DataLoader(testset, batch_size=optimal_batch_size)
-trainer.eval(model, test_loader, flag="Test")
+## Dataset
+dataset = GraphDataset(dataset_info, split=dataset_info['test_split'])
+dataset_loader = DataLoader(dataset, batch_size=optimal_batch_size)
+trainer.eval(model, dataset_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
 
@@ -141,7 +141,7 @@ query_idx = 1
 
 print(f"\n{'='*60}")
 print(f"Finding molecules similar to molecule #{query_idx}")
-print(f"Query SMILES: {testset[query_idx].smiles}")
+print(f"Query SMILES: {dataset[query_idx].smiles}")
 print(f"{'='*60}\n")
 
 # Find similar molecules
@@ -153,7 +153,7 @@ print(f"  Prediction: {all_predictions[query_idx].item():.3f}\n")
 
 print("Most similar molecules:")
 for rank, (idx, sim) in enumerate(similar, 1):
-    mol_data = testset[idx]
+    mol_data = dataset[idx]
     print(f"{rank}. Index: {idx} | Similarity: {sim:.4f}")
     print(f"   Target: {all_targets[idx].item():.3f}")
     print(f"   Prediction: {all_predictions[idx].item():.3f}")
@@ -167,7 +167,7 @@ similarities = [sim for _, sim in similar]
 img = visualize_similar_molecules(
     query_idx, 
     similar_indices, 
-    testset, 
+    dataset, 
     similarities,
     save_path=f"similar_molecules_query_{query_idx}.png"
 )
