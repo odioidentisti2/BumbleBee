@@ -54,7 +54,7 @@ class Trainer:
             for batch in loader:
                 batch = batch.to(self.device)
                 targets = batch.y
-                logits = model(batch)
+                logits, _ = model(batch, return_attention=True)  # OKKKKKIO!!!!!!!!!!
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
                 total += batch.num_graphs

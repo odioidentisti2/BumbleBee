@@ -23,7 +23,7 @@ trainer.eval(model, dataset_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
 
-from model import repr_list, att_list
+from model import repr_list
 
 print(f"\nCollected {len(repr_list)} molecule representations")
 print(f"Representation dimension: {repr_list[0].shape[0]}")
@@ -145,7 +145,7 @@ print(f"Query SMILES: {dataset[query_idx].smiles}")
 print(f"{'='*60}\n")
 
 # Find similar molecules
-similar = find_similar_molecules(query_idx, repr_list, top_k=5, metric='cosine')
+similar = find_similar_molecules(query_idx, repr_list, top_k=10, metric='cosine')
 
 print(f"Query molecule:")
 print(f"  Target: {all_targets[query_idx].item():.3f}")
@@ -169,21 +169,21 @@ img = visualize_similar_molecules(
     similar_indices, 
     dataset, 
     similarities,
-    save_path=f"similar_molecules_query_{query_idx}.png"
+    save_path=f"{query_idx}_similar_molecules.png"
 )
 
 # Display in notebook (if using Jupyter)
 # from IPython.display import display
 # display(img)
 
-# Or save as matplotlib figure
-plt.figure(figsize=(12, 8))
-plt.imshow(img)
-plt.axis('off')
-plt.title(f"Query Molecule {query_idx} and Top-5 Similar Molecules", fontsize=14)
-plt.tight_layout()
-plt.savefig(f"similarity_analysis_query_{query_idx}.png", dpi=150, bbox_inches='tight')
-print(f"\nSaved matplotlib figure")
+# # Or save as matplotlib figure
+# plt.figure(figsize=(12, 8))
+# plt.imshow(img)
+# plt.axis('off')
+# plt.title(f"Query Molecule {query_idx} and Top-5 Similar Molecules", fontsize=14)
+# plt.tight_layout()
+# plt.savefig(f"similarity_analysis_query_{query_idx}.png", dpi=150, bbox_inches='tight')
+# print(f"\nSaved matplotlib figure")
 
 # ============================================================================
 # BATCH ANALYSIS: Find clusters of similar molecules
@@ -203,16 +203,16 @@ def analyze_similarity_distribution(representations, num_samples=100):
         similar = find_similar_molecules(idx, representations, top_k=10)
         all_similarities.extend([sim for _, sim in similar])
     
-    # Plot distribution
-    plt.figure(figsize=(10, 6))
-    plt.hist(all_similarities, bins=50, edgecolor='black')
-    plt.xlabel('Cosine Similarity', fontsize=12)
-    plt.ylabel('Frequency', fontsize=12)
-    plt.title('Distribution of Top-10 Similarity Scores', fontsize=14)
-    plt.axvline(x=0.9, color='r', linestyle='--', label='High similarity (>0.9)')
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.savefig('similarity_distribution.png', dpi=150, bbox_inches='tight')
+    # # Plot distribution
+    # plt.figure(figsize=(10, 6))
+    # plt.hist(all_similarities, bins=50, edgecolor='black')
+    # plt.xlabel('Cosine Similarity', fontsize=12)
+    # plt.ylabel('Frequency', fontsize=12)
+    # plt.title('Distribution of Top-10 Similarity Scores', fontsize=14)
+    # plt.axvline(x=0.9, color='r', linestyle='--', label='High similarity (>0.9)')
+    # plt.legend()
+    # plt.grid(alpha=0.3)
+    # plt.savefig('similarity_distribution.png', dpi=150, bbox_inches='tight')
     print(f"\nSimilarity statistics:")
     print(f"  Mean: {sum(all_similarities)/len(all_similarities):.3f}")
     print(f"  Min:  {min(all_similarities):.3f}")

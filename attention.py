@@ -46,14 +46,28 @@ class MultiHeadAttention(nn.Module):
             attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
         attn_weights = F.softmax(attn_scores, dim=-1)  # [batch_size, num_heads, num_seeds, num_tokens]
         # attn_weights = torch.nan_to_num(attn_weights, nan=0.0)  # fix NaN
-        # Aggregate heads by mean (SHOULD I INSPECT fc_o WEIGHTS?)
-        attn_weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
 
-        # # DROPOUT for debug only, this method is used in eval mode only!!!     
+        # # Mask out attention weights below their mean (per query)
+        mean_attn = attn_weights.mean(dim=-1, keepdim=True)  # [batch, num_heads, num_seeds, 1]
+        mask_high = attn_weights >= mean_attn                # [batch, num_heads, num_seeds, num_tokens]
+        # Set low-attention scores to -inf in attn_scores
+        attn_scores = attn_scores.masked_fill(~mask_high, float('-inf'))
+        # Recompute softmax over the filtered scores
+        new_attn_weights = F.softmax(attn_scores, dim=-1)
+        
+        # # print("Attention weights filtered:", torch.sum(mask_high).item(), "out of", mask_high.numel())
+        # # print("BEFORE: ", attn_weights[0, 0, 0, :5])
+        # # print("AFTER:  ", new_attn_weights[0, 0, 0, :5])
+        # attn_weights = new_attn_weights
+
+        # # DROPOUT (to be used in eval mode only)
         # if self.training and self.dropout > 0:
         #     attn_weights = F.dropout(attn_weights, p=self.dropout)
     
         out = torch.matmul(attn_weights, V)
+
+        # Aggregate heads by mean (SHOULD I INSPECT fc_o WEIGHTS?)
+        attn_weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
         return out, attn_weights
 
     def forward(self, Q, K, mask=None, return_attention=False):
