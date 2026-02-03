@@ -6,7 +6,7 @@ from adj_mask_utils import edge_adjacency, edge_mask
 
 from parameters import model_params as PARAMS
 
-
+# to be detached
 repr_list = []
 att_list = []
 
@@ -21,7 +21,7 @@ class MAG(nn.Module):
         self.input_mlp = mlp(2 * node_dim + edge_dim, PARAMS['in_out_mlp'], self.hidden_dim)
         # ESA block
         self.esa = ESA(self.hidden_dim, self.layer_types, PARAMS['mlp_expansion'])
-        # Classifier
+        # Predictor
         self.output_mlp = mlp(self.hidden_dim, PARAMS['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch, return_attention=False):
@@ -32,50 +32,45 @@ class MAG(nn.Module):
         dense_batch_h, pad_mask = to_dense_batch(batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
         batch_size = node_batch.max().item() + 1
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
+        # ESA forward
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         if return_attention:
             attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
-            # attention_list = [attention[i] for i in range(batch_size)]  # For compatibility with graph_forward
-            attention_list = attention.detach().unbind(dim=0)
-            repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
-            att_list.extend(attention_list)
+            batch_attention = attention.unbind(dim=0)
+            repr_list.extend(self.esa.enc_out.unbind(dim=0))
+            att_list.extend(batch_attention)
         # out = torch.where(pad_mask.unsqueeze(-1), out, torch.zeros_like(out))
-        logits = self.output_mlp(out)    # [batch_size, output_dim]
-        logits = torch.flatten(logits)    # [batch_size]
-        if return_attention:
-            return logits, list(attention_list)
-        return logits     # [batch_size] 
-
+        # <- DROPOUT here if needed
+        # MLP
+        logits = torch.flatten(self.output_mlp(out))    # [batch_size]
+        return (logits, batch_attention) if return_attention else logits
+    
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
         batch_size = node_batch.max().item() + 1
         src, dst = edge_index
-        attention_list = []
+        batch_attention = []
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
+        # Per-graph
         for i in range(batch_size):
             graph_mask = (edge_batch == i)  # mask for graph i
             h = batched_h[graph_mask]  # [graph_edges, hidden_dim]
             adj_mask = edge_adjacency(src[graph_mask], dst[graph_mask])  # [graph_edges, graph_edges]
             # Add batch dimension
-            adj_mask = adj_mask.unsqueeze(0)  # Add batch dimension
-            h = h.unsqueeze(0)  # Add batch dimension
-            out[i] = self.esa(h, adj_mask)  # [hidden_dim]            
-            # out[i] = out[i].squeeze(0)  # Remove batch dimension ???
+            adj_mask = adj_mask.unsqueeze(0)
+            h = h.unsqueeze(0)
+            # ESA forward
+            out[i] = self.esa(h, adj_mask)  # [hidden_dim]  (pythorch auto-removes batch dimension)
             if return_attention:
-                attention = self.esa.get_attention()
-                attention_list.append(attention.squeeze(0))  # Remove batch dimension
-                att_list.extend(attention.detach().unbind(dim=0))
-                repr_list.extend(self.esa.enc_out.detach().unbind(dim=0))
-                # attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
-                # attention_list.append(attention)
-        # DROPOUT?
-        out = self.output_mlp(out)    # [batch_size, output_dim]
-        logits = torch.flatten(out)    # [batch_size]
-        if return_attention:
-            return logits, attention_list
-        return logits 
+                graph_attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
+                batch_attention.append(graph_attention)
+                att_list.extend(graph_attention.unbind(dim=0))
+                repr_list.extend(self.esa.enc_out.unbind(dim=0))
+        # MLP
+        logits = torch.flatten(self.output_mlp(out))    # [batch_size]
+        return (logits, batch_attention) if return_attention else logits
     
     def forward(self, batch, return_attention=False):
         """
@@ -90,9 +85,9 @@ class MAG(nn.Module):
 
         if (not PARAMS['BATCH_DEBUG'] and
             edge_feat.device.type == 'cpu' and
-            batch.num_graphs > 16):  # CPU: per-graph Attention (FASTER)
+            batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
             return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
-        else:  # GPU: batch Attention
+        else:  # Batch attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
 
         # DEBUG: Compare batch vs single graph Attention
@@ -113,21 +108,3 @@ class MAG(nn.Module):
         # (assumes all edges within a graph)
         return node_batch[edge_index[0]]
     
-    
-    # def get_encoder_output(self, batch, BATCH_DEBUG=False):
-    #     """Returns encoder set features [batch, seq_len, hidden_dim] before pooling."""
-    #     edge_feat = MAGClassifier.get_features(batch)
-    #     batched_h = self.input_mlp(edge_feat)
-    #     edge_batch = self._edge_batch(batch.edge_index, batch.batch)
-    #     max_edges = torch.bincount(edge_batch).max().item()
-    #     dense_batch_h, pad_mask = to_dense_batch(
-    #         batched_h, edge_batch, fill_value=0, max_num_nodes=max_edges)
-    #     batch_size = batch.batch.max().item() + 1
-    #     adj_mask = edge_mask(batch.edge_index, batch.batch, batch_size, max_edges)
-        
-    #     # Run encoder only
-    #     enc = dense_batch_h
-    #     for layer in self.esa.encoder:
-    #         enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
-        
-    #     return enc  # [batch, seq_len, hidden_dim]
