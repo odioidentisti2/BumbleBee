@@ -127,12 +127,12 @@ if __name__ == "__main__":
     torch.use_deterministic_algorithms(True)
 
     ## Inputs
-    # dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
-    dataset_info = datasets.muta
+    dataset_info = datasets.logp_split
+    model_name = 'logp.pt'
+    # dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
-    print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
+    # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 
     start_time = time.time()
     # crossvalidation(dataset_info, device)   
