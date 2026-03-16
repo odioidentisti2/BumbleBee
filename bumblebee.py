@@ -121,9 +121,9 @@ if __name__ == "__main__":
     model_name = None
 
     ## Inputs
-    dataset_info = datasets.logp_split
+    # dataset_info = datasets.logp_split
     # model_name = 'logp.pt'
-    # dataset_info = datasets.muta
+    dataset_info = datasets.muta
     # model_name = 'muta.pt'
     task = dataset_info['task']
 
