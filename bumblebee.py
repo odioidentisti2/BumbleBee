@@ -14,7 +14,7 @@ from parameters import print_parameters, main_params as PARAMS
 
 ## CPU or GPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-optimal_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # for speed/memory tradeoff
+optimal_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # TEST ONLY! for speed/memory tradeoff
 
 
 def set_random_seed(seed):
@@ -121,15 +121,15 @@ if __name__ == "__main__":
     model_name = None
 
     ## Reproducibility
-    # if device.type == 'cuda':
-    #     import os
-    #     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    # torch.use_deterministic_algorithms(True)
+    if device.type == 'cuda':
+        import os
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+    torch.use_deterministic_algorithms(True)
 
     ## Inputs
-    dataset_info = datasets.logp_split
+    # dataset_info = datasets.logp_split
     # model_name = 'logp.pt'
-    # dataset_info = datasets.muta
+    dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
     # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
