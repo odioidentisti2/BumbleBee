@@ -133,6 +133,8 @@ if __name__ == "__main__":
             import os
             os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         torch.use_deterministic_algorithms(True)
+    else:
+        print("NON-DETERMINISTIC")
 
     # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 
