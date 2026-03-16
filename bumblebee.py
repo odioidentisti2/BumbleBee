@@ -120,7 +120,7 @@ if __name__ == "__main__":
     print(f"DEVICE: {device}")
     model_name = None
 
-    ## Reproducibility
+    ## Reproducibility  (I think MSE criterion is deterministic anyway, but I need extensive tests)
     # if device.type == 'cuda':
     #     import os
     #     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'

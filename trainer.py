@@ -15,8 +15,8 @@ class Trainer:
             # self.criterion = torch.nn.BCEWithLogitsLoss()
             self.statistics = AccuracyTracker()
         else:
-            self.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-            # self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+            # self.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
+            self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
             self.statistics =  R2Tracker()
         self.count = 0
 
