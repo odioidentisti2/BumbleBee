@@ -82,7 +82,7 @@ def main_loop(dataset_info, device, model_name=None):
         train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
 
         ## Train model
-        model =  MAG(ATOM_DIM, BOND_DIM)
+        model = MAG(ATOM_DIM, BOND_DIM)
         trainer.set_baseline_target(trainingset.targets)  # For injection baseline
         trainer.train(model, train_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
@@ -106,7 +106,7 @@ def main_loop(dataset_info, device, model_name=None):
     trainer.eval(model, test_loader, flag="Test")
 
 
-    # ## Explain
+    ## Explain
     utils.print_header("CALIBRATION")
     print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
     print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
