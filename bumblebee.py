@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # dataset_info = datasets.logp_split
     # model_name = 'logp.pt'
     dataset_info = datasets.muta
-    # model_name = 'muta.pt'
+    model_name = 'muta.pt'
     task = dataset_info['task']
 
     ## Reproducibility
@@ -133,8 +133,6 @@ if __name__ == "__main__":
             import os
             os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         torch.use_deterministic_algorithms(True)
-    else:
-        print("NON-DETERMINISTIC")
 
     # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 
