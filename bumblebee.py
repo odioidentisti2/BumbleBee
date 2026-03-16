@@ -120,17 +120,19 @@ if __name__ == "__main__":
     print(f"DEVICE: {device}")
     model_name = None
 
-    ## Reproducibility  (I think MSE criterion is deterministic anyway, but I need extensive tests)
-    # if device.type == 'cuda':
-    #     import os
-    #     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    # torch.use_deterministic_algorithms(True)
-
     ## Inputs
     dataset_info = datasets.logp_split
     # model_name = 'logp.pt'
     # dataset_info = datasets.muta
     # model_name = 'muta.pt'
+    task = dataset_info['task']
+
+    ## Reproducibility
+    if task == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
+        if device.type == 'cuda':
+            import os
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+        torch.use_deterministic_algorithms(True)
 
     # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 

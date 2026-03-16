@@ -12,11 +12,9 @@ class Trainer:
         self.task = task
         if self.task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
-            # self.criterion = torch.nn.BCEWithLogitsLoss()
             self.statistics = AccuracyTracker()
-        else:
-            # self.criterion = torch.nn.MSELoss()  # Mean Squared Error for regression
-            self.criterion = torch.nn.L1Loss()  # Mean Absolute Error
+        else:  # regression
+            self.criterion = torch.nn.MSELoss()  # Mean Squared Error
             self.statistics =  R2Tracker()
         self.count = 0
 
