@@ -116,7 +116,7 @@ def main_loop(dataset_info, device, model_name=None):
 
 if __name__ == "__main__":
     import time
-    print(f"\n{time.strftime("%Y-%m-%d %H:%M:%S")}")
+    print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"DEVICE: {device}")
     model_name = None
 
