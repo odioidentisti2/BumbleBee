@@ -124,7 +124,8 @@ if __name__ == "__main__":
     # dataset_info = datasets.logp_split
     # model_name = 'logp.pt'
     dataset_info = datasets.muta
-    model_name = 'muta.pt'
+    # model_name = 'muta.pt'
+
     task = dataset_info['task']
 
     ## Reproducibility
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 
 
 
-#  TO BE PLACED INSID MAIN TO DEBUG SEED DIVERSITY
+#  TO BE PLACED INSIDE MAIN TO DEBUG SEED DIVERSITY
     # with torch.no_grad():
     #     pma = model.esa.decoder[-1].attention  # shortcut
 
