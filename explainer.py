@@ -15,26 +15,28 @@ class Explainer:
     def explain(self, model, loader):
         device = next(model.parameters()).device
         model.eval()
-        att_list = []
-        ig_list = []
-        ig_feat_list = []
-        ig_atom_bond_list = []
-        ig_edge_list = []
-        c = 0
+        all_att_weights = []
+        all_ig_weights = []
+        # ig_feat_list = []
+        # ig_atom_bond_list = []
+        # ig_edge_list = []
+        c = -1
         for batch in loader:
             batch = batch.to(device)
             ## Attention
-            att_list.extend(self.att_attributions(model, batch.clone()))  # why clone()? for random seed consistency?
-            
+            batch_att = self.att_attributions(model, batch.clone())  # why clone()? for random seed consistency?
+            all_att_weights.extend(batch_att)
             ## Integrated Gradients
-            ig_list.extend(self.ig_attributions(model, batch.clone()))
+            batch_ig = self.ig_attributions(model, batch.clone())
+            all_ig_weights.extend(batch_ig)
             for graph in batch.to_data_list():
                 repeat = True
+                c += 1
                 while repeat:
-                    self.att_depicter.depict(graph, att_list[c])
-                    self.ig_depicter.depict(graph, ig_list[c], count=c)
-                    # user_input = ''
-                    user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
+                    self.att_depicter.depict(graph, all_att_weights[c])
+                    self.ig_depicter.depict(graph, all_ig_weights[c], count=c)
+                    user_input = ''
+                    # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
                     minus_count = user_input.count('-')
                     if plus_count + minus_count > 0:
@@ -43,19 +45,14 @@ class Explainer:
                     else:
                         repeat = False  # Move to next molecule
 
-            # Unpack and extend the three lists
-            feat_batch, atom_bond_batch, edge_batch = self.ig_attributions(model, batch.clone())
-            ig_feat_list.extend(feat_batch)
-            ig_atom_bond_list.extend(atom_bond_batch)
-            ig_edge_list.extend(edge_batch)
-            ig_list = (ig_feat_list, ig_atom_bond_list, ig_edge_list)
+            # # Unpack and extend the three lists
+            # feat_batch, atom_bond_batch, edge_batch = batch_ig
+            # ig_feat_list.extend(feat_batch)
+            # ig_atom_bond_list.extend(atom_bond_batch)
+            # ig_edge_list.extend(edge_batch)
+            # all_ig_weights = (ig_feat_list, ig_atom_bond_list, ig_edge_list)
 
-            c += 1
-            if c == 1:
-                print(f"Baseline: {self.ig_depicter.baseline_pred}")
-
-            # return att_list, ig_list
-        return att_list, ig_list
+        return all_att_weights, all_ig_weights
 
     def att_attributions(self, model, batch):
         with torch.no_grad():
@@ -87,6 +84,7 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
+        print(f"BATCH BASELINES: {baseline_pred}") 
         if baseline_pred.shape[0] > 1:
             assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:
@@ -96,8 +94,8 @@ class Explainer:
         self.ig_depicter.predictions.extend(final_pred.tolist())  # DEBUG
 
         # Process each graph in the batch
-        feat_importance_list = []
-        atom_bond_importance_list = []
+        # feat_importance_list = []
+        # atom_bond_importance_list = []
         edge_importance_list = []
 
         # Split attributions by graph
@@ -116,12 +114,11 @@ class Explainer:
                 atom_feat_importance, bond_feat_importance
             )
             edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
-
-            feat_importance_list.append(torch.cat([atom_feat_importance.flatten(), bond_feat_importance.flatten()]))
-            atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
             edge_importance_list.append(edge_importance)
 
         return edge_importance_list
+            # feat_importance_list.append(torch.cat([atom_feat_importance.flatten(), bond_feat_importance.flatten()]))
+            # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
         # return feat_importance_list, atom_bond_importance_list, edge_importance_list
  
     @staticmethod

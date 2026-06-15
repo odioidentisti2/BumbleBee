@@ -101,6 +101,8 @@ def main_loop(dataset_info, device, model_name=None):
     model.task = dataset_info['task']
 
     ## Test
+    optimal_batch_size = 2  # debug
+    print("TEST BATCH SIZE = 2")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     test_loader = DataLoader(testset, batch_size=optimal_batch_size)
     trainer.eval(model, test_loader, flag="Test")
@@ -122,14 +124,12 @@ if __name__ == "__main__":
 
     ## Inputs
     dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
+    model_name = 'logp.pt'
     # dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
-    task = dataset_info['task']
-
     ## Reproducibility
-    if task == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
+    if dataset_info['task'] == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
         if device.type == 'cuda':
             import os
             os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
