@@ -20,7 +20,7 @@ class Explainer:
         # ig_feat_list = []
         # ig_atom_bond_list = []
         # ig_edge_list = []
-        c = -1
+        c = 0
         for batch in loader:
             batch = batch.to(device)
             ## Attention
@@ -31,7 +31,6 @@ class Explainer:
             all_ig_weights.extend(batch_ig)
             for graph in batch.to_data_list():
                 repeat = True
-                c += 1
                 while repeat:
                     self.att_depicter.depict(graph, all_att_weights[c])
                     self.ig_depicter.depict(graph, all_ig_weights[c], count=c)
@@ -44,6 +43,7 @@ class Explainer:
                         self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
+                c += 1
 
             # # Unpack and extend the three lists
             # feat_batch, atom_bond_batch, edge_batch = batch_ig

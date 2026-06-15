@@ -127,7 +127,9 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     atom_colors = {}
 
     # Populating bond_intensity dict
-    for directional_weight, (src, dst) in zip(weights, graph.edge_index.T):
+    edge_index = graph.edge_index.T
+    assert weights.shape[0] == edge_index.shape[0]  # DEBUG
+    for directional_weight, (src, dst) in zip(weights, edge_index):
         bond = mol.GetBondBetweenAtoms(int(src), int(dst))
         bond_idx = bond.GetIdx()
         if bond_idx not in bond_weights:

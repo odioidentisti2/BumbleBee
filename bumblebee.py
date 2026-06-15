@@ -102,7 +102,7 @@ def main_loop(dataset_info, device, model_name=None):
 
     ## Test
     optimal_batch_size = 2  # debug
-    print("TEST BATCH SIZE = 2")
+    print("\nTEST BATCH SIZE = 2")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     test_loader = DataLoader(testset, batch_size=optimal_batch_size)
     trainer.eval(model, test_loader, flag="Test")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     ## Inputs
     dataset_info = datasets.logp_split
-    model_name = 'logp.pt'
+    # model_name = 'logp.pt'
     # dataset_info = datasets.muta
     # model_name = 'muta.pt'
 
