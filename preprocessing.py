@@ -2,7 +2,9 @@ import torch
     
 def cv_subsets(dataset, num_folds):
     dataset_size = len(dataset)
-    indices = torch.randperm(dataset_size).tolist()
+    g = torch.Generator()
+    g.manual_seed(42)
+    indices = torch.randperm(dataset_size, generator=g).tolist()
     fold_size = dataset_size // num_folds 
     for fold in range(num_folds):
         # Create indices
