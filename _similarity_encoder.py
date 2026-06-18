@@ -16,7 +16,7 @@ model = load(f"MODELS/{model_name}", device)
 
 ## Dataset
 dataset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-dataset_loader = DataLoader(dataset, batch_size=optimal_batch_size)
+dataset_loader = DataLoader(dataset, batch_size=test_batch_size)
 trainer.eval(model, dataset_loader, flag="Test")
 
 print(f"\nEvaluation TIME: {time.time() - start_time:.0f}s")
