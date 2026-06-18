@@ -14,7 +14,7 @@ from parameters import print_parameters, main_params as PARAMS
 
 ## CPU or GPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-optimal_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # TEST ONLY! for speed/memory tradeoff
+test_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # Optimal size for speed/memory tradeoff
 
 
 def set_random_seed(seed):
@@ -57,8 +57,8 @@ def crossvalidation(dataset_info, device, folds=5):
         g = torch.Generator()
         g.manual_seed(PARAMS['random_seed'])
 
-        train_loader = DataLoader(train_subset, batch_size=PARAMS['batch_size'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=PARAMS['batch_size'], generator=g)
+        train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
+        test_loader = DataLoader(test_subset, batch_size=test_batch_size, generator=g)
         
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
@@ -109,11 +109,11 @@ def main_loop(dataset_info, device, model_name=None):
 
 
     ## Explain
-    utils.print_header("CALIBRATION")
-    print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
-    print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
-    explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
-    return explainer.explain(model, test_loader)
+    # utils.print_header("CALIBRATION")
+    # print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
+    # print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
+    # explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
+    # return explainer.explain(model, test_loader)
 
 
 if __name__ == "__main__":
@@ -139,9 +139,8 @@ if __name__ == "__main__":
     # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 
     start_time = time.time()
-    # crossvalidation(dataset_info, device)   
-    # print("RANDOM = 15\n")
-    main_loop(dataset_info, device, model_name)
+    crossvalidation(dataset_info, device)   
+    # main_loop(dataset_info, device, model_name)
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
