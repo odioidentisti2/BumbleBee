@@ -122,26 +122,27 @@ if __name__ == "__main__":
     print(f"DEVICE: {device}")
     model_name = None
 
-    ## Inputs
-    dataset_info = datasets.logp_split
-    # model_name = 'logp.pt'
-    # dataset_info = datasets.muta
-    # model_name = 'muta.pt'
 
-    ## Reproducibility
-    if dataset_info['task'] == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
-        if device.type == 'cuda':
-            import os
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-        torch.use_deterministic_algorithms(True)
-        print("(DETERMINISTIC algorithms)")
+    for dataset_info in (datasets.logp_split, datasets.muta):
+        # model_name = 'logp.pt'
+        # model_name = 'muta.pt'
 
-    # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
+        ## Reproducibility
+        if dataset_info['task'] == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
+            if device.type == 'cuda':
+                import os
+                os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+            torch.use_deterministic_algorithms(True)
+            print("(DETERMINISTIC algorithms)")
 
-    start_time = time.time()
-    crossvalidation(dataset_info, device)   
-    # main_loop(dataset_info, device, model_name)
-    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
+        # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
+
+        start_time = time.time()
+        import parameters
+        for parameters.model_params['layer_types'] in (['M', 'M', 'S', 'P'], ['M', 'M', 'M', 'M', 'P'], ['M', 'M', 'M', 'S', 'P']):
+            crossvalidation(dataset_info, device)   
+        # main_loop(dataset_info, device, model_name)
+        print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
 
