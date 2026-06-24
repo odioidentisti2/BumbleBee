@@ -82,11 +82,17 @@ def main_loop(dataset_info, device, model_name=None):
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
         train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
 
+
         val_loader = None
         ## Load validation set
-        # print(f"\nValidation set: {dataset_info['path']}")
-        # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        # val_loader = DataLoader(validation_set, batch_size=test_batch_size)
+        print(f"\nValidation set: {dataset_info['path']}")
+        validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        val_loader = DataLoader(validation_set, batch_size=test_batch_size)
+
+        rng_before = torch.get_rng_state()
+        for batch in val_loader:
+            rng_after = torch.get_rng_state()
+            print("RNG STATE AFTER for batch EQUAL?", torch.equal(rng_before, rng_after))
 
         ## Train model
         model = MAG(ATOM_DIM, BOND_DIM)
