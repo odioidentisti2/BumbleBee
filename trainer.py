@@ -93,7 +93,10 @@ class Trainer:
                 metric = self.eval(model, val_loader, flag='Validation')
 
                 state_after = model.state_dict()
-                print("MODEL STATE equal?", torch.equal(state_before, state_after))
+                                
+                for k in state_before:
+                    if not torch.equal(state_before[k], state_after[k]):
+                        print(f"Changed: {k}")
 
                 if stopper.check(metric, model, epoch):
                     stopper.restore(model)
