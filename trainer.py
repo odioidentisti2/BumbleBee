@@ -56,7 +56,7 @@ class Trainer:
                 rng_before = torch.get_rng_state()
                 logits = model(batch)
                 rng_after = torch.get_rng_state()
-                print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
+                print("RNG STATE AFTER model(batch) EQUAL?", torch.equal(rng_before, rng_after))
                 # logits, _ = model(batch, return_attention=True)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
