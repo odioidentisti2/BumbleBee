@@ -45,6 +45,7 @@ class Trainer:
         return total_loss / total
 
     def _eval(self, model, loader):
+        rng_before = torch.get_rng_state()
         self.statistics.init()
         model = model.to(self.device)
         total_loss = 0
@@ -60,6 +61,8 @@ class Trainer:
                 total += batch.num_graphs
                 # Record statistics
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
+        rng_after = torch.get_rng_state()
+        print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):

@@ -79,7 +79,7 @@ def main_loop(dataset_info, device, model_name=None):
     if not model_name:  # Train model
         ## Load training set
         print(f"\nTraining set: {dataset_info['path']}")
-        trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
+        trainingset = GraphDataset(dataset_info, split=dataset_info['test_split'])
         train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
 
         val_loader = None
