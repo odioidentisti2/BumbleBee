@@ -16,9 +16,6 @@ from parameters import print_parameters, train_params as PARAMS
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
 
 
-
-
-### Save / Load model
 def save(model, path):
     # if not path:
     #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
@@ -50,7 +47,7 @@ def crossvalidation(dataset_info, device, folds=5):
     for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
         print_parameters()        
         set_torch_seed()  # Reproducibility
-        
+
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # g = torch.Generator()
@@ -67,6 +64,7 @@ def crossvalidation(dataset_info, device, folds=5):
     
     cv_tracker.summary()  # Print summary
 
+
 def main_loop(dataset_info, device, model_name=None):
     print_parameters()
     set_torch_seed()  # Reproducibility
@@ -77,8 +75,8 @@ def main_loop(dataset_info, device, model_name=None):
         ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
-        train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
-
+        train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], \
+                                  generator=g(), shuffle=True, drop_last=True)
 
         val_loader = None
         ### Load validation set
@@ -112,7 +110,6 @@ def main_loop(dataset_info, device, model_name=None):
     test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 
-
     ### Explain
     # utils.print_header("CALIBRATION")
     # print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
@@ -143,8 +140,8 @@ if __name__ == "__main__":
             use_deterministic_algorithms(device)
 
         start_time = time.time()
-        crossvalidation(dataset_info, device)   
-        # main_loop(dataset_info, device, model_name)
+        # crossvalidation(dataset_info, device)   
+        main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
