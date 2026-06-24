@@ -53,7 +53,12 @@ class Trainer:
             for batch in loader:
                 batch = batch.to(self.device)
                 targets = batch.y
+
+                rng_before = torch.get_rng_state()
                 logits = model(batch)
+                rng_after = torch.get_rng_state()
+                print("RNG STATE EQUAL?", torch.equal(rng_before, rng_after))
+
                 # logits, _ = model(batch, return_attention=True)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
@@ -82,7 +87,14 @@ class Trainer:
 
             # Early stop
             if early_stop and epoch % val_interval == 0:
+
+                state_before = deepcopy(model.state_dict())
+
                 metric = self.eval(model, val_loader, flag='Validation')
+
+                state_after = model.state_dict()
+                print("MODEL STATE equal?", torch.equal(state_before, state_after))
+
                 if stopper.check(metric, model, epoch):
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")

@@ -98,7 +98,6 @@ def smiles2graph(smiles):
 
 class GraphDataset(Dataset):
     def __init__(self, dataset_info, split=None):
-        print(f"\n{split or 'Data'} set: {dataset_info['path']}")
         super().__init__()
         self.task = dataset_info['task']
         self.graphs = []
