@@ -53,10 +53,7 @@ class Trainer:
             for batch in loader:
                 batch = batch.to(self.device)
                 targets = batch.y
-                rng_before = torch.get_rng_state()
                 logits = model(batch)
-                rng_after = torch.get_rng_state()
-                print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
                 # logits, _ = model(batch, return_attention=True)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
@@ -71,7 +68,7 @@ class Trainer:
 
         if val_loader:
             stopper = EarlyStop()
-            val_interval = max(1, round(max_epochs / 100))
+            val_interval = 1  #max(1, round(max_epochs / 100))
             early_stop = True
         else:
             early_stop = False

@@ -26,6 +26,7 @@ class MAG(nn.Module):
         self.output_mlp = mlp(self.hidden_dim, PARAMS['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch, return_attention=False):
+        rng_before = torch.get_rng_state()
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
@@ -45,6 +46,8 @@ class MAG(nn.Module):
         # <- DROPOUT here if needed
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
+        rng_after = torch.get_rng_state()
+        print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
         return (logits, batch_attention) if return_attention else logits
     
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):

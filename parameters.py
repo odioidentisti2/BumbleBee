@@ -5,7 +5,7 @@ train_params = {
     'random_seed': 42,
     'train_batch_size': 32,
     'lr': 1e-4,
-    'max_steps': 25000, #10**5,
+    'max_steps': 10**5,
     # 'weight_decay': 1e-5,
     'inject': True,  # Enable baseline injection
     # 'early_stop': False,
