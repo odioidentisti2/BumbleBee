@@ -9,7 +9,7 @@ import utils
 import statistics
 
 import datasets
-from parameters import print_parameters, main_params as PARAMS
+from parameters import print_parameters, train_params as PARAMS
 
 
 ## CPU or GPU
@@ -44,7 +44,7 @@ def load(model_path, device):
 
 def crossvalidation(dataset_info, device, folds=5):
     from preprocessing import cv_subsets
-    print(f"\nCross-Validation on: ", dataset_info['path'])
+    print(f"\nCross-Validation on: {dataset_info['path']}")
     dataset = GraphDataset(dataset_info)
     cv_tracker = statistics.CVTracker()
     
@@ -78,13 +78,20 @@ def main_loop(dataset_info, device, model_name=None):
 
     if not model_name:  # Train model
         ## Load training set
+        print(f"\nTraining set: {dataset_info['path']}")
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
         train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
+
+        val_loader = None
+        ## Load validation set
+        print(f"\nValidation set: {dataset_info['path']}")
+        validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        val_loader = DataLoader(validation_set, batch_size=test_batch_size)
 
         ## Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.set_baseline_target(trainingset.targets)  # For injection baseline
-        trainer.train(model, train_loader)
+        trainer.train(model, train_loader, val_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
         ## Statistics on Training setset_baseline_target
@@ -101,10 +108,10 @@ def main_loop(dataset_info, device, model_name=None):
     model.task = dataset_info['task']
 
     ## Test
-    optimal_batch_size = 2  # debug
-    print("\nTEST BATCH SIZE = 2")
+    print(f"\nTest set: {dataset_info['path']}")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    test_loader = DataLoader(testset, batch_size=optimal_batch_size)
+    print("\nTEST BATCH SIZE = 2")
+    test_loader = DataLoader(testset, batch_size=2)
     trainer.eval(model, test_loader, flag="Test")
 
 
@@ -122,8 +129,11 @@ if __name__ == "__main__":
     print(f"DEVICE: {device}")
     model_name = None
 
+    _datasets = []
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
-    for dataset_info in (datasets.logp_split, datasets.muta):
+    for dataset_info in _datasets:
         # model_name = 'logp.pt'
         # model_name = 'muta.pt'
 
@@ -138,10 +148,8 @@ if __name__ == "__main__":
         # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
 
         start_time = time.time()
-        import parameters
-        for parameters.model_params['layer_types'] in (['M', 'M', 'S', 'P'], ['M', 'M', 'M', 'M', 'P'], ['M', 'M', 'M', 'S', 'P']):
-            crossvalidation(dataset_info, device)   
-        # main_loop(dataset_info, device, model_name)
+        # crossvalidation(dataset_info, device)   
+        main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
