@@ -20,8 +20,8 @@ class MetricTracker:
     
     def update(self, logits, targets):
         """Update statistics for current run."""
-        self.stats[-1]['predictions'].append(logits)  # DEBUG
-        self.stats[-1]['targets'].append(targets)  # DEBUG
+        self.stats[-1]['predictions'].append(logits.detach().cpu())  # DEBUG
+        self.stats[-1]['targets'].append(targets.detach().cpu())  # DEBUG
     
     def metric(self, index=-1):
         """Compute metric for specific run. Default: last run."""
