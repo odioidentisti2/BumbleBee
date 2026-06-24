@@ -12,20 +12,22 @@ import datasets
 from parameters import print_parameters, train_params as PARAMS
 
 
-## CPU or GPU
+### CPU or GPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 test_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # Optimal size for speed/memory tradeoff
 
+### Reproducibility
+RAND_SEED = 42
 
-def set_random_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+def set_random_seed():
+    torch.manual_seed(RAND_SEED)
+    torch.cuda.manual_seed_all(RAND_SEED)
 
-# For reproducibility in DataLoader
-def generator(seed):
+def generator():  # For reproducibility in DataLoader
     g = torch.Generator()
-    g.manual_seed(seed)
+    g.manual_seed(RAND_SEED)
     return g
+
 
 def save(model, path):
     # if not path:
@@ -59,9 +61,9 @@ def crossvalidation(dataset_info, device, folds=5):
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
-        set_random_seed(PARAMS['random_seed'])
+        set_random_seed()
         g = torch.Generator()
-        g.manual_seed(PARAMS['random_seed'])
+        g.manual_seed(RAND_SEED)
 
         train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=test_batch_size, generator=g)
@@ -78,7 +80,7 @@ def main_loop(dataset_info, device, model_name=None):
     print_parameters()
 
     ## Reproducibility
-    set_random_seed(PARAMS['random_seed'])
+    set_random_seed()
     
     trainer = Trainer(dataset_info['task'], device)
 
@@ -93,7 +95,7 @@ def main_loop(dataset_info, device, model_name=None):
         ## Load validation set
         print(f"\nValidation set: {dataset_info['path']}")
         validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        val_loader = DataLoader(validation_set, batch_size=test_batch_size,generator=generator(PARAMS['random_seed']))
+        val_loader = DataLoader(validation_set, batch_size=test_batch_size, generator=generator())
 
         rng_before = torch.get_rng_state()
         for batch in val_loader:

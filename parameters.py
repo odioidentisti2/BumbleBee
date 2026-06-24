@@ -2,7 +2,6 @@ from pprint import pprint
 
 
 train_params = {
-    'random_seed': 42,
     'train_batch_size': 32,
     'lr': 1e-4,
     'max_steps': 10**5,
