@@ -5,6 +5,7 @@ from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
+from reproducibility import use_deterministic_algorithms, set_torch_seed, torch_generator as g
 import utils
 import statistics
 
@@ -15,19 +16,9 @@ from parameters import print_parameters, train_params as PARAMS
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
 
 
-### Reproducibility
-RAND_SEED = 42
-
-def set_random_seed():
-    torch.manual_seed(RAND_SEED)
-    torch.cuda.manual_seed_all(RAND_SEED)
-
-def generator():  # For reproducibility in DataLoader
-    g = torch.Generator()
-    g.manual_seed(RAND_SEED)
-    return g
 
 
+### Save / Load model
 def save(model, path):
     # if not path:
     #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
@@ -49,6 +40,7 @@ def load(model_path, device):
     model.eval()
     return model
 
+
 def crossvalidation(dataset_info, device, folds=5):
     from preprocessing import cv_subsets
     print(f"\nCross-Validation on: {dataset_info['path']}")
@@ -60,12 +52,12 @@ def crossvalidation(dataset_info, device, folds=5):
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
         # Reproducibility
-        set_random_seed()
-        g = torch.Generator()
-        g.manual_seed(RAND_SEED)
+        # set_torch_seed()
+        # g = torch.Generator()
+        # g.manual_seed(RAND_SEED)
 
         train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g)
+        test_loader = DataLoader(test_subset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
         
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
@@ -77,9 +69,7 @@ def crossvalidation(dataset_info, device, folds=5):
 
 def main_loop(dataset_info, device, model_name=None):
     print_parameters()
-
-    ### Reproducibility
-    set_random_seed()
+    set_torch_seed()  # Reproducibility
     
     trainer = Trainer(dataset_info['task'], device)
 
@@ -119,7 +109,7 @@ def main_loop(dataset_info, device, model_name=None):
     print(f"\nTest set: {dataset_info['path']}")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     print("\nTEST BATCH SIZE = 2")
-    test_loader = DataLoader(testset, batch_size=2, generator=generator())  # OPTIMAL_BATCH_SIZE[device.type]
+    test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 
 
@@ -148,19 +138,13 @@ if __name__ == "__main__":
         # model_name = 'logp.pt'
         # model_name = 'muta.pt'
 
-        ### Reproducibility
-        if dataset_info['task'] == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
-            if device.type == 'cuda':
-                import os
-                os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-            torch.use_deterministic_algorithms(True)
-            print("(DETERMINISTIC algorithms)")
-
-        # print("TRAINER.EVAL HAS RETURN_ATTENTION = TRUE!!!!!")
+        ### Reproducibility  (MSE criterion => regression is deterministic enough ?)
+        if dataset_info['task'] == 'binary_classification':
+            use_deterministic_algorithms(device)
 
         start_time = time.time()
-        # crossvalidation(dataset_info, device)   
-        main_loop(dataset_info, device, model_name)
+        crossvalidation(dataset_info, device)   
+        # main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
