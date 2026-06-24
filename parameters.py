@@ -1,22 +1,16 @@
 from pprint import pprint
 
 
-parameters = []
-
-# PARAMETERS
-main_params = {
-    'train_batch_size': 32,
+train_params = {
     'random_seed': 42,
-}
-parameters.append(main_params)
-
-trainer_params = {
+    'train_batch_size': 32,
     'lr': 1e-4,
-    'epochs': 100,
+    'max_steps': 10**5,
     # 'weight_decay': 1e-5,
     'inject': True,  # Enable baseline injection
+    # 'early_stop': False,
 }
-parameters.append(trainer_params)
+
 
 model_params = {
     'layer_types': ['M', 'M', 'M', 'P'],
@@ -26,7 +20,6 @@ model_params = {
     'ESA_dropout': 0.0,
     'BATCH_DEBUG': False,  # Debug: use batch Attention even on CPU
 }
-parameters.append(model_params)
 
 attention_params = {
     'heads': 8,
@@ -34,8 +27,8 @@ attention_params = {
     'SAB_dropout': 0.0,
     'PMA_dropout': 0.0,
 }
-parameters.append(attention_params)
 
+parameters = (train_params, model_params, attention_params)
 
 def print_parameters():
     print('\nPARAMETERS:')
