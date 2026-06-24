@@ -82,7 +82,8 @@ class Trainer:
 
             # Early stop
             if early_stop and epoch % val_interval == 0:
-
+       
+                print("START EVAL!!!!!!!")
                 state_before = deepcopy(model.state_dict())
                 rng_before = torch.get_rng_state()
 

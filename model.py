@@ -47,7 +47,7 @@ class MAG(nn.Module):
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
         rng_after = torch.get_rng_state()
-        print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
+        print("RNG STATE AFTER batch_forward EQUAL?", torch.equal(rng_before, rng_after))
         return (logits, batch_attention) if return_attention else logits
     
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
