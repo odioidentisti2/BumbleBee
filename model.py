@@ -26,7 +26,6 @@ class MAG(nn.Module):
         self.output_mlp = mlp(self.hidden_dim, PARAMS['in_out_mlp'], 1)
 
     def batch_forward(self, edge_features, edge_index, node_batch, return_attention=False):
-        rng_before = torch.get_rng_state()
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
@@ -46,8 +45,6 @@ class MAG(nn.Module):
         # <- DROPOUT here if needed
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
-        rng_after = torch.get_rng_state()
-        print("RNG STATE AFTER batch_forward EQUAL?", torch.equal(rng_before, rng_after))
         return (logits, batch_attention) if return_attention else logits
     
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
@@ -79,6 +76,7 @@ class MAG(nn.Module):
         return (logits, batch_attention) if return_attention else logits
     
     def forward(self, batch, return_attention=False):
+        rng_before = torch.get_rng_state()
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -92,9 +90,13 @@ class MAG(nn.Module):
         if (not PARAMS['BATCH_DEBUG'] and
             edge_feat.device.type == 'cpu' and
             batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
-            return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+            ##  WARNING: chekcing num_graphs implies that the last batch can follow a different path!!!!!
+            result = self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
         else:  # Batch attention
-            return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+            result = self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+        rng_after = torch.get_rng_state()
+        print("RNG STATE AFTER forward EQUAL?", torch.equal(rng_before, rng_after))
+        return result
 
         # DEBUG: Compare batch vs single graph Attention
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
