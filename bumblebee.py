@@ -53,7 +53,8 @@ def crossvalidation(dataset_info, device, folds=5):
         # g = torch.Generator()
         # g.manual_seed(RAND_SEED)
 
-        train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
+        train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], generator=g(), \
+                                  shuffle=True, drop_last=True)
         test_loader = DataLoader(test_subset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
         
         model = MAG(ATOM_DIM, BOND_DIM)
