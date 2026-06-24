@@ -76,7 +76,6 @@ class MAG(nn.Module):
         return (logits, batch_attention) if return_attention else logits
     
     def forward(self, batch, return_attention=False):
-        rng_before = torch.get_rng_state()
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -91,12 +90,9 @@ class MAG(nn.Module):
             edge_feat.device.type == 'cpu' and
             batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
             ##  WARNING: chekcing num_graphs implies that the last batch can follow a different path!!!!!
-            result = self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+            return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
         else:  # Batch attention
-            result = self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
-        rng_after = torch.get_rng_state()
-        print("RNG STATE AFTER forward EQUAL?", torch.equal(rng_before, rng_after))
-        return result
+            return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
 
         # DEBUG: Compare batch vs single graph Attention
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):

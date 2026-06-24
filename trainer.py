@@ -85,20 +85,7 @@ class Trainer:
 
             # Early stop
             if early_stop and epoch % val_interval == 0:
-       
-                print("START EVAL!!!!!!!")
-                state_before = deepcopy(model.state_dict())
-                rng_before = torch.get_rng_state()
-
                 metric = self.eval(model, val_loader, flag='Validation')
-
-                rng_after = torch.get_rng_state()
-                print("RNG STATE AFTER EVAL EQUAL?", torch.equal(rng_before, rng_after))
-                state_after = model.state_dict()
-                                
-                for k in state_before:
-                    if not torch.equal(state_before[k], state_after[k]):
-                        print(f"Changed: {k}")
 
                 if stopper.check(metric, model, epoch):
                     stopper.restore(model)
@@ -109,10 +96,7 @@ class Trainer:
         model.eval()  # set evaluation mode
         if flag == 'Test': 
             print("\nTesting...")
-        rng_before = torch.get_rng_state()
         loss = self._eval(model, loader)
-        rng_after = torch.get_rng_state()
-        print("RNG STATE AFTER _eval EQUAL?", torch.equal(rng_before, rng_after))
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
