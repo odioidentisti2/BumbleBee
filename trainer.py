@@ -49,9 +49,9 @@ class Trainer:
         model = model.to(self.device)
         total_loss = 0
         total = 0
-        rng_before = torch.get_rng_state()
         with torch.no_grad():
             for batch in loader:
+                rng_before = torch.get_rng_state()
                 batch = batch.to(self.device)
                 targets = batch.y
                 logits = model(batch)
@@ -61,8 +61,8 @@ class Trainer:
                 total += batch.num_graphs
                 # Record statistics
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
-        rng_after = torch.get_rng_state()
-        print("RNG STATE AFTER model(batch) EQUAL?", torch.equal(rng_before, rng_after))
+                rng_after = torch.get_rng_state()
+                print("RNG STATE AFTER model(batch) EQUAL?", torch.equal(rng_before, rng_after))
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):
