@@ -45,11 +45,11 @@ class Trainer:
         return total_loss / total
 
     def _eval(self, model, loader):
-        rng_before = torch.get_rng_state()
         self.statistics.init()
         model = model.to(self.device)
         total_loss = 0
         total = 0
+        rng_before = torch.get_rng_state()
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
