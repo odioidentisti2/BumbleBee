@@ -72,7 +72,7 @@ class Trainer:
         if val_loader:
             stopper = EarlyStop()
             val_interval = 1  #max(1, round(max_epochs / 100))
-            early_stop = False
+            early_stop = True
         else:
             early_stop = False
 

@@ -97,11 +97,6 @@ def main_loop(dataset_info, device, model_name=None):
         validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
         val_loader = DataLoader(validation_set, batch_size=test_batch_size, generator=generator())
 
-        rng_before = torch.get_rng_state()
-        for batch in val_loader:
-            rng_after = torch.get_rng_state()
-            print("RNG STATE AFTER for batch EQUAL?", torch.equal(rng_before, rng_after))
-
         ## Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.set_baseline_target(trainingset.targets)  # For injection baseline
