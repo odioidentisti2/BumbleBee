@@ -1,7 +1,8 @@
 import time
 import torch
 from statistics import AccuracyTracker, R2Tracker
-from parameters import trainer_params as PARAMS
+from parameters import train_params as PARAMS
+from copy import deepcopy  # early stop
 
 
 class Trainer:
@@ -61,16 +62,31 @@ class Trainer:
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
         return total_loss / total
 
-    def train(self, model, loader, val_loader=None):  
-        model.train()  # set training mode      
+    def train(self, model, loader, val_loader=None):
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
+        max_epochs = max(1, PARAMS['max_steps'] // len(loader))
+
+        if val_loader:
+            stopper = EarlyStop()
+            val_interval = max(1, round(max_epochs / 100))
+            early_stop = True
+        else:
+            early_stop = False
+
         print("\nTraining...")
         start_time = time.time()
-        for epoch in range(1, PARAMS['epochs'] + 1):
+        for epoch in range(1, max_epochs + 1):
+            model.train()  # set training mode      
             loss = self._train(model, loader)
             print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
-            if val_loader and epoch % 5 == 0:
-                self.eval(model, val_loader, flag='Validation')
+
+            # Early stop
+            if early_stop and epoch % val_interval == 0:
+                metric = self.eval(model, val_loader, flag='Validation')
+                if stopper.check(metric, model, epoch):
+                    stopper.restore(model)
+                    print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
+                    break
 
     def eval(self, model, loader, flag):
         model.eval()  # set evaluation mode
@@ -117,11 +133,29 @@ class Trainer:
         model.training_predictions = torch.tensor(training_predictions)  # DEBUG
 
 
-# class BinaryHingeLoss(torch.nn.Module):
-#     def forward(self, pred, target):
-#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-#         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
-#         return loss.mean()
+class EarlyStop:
+    def __init__(self):
+        self.best_state = None
+        self.best_metric = -float("inf")
+        self.best_epoch = None
+        self.counter = 0
+        self.patience = 5
+        self.min_delta = 0
+
+    def check(self, metric, model, epoch):
+        if metric > self.best_metric + self.min_delta:
+            self.best_metric = metric
+            self.best_state = deepcopy(model.state_dict())
+            self.best_epoch = epoch
+            self.counter = 0
+        else:
+            self.counter += 1
+        return self.counter >= self.patience
+
+    def restore(self, model):
+        if self.best_state is not None:
+            model.load_state_dict(self.best_state)
+
 
 # Custom Hinge that handles target=0.5 for baseline injection
 class BinaryHingeLoss(torch.nn.Module):
@@ -134,3 +168,9 @@ class BinaryHingeLoss(torch.nn.Module):
         # loss[mask_zero] = (pred[mask_zero] + 1).abs()  # Push injected samples toward -1
         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
         return loss.mean()
+
+# class BinaryHingeLoss(torch.nn.Module):
+#     def forward(self, pred, target):
+#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
+#         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
+#         return loss.mean()
