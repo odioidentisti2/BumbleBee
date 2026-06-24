@@ -21,6 +21,12 @@ def set_random_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
+# For reproducibility in DataLoader
+def generator(seed):
+    g = torch.Generator()
+    g.manual_seed(seed)
+    return g
+
 def save(model, path):
     # if not path:
     #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
@@ -87,7 +93,7 @@ def main_loop(dataset_info, device, model_name=None):
         ## Load validation set
         print(f"\nValidation set: {dataset_info['path']}")
         validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        val_loader = DataLoader(validation_set, batch_size=test_batch_size)
+        val_loader = DataLoader(validation_set, batch_size=test_batch_size,generator=generator(PARAMS['random_seed']))
 
         rng_before = torch.get_rng_state()
         for batch in val_loader:
