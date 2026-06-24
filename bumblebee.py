@@ -12,9 +12,8 @@ import datasets
 from parameters import print_parameters, train_params as PARAMS
 
 
-### CPU or GPU
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-test_batch_size = {'cpu': 8, 'cuda': 64}[device.type]  # Optimal size for speed/memory tradeoff
+OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
+
 
 ### Reproducibility
 RAND_SEED = 42
@@ -66,7 +65,7 @@ def crossvalidation(dataset_info, device, folds=5):
         g.manual_seed(RAND_SEED)
 
         train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=test_batch_size, generator=g)
+        test_loader = DataLoader(test_subset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g)
         
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
@@ -79,35 +78,35 @@ def crossvalidation(dataset_info, device, folds=5):
 def main_loop(dataset_info, device, model_name=None):
     print_parameters()
 
-    ## Reproducibility
+    ### Reproducibility
     set_random_seed()
     
     trainer = Trainer(dataset_info['task'], device)
 
     if not model_name:  # Train model
-        ## Load training set
+        ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
         train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], shuffle=True, drop_last=True)
 
 
         val_loader = None
-        ## Load validation set
+        ### Load validation set
         print(f"\nValidation set: {dataset_info['path']}")
         validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        val_loader = DataLoader(validation_set, batch_size=test_batch_size, generator=generator())
+        val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=generator())
 
-        ## Train model
+        ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.set_baseline_target(trainingset.targets)  # For injection baseline
         trainer.train(model, train_loader, val_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
-        ## Statistics on Training setset_baseline_target
+        ### Statistics on Training setset_baseline_target
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 
-        ## Save model
+        ### Save model
         # save(model, "MODELS/muta.pt")
 
     else:  # Load saved model
@@ -116,15 +115,15 @@ def main_loop(dataset_info, device, model_name=None):
 
     model.task = dataset_info['task']
 
-    ## Test
+    ### Test
     print(f"\nTest set: {dataset_info['path']}")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     print("\nTEST BATCH SIZE = 2")
-    test_loader = DataLoader(testset, batch_size=2)
+    test_loader = DataLoader(testset, batch_size=2)  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 
 
-    ## Explain
+    ### Explain
     # utils.print_header("CALIBRATION")
     # print(f"Prediction distribution mean/std: {model.training_predictions.mean():.2f} / {model.training_predictions.std():.2f}")
     # print(f"Prediction range: {model.training_predictions.min():.2f} to {model.training_predictions.max():.2f}")
@@ -135,9 +134,12 @@ def main_loop(dataset_info, device, model_name=None):
 if __name__ == "__main__":
     import time
     print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"DEVICE: {device}")
-    model_name = None
 
+    ### CPU or GPU
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"DEVICE: {device}")
+
+    model_name = None
     _datasets = []
     _datasets.append(datasets.logp_split)
     # _datasets.append(datasets.muta)
@@ -146,7 +148,7 @@ if __name__ == "__main__":
         # model_name = 'logp.pt'
         # model_name = 'muta.pt'
 
-        ## Reproducibility
+        ### Reproducibility
         if dataset_info['task'] == 'binary_classification':  # MSE criterion (regression) looks deterministic (but it needs more tests)
             if device.type == 'cuda':
                 import os
