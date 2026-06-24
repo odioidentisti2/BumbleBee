@@ -48,11 +48,11 @@ def crossvalidation(dataset_info, device, folds=5):
     cv_tracker = statistics.CVTracker()
     
     for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
-        print_parameters()
+        print_parameters()        
+        set_torch_seed()  # Reproducibility
+        
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
-        # Reproducibility
-        # set_torch_seed()
         # g = torch.Generator()
         # g.manual_seed(RAND_SEED)
 
@@ -84,7 +84,7 @@ def main_loop(dataset_info, device, model_name=None):
         ### Load validation set
         # print(f"\nValidation set: {dataset_info['path']}")
         # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        # val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=generator())
+        # val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
@@ -146,6 +146,7 @@ if __name__ == "__main__":
         crossvalidation(dataset_info, device)   
         # main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
+
 
 
 
