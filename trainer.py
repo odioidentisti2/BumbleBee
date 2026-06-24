@@ -89,11 +89,15 @@ class Trainer:
             if early_stop and epoch % val_interval == 0:
 
                 state_before = deepcopy(model.state_dict())
+                # Install debug hooks to catch unexpected RNG usage
+                self._install_rng_debug_hooks()
                 rng_before = torch.get_rng_state()
 
                 metric = self.eval(model, val_loader, flag='Validation')
 
                 rng_after = torch.get_rng_state()
+                # Remove debug hooks after eval
+                self._remove_rng_debug_hooks()
                 print("RNG STATE AFTER EVAL EQUAL?", torch.equal(rng_before, rng_after))
                 state_after = model.state_dict()
                                 
@@ -149,6 +153,34 @@ class Trainer:
         training_att_factors = torch.stack([aw.max() * aw.numel() for aw in training_attn_weights])
         model.att_factor_top = training_att_factors.mean().item() + training_att_factors.std().item()
         model.training_predictions = torch.tensor(training_predictions)  # DEBUG
+
+    # Debug helpers to trace unexpected calls to torch RNG functions
+    def _install_rng_debug_hooks(self):
+        """Monkeypatch common torch RNG functions to print a stack trace when called."""
+        import traceback
+        self._orig_torch_fns = {}
+        fn_names = [
+            'rand', 'randn', 'randint', 'randperm', 'bernoulli', 'multinomial', 'normal'
+        ]
+        for name in fn_names:
+            if hasattr(torch, name):
+                orig = getattr(torch, name)
+                self._orig_torch_fns[name] = orig
+                def make_wrapper(orig_fn, fname):
+                    def wrapper(*args, **kwargs):
+                        print(f"[RNG HOOK] torch.{fname} called")
+                        traceback.print_stack(limit=6)
+                        return orig_fn(*args, **kwargs)
+                    return wrapper
+                setattr(torch, name, make_wrapper(orig, name))
+
+    def _remove_rng_debug_hooks(self):
+        """Restore patched torch functions."""
+        if not hasattr(self, '_orig_torch_fns'):
+            return
+        for name, orig in self._orig_torch_fns.items():
+            setattr(torch, name, orig)
+        del self._orig_torch_fns
 
 
 class EarlyStop:
