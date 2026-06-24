@@ -57,7 +57,7 @@ class Trainer:
                 rng_before = torch.get_rng_state()
                 logits = model(batch)
                 rng_after = torch.get_rng_state()
-                print("RNG STATE EQUAL?", torch.equal(rng_before, rng_after))
+                print("RNG STATE AFTER Forward EQUAL?", torch.equal(rng_before, rng_after))
 
                 # logits, _ = model(batch, return_attention=True)
                 loss = self.criterion(logits, targets)
@@ -89,9 +89,12 @@ class Trainer:
             if early_stop and epoch % val_interval == 0:
 
                 state_before = deepcopy(model.state_dict())
+                rng_before = torch.get_rng_state()
 
                 metric = self.eval(model, val_loader, flag='Validation')
 
+                rng_after = torch.get_rng_state()
+                print("RNG STATE AFTER EVAL EQUAL?", torch.equal(rng_before, rng_after))
                 state_after = model.state_dict()
                                 
                 for k in state_before:
