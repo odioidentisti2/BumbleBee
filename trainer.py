@@ -9,8 +9,8 @@ class Trainer:
 
     def __init__(self, task, device):
         self.device = device
-        self.optim = None
         self.task = task
+        self.optim = None
         if self.task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
             self.statistics = AccuracyTracker()
