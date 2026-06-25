@@ -32,12 +32,9 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            old_targets = batch.y.clone()  # DEBUG
-            batch = self._injected_batch(batch)  # INJECTION
             targets = batch.y
-            print(old_targets)  # DEBUG
-            print(targets)  # DEBUG
-            assert not torch.equal(old_targets, targets)
+            batch = self._injected_batch(batch)  # INJECTION
+            print(targets)
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
