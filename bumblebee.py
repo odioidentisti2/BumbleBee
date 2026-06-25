@@ -100,6 +100,9 @@ def main_loop(dataset_info, device, model_name=None):
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 
+        def print_model_device(prefix, model):
+            print(prefix, id(model), next(model.parameters()).device)
+
         ### Calibrating Explainer
         print("\nCalibrating Explainer...")
         print_model_device("caller before ctor", model)
@@ -120,9 +123,6 @@ def main_loop(dataset_info, device, model_name=None):
     print("\nTEST BATCH SIZE = 2")
     test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
-
-    def print_model_device(prefix, model):
-        print(prefix, id(model), next(model.parameters()).device)
 
 
     ### Explain
