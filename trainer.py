@@ -34,8 +34,8 @@ class Trainer:
         for batch in loader:
             batch = batch.to(self.device)
             targets = batch.y
-            if PARAMS['inject']:
-                batch = self._injected_batch(batch)  # INJECTION
+            # if PARAMS['inject']:
+            batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
