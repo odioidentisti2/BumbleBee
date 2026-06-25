@@ -89,7 +89,7 @@ def main_loop(dataset_info, device, model_name=None):
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader, val_loader)
-        trainer.calibration_stats(model, train_loader)  # Needed for Explainer
+        # trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
         explainer = Explainer(model, train_loader)
 
