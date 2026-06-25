@@ -25,17 +25,15 @@ class Trainer:
             # Otherwise, if I use the mean with unbalanced datasets, it can be that in the heat-map there's no red nor green, still it's toxic
         else:
             self.baseline = sum(targets) / len(targets)
-        print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
         
     def _train(self, model, loader):
         model = model.to(self.device)
         total_loss = 0
         total = 0
         for batch in loader:
+            batch = self._injected_batch(batch)  # INJECTION
             batch = batch.to(self.device)
             targets = batch.y
-            # if PARAMS['inject']:
-            batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
@@ -62,10 +60,13 @@ class Trainer:
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):
-        self.set_baseline(loader.dataset.targets)  # For baseline injection
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
         max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
+
+        # Injection
+        self.set_baseline(loader.dataset.targets)  # For baseline injection
+        print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
         # Validation + early stop configuration
         if val_loader:
