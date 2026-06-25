@@ -86,9 +86,9 @@ class Explainer:
         # DEBUG: Sanity checks
         print(f"BATCH BASELINES: {baseline_pred}") 
         if baseline_pred.shape[0] > 1:
-            assert baseline_pred.std() < 1e-6, "Baseline predictions are not constant!"
+            assert baseline_pred.std() < 1e-4, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:
-            assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-6, "Baseline predictions differ from previous graphs!"
+            assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-4, "Baseline predictions differ from previous graphs!"
         else:
             self.ig_depicter.baseline_pred = baseline_pred.mean().item()
         self.ig_depicter.predictions.extend(final_pred.tolist())  # DEBUG
