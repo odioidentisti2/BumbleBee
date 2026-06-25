@@ -1,3 +1,5 @@
+from xml.parsers.expat import model
+
 import torch
 from torch_geometric.loader import DataLoader
 
@@ -16,13 +18,14 @@ from parameters import print_parameters, train_params as PARAMS
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
 
 
-def save(model, path):
+def save(model, explainer, path):
     # if not path:
     #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
+        'task': model.task,
         'state_dict': model.state_dict(),
-        'att_factor_top': getattr(model, 'att_factor_top'),
-        'training_predictions': getattr(model, 'training_predictions', None),  # DEBUG
+        'att_factor_top': getattr(explainer, 'att_factor_top'),
+        'training_predictions': getattr(explainer, 'training_predictions', None),  # DEBUG
     }
     torch.save(ckpt, path)
     print(f"\nModel checkpoint saved to: {path}")
@@ -31,11 +34,14 @@ def load(model_path, device):
     print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=device)
     model = MAG(ATOM_DIM, BOND_DIM).to(device)
-    model.att_factor_top = ckpt.get('att_factor_top')
-    model.training_predictions = ckpt.get('training_predictions')  # DEBUG
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
-    return model
+    model.task = ckpt['task']
+    explainer = Explainer()
+    explainer.initialize(ckpt.get('att_factor_top'), ckpt.get('training_predictions'))
+    # model.att_factor_top = ckpt.get('att_factor_top')
+    # model.training_predictions = ckpt.get('training_predictions')  # DEBUG
+    return model, explainer
 
 
 def crossvalidation(dataset_info, device, folds=5):
@@ -94,14 +100,19 @@ def main_loop(dataset_info, device, model_name=None):
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 
+        ### Calibrating Explainer
+        print("\nCalibrating Explainer...")
+        print_model_device("caller before ctor", model)
+        explainer = Explainer()
+        explainer.calibrate(model, train_loader)
+        print_model_device("caller after ctor", model)
+
         ### Save model
-        # save(model, "MODELS/muta.pt")
+        save(model, explainer, "MODELS/muta_explainer_1epoch.pt")
 
-    else:  # Load saved model
-        model = load(f"MODELS/{model_name}", device)
-        # there should be task inside model......    
-
-    model.task = dataset_info['task']
+    # else:  # Load saved model
+        model_name = "muta_explainer_1epoch.pt"
+        model, explainer = load(f"MODELS/{model_name}", device)
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
@@ -110,15 +121,12 @@ def main_loop(dataset_info, device, model_name=None):
     test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 
+    def print_model_device(prefix, model):
+        print(prefix, id(model), next(model.parameters()).device)
+
+
     ### Explain
-    utils.print_header("CALIBRATION")
-    if train_loader is not None:
-        explainer = Explainer(model, train_loader)
-    else:
-        pass
-    print(f"Prediction distribution mean/std: {explainer.training_predictions.mean():.2f} / {explainer.training_predictions.std():.2f}")
-    print(f"Prediction range: {explainer.training_predictions.min():.2f} to {explainer.training_predictions.max():.2f}")
-    # explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
+    explainer.print_calibration()
     return explainer.explain(model, test_loader)
 
 
@@ -132,8 +140,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp.pt'
