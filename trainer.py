@@ -64,14 +64,11 @@ class Trainer:
 
     def train(self, model, loader, val_loader=None):
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
 
         if val_loader:
             stopper = EarlyStop()
-            val_interval = max(1, round(max_epochs / 100))
-            early_stop = True
-        else:
-            early_stop = False
+            val_interval = 5  # max(1, round(max_epochs / 100))
 
         print("\nTraining...")
         start_time = time.time()
@@ -81,7 +78,7 @@ class Trainer:
             print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Early stop
-            if early_stop and epoch % val_interval == 0:
+            if PARAMS['early_stop'] and epoch % val_interval == 0:
                 metric = self.eval(model, val_loader, flag='Validation')
 
                 if stopper.check(metric, model, epoch):

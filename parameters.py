@@ -7,7 +7,7 @@ train_params = {
     'max_steps': 10**5,
     # 'weight_decay': 1e-5,
     'inject': True,  # Enable baseline injection
-    # 'early_stop': False,
+    'early_stop': False,
 }
 
 
