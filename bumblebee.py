@@ -111,10 +111,10 @@ def main_loop(dataset_info, device, model_name=None):
         print_model_device("caller after ctor", model)
 
         ### Save model
-        save(model, explainer, "MODELS/muta_explainer_1epoch.pt")
+        save(model, explainer, "MODELS/muta_explainer.pt")
 
     # else:  # Load saved model
-        model_name = "muta_explainer_1epoch.pt"
+        model_name = "muta_explainer.pt"
         model, explainer = load(f"MODELS/{model_name}", device)
 
     ### Test
