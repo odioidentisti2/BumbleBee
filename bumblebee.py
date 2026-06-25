@@ -124,7 +124,6 @@ def main_loop(dataset_info, device, model_name=None):
     test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 
-
     ### Explain
     explainer.print_calibration()
     return explainer.explain(model, test_loader)
@@ -140,11 +139,11 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        # model_name = 'logp.pt'
+        # model_name = 'logp_explainer.pt'
         # model_name = 'muta_explainer.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
