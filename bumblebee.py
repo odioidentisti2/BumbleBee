@@ -130,14 +130,14 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp.pt'
         # model_name = 'muta.pt'
 
-        ### Reproducibility  (MSE criterion => regression is deterministic enough ?)
+        ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
             use_deterministic_algorithms(device)
 
