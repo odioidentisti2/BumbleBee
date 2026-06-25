@@ -67,8 +67,9 @@ class Trainer:
         max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
 
         if val_loader:
-            stopper = EarlyStop()
             val_interval = 5  # max(1, round(max_epochs / 100))
+            if PARAMS['early_stop']:
+                stopper = EarlyStop()
 
         print("\nTraining...")
         start_time = time.time()
@@ -78,10 +79,10 @@ class Trainer:
             print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Early stop
-            if PARAMS['early_stop'] and epoch % val_interval == 0:
+            if val_loader and epoch % val_interval == 0:
                 metric = self.eval(model, val_loader, flag='Validation')
 
-                if stopper.check(metric, model, epoch):
+                if PARAMS['early_stop'] and stopper.check(metric, model, epoch):
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
