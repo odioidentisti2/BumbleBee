@@ -23,7 +23,7 @@ class Explainer:
         self.att_factor_top = att_factor_top
         self.training_predictions = training_predictions
         self.ig_top = self.training_predictions.std().item()  # using PREDICTION std (not actual target)
-        self.att_depicter = Att_Depicter(top=self.att_top)
+        self.att_depicter = Att_Depicter(top=self.att_factor_top)
         self.ig_depicter = IG_Depicter(top=self.ig_top)  # using PREDICTION std (not actual target)
 
     def calibrate(self, model, train_loader):
