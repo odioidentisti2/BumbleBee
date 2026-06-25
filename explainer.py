@@ -30,23 +30,6 @@ class Explainer:
         self.ig_depicter = IG_Depicter(top=self.training_predictions.std().item())  # using PREDICTION std (not actual target)
 
         
-    @staticmethod
-    def calibration_stats(model, loader):
-        """Collect attention weights statistics on training set for Explainer."""
-        model = model.to('cpu')
-        training_attn_weights = []
-        training_predictions = []  # DEBUG
-        with torch.no_grad():
-            for batch in loader:
-                batch = batch.to('cpu')
-                preds, attn_weights = model(batch, return_attention=True)
-                training_predictions.extend(preds)  # DEBUG
-                training_attn_weights.extend(attn_weights)
-        training_att_factors = torch.stack([aw.max() * aw.numel() for aw in training_attn_weights])
-        model.att_factor_top = training_att_factors.mean().item() + training_att_factors.std().item()
-        model.training_predictions = torch.tensor(training_predictions)  # DEBUG
-):
-
     def explain(self, model, loader):
         device = next(model.parameters()).device
         model.eval()
