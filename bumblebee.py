@@ -91,7 +91,7 @@ def main_loop(dataset_info, device, model_name=None):
         trainer.train(model, train_loader, val_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 
-        model.explainer = Explainer(model, train_loader)
+        explainer = Explainer(model, train_loader)
 
         ### Statistics on Training setset_baseline_target
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
@@ -115,8 +115,8 @@ def main_loop(dataset_info, device, model_name=None):
 
     ### Explain
     utils.print_header("CALIBRATION")
-    print(f"Prediction distribution mean/std: {model.explainer.training_predictions.mean():.2f} / {model.explainer.training_predictions.std():.2f}")
-    print(f"Prediction range: {model.explainer.training_predictions.min():.2f} to {model.explainer.training_predictions.max():.2f}")
+    print(f"Prediction distribution mean/std: {explainer.training_predictions.mean():.2f} / {explainer.training_predictions.std():.2f}")
+    print(f"Prediction range: {explainer.training_predictions.min():.2f} to {explainer.training_predictions.max():.2f}")
     # explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
     return explainer.explain(model, test_loader)
 
