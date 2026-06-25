@@ -111,10 +111,10 @@ def main_loop(dataset_info, device, model_name=None):
         print_model_device("caller after ctor", model)
 
         ### Save model
-        save(model, explainer, "MODELS/muta_explainer.pt")
+        save(model, explainer, "MODELS/logp_explainer.pt")
 
-    else:  # Load saved model
-        model_name = "muta_explainer.pt"
+    # else:  # Load saved model
+        model_name = "logp_explainer.pt"
         model, explainer = load(f"MODELS/{model_name}", device)
 
     ### Test
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     for dataset_info in _datasets:
         # model_name = 'logp.pt'
-        model_name = 'muta_explainer.pt'
+        # model_name = 'muta_explainer.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
