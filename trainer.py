@@ -99,7 +99,7 @@ class Trainer:
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
 
-    def _injected_batch(self, batch, interval=10):
+    def _injected_batch(self, batch, interval=1000):
         # WHAT IF NUMBER OF SAMPLES IS LESS THAN INTERVAL???
         """Deterministically inject synthetic zero-feature samples every N molecules."""
         global_indices = \
