@@ -31,9 +31,13 @@ class Trainer:
         total_loss = 0
         total = 0
         for batch in loader:
-            batch = self._injected_batch(batch)  # INJECTION
             batch = batch.to(self.device)
+            old_targets = batch.y.clone()  # DEBUG
+            batch = self._injected_batch(batch)  # INJECTION
             targets = batch.y
+            print(old_targets)  # DEBUG
+            print(targets)  # DEBUG
+            assert not torch.equal(old_targets, targets)
             logits = model(batch)  # forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
@@ -64,15 +68,15 @@ class Trainer:
         max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
 
-        # Injection
-        self.set_baseline(loader.dataset.targets)  # For baseline injection
-        print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
-
-        # Validation + early stop configuration
+        # Configuration: validation + early stop
         if val_loader:
             val_interval = 5  # max(1, round(max_epochs / 100))
             if PARAMS['early_stop']:
                 stopper = EarlyStop()
+
+        # Injection
+        self.set_baseline(loader.dataset.targets)  # For baseline injection
+        print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
         # Training loop
         print("\nTraining...")
