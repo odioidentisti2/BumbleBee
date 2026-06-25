@@ -6,7 +6,7 @@ train_params = {
     'lr': 1e-4,
     'max_steps': 10**5,
     # 'weight_decay': 1e-5,
-    'inject': True,  # Enable baseline injection
+    # 'inject': True,  # Enabled by default, otherwise models with/without are inconsistent
     'early_stop': False,
 }
 

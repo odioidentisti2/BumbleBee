@@ -60,7 +60,7 @@ def crossvalidation(dataset_info, device, folds=5):
         
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
-        trainer.set_baseline_target(dataset.targets)  # WARNING: using full dataset targets!!!!!!
+        # trainer.set_baseline(dataset.targets)  # WARNING: using full dataset targets!!!!!!
         trainer.train(model, train_loader, val_loader=test_loader)   
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
@@ -89,7 +89,7 @@ def main_loop(dataset_info, device, model_name=None):
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
-        trainer.set_baseline_target(trainingset.targets)  # For injection baseline
+        # trainer.set_baseline(trainingset.targets)  # For injection baseline
         trainer.train(model, train_loader, val_loader)
         trainer.calibration_stats(model, train_loader)  # Needed for Explainer
 

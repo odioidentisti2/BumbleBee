@@ -19,14 +19,13 @@ class Trainer:
             self.statistics =  R2Tracker()
         self.count = 0  # This global used for injection is bad.....
 
-    def set_baseline_target(self, targets):
-        if PARAMS['inject']:
-            if self.task == 'binary_classification':
-                self.baseline_target = 0.5  # Decision boundary
-                # Otherwise, if I use the mean with unbalanced datasets, it can be that in the heat-map there's no red nor green, still it's toxic
-            else:
-                self.baseline_target = sum(targets) / len(targets)
-            print(f"\nBaseline target: {self.baseline_target:.2f}")  # DEBUG
+    def set_baseline(self, targets):
+        if self.task == 'binary_classification':
+            self.baseline = 0.5  # Decision boundary
+            # Otherwise, if I use the mean with unbalanced datasets, it can be that in the heat-map there's no red nor green, still it's toxic
+        else:
+            self.baseline = sum(targets) / len(targets)
+        print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
         
     def _train(self, model, loader):
         model = model.to(self.device)
@@ -38,9 +37,8 @@ class Trainer:
             if PARAMS['inject']:
                 batch = self._injected_batch(batch)  # INJECTION
             logits = model(batch)  # forward pass
-            loss = self.criterion(logits, targets)  # calculate loss
-            # Learning: zero grad; backward pass; update weights
-            self.optim.zero_grad(); loss.backward(); self.optim.step()
+            loss = self.criterion(logits, targets)  # Calculate loss
+            self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
         return total_loss / total
@@ -64,14 +62,18 @@ class Trainer:
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):
+        self.set_baseline(loader.dataset.targets)  # For baseline injection
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
         max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
+        val_interval = stopper = None
 
+        # Validation + early stop configuration
         if val_loader:
             val_interval = 5  # max(1, round(max_epochs / 100))
             if PARAMS['early_stop']:
                 stopper = EarlyStop()
 
+        # Training loop
         print("\nTraining...")
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):
@@ -79,11 +81,10 @@ class Trainer:
             loss = self._train(model, loader)
             print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
-            # Early stop
-            if val_loader and epoch % val_interval == 0:
+            # Validation + early stop
+            if val_interval and epoch % val_interval == 0:
                 metric = self.eval(model, val_loader, flag='Validation')
-
-                if PARAMS['early_stop'] and stopper.check(metric, model, epoch):
+                if stopper and stopper.check(metric, model, epoch):
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
@@ -98,6 +99,7 @@ class Trainer:
         return metric
 
     def _injected_batch(self, batch, interval=1000):
+        # WHAT IF NUMBER OF SAMPLES IS LESS THAN INTERVAL???
         """Deterministically inject synthetic zero-feature samples every N molecules."""
         global_indices = \
             torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
@@ -111,7 +113,7 @@ class Trainer:
                 edge_mask = graph_mask[batch.edge_index[0]]
                 batch.edge_attr[edge_mask] = 0            
             # Set target for baseline
-            batch.y[local_indices] = self.baseline_target
+            batch.y[local_indices] = self.baseline
         
         self.count += batch.num_graphs
         return batch
