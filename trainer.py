@@ -17,15 +17,16 @@ class Trainer:
         else:  # regression
             self.criterion = torch.nn.MSELoss()  # Mean Squared Error
             self.statistics =  R2Tracker()
-        self.count = 0
+        self.count = 0  # This global used for injection is bad.....
 
     def set_baseline_target(self, targets):
         if PARAMS['inject']:
             if self.task == 'binary_classification':
                 self.baseline_target = 0.5  # Decision boundary
+                # Otherwise, if I use the mean with unbalanced datasets, it can be that in the heat-map there's no red nor green, still it's toxic
             else:
                 self.baseline_target = sum(targets) / len(targets)
-            print(f"\nBaseline target: {self.baseline_target:.2f}")
+            print(f"\nBaseline target: {self.baseline_target:.2f}")  # DEBUG
         
     def _train(self, model, loader):
         model = model.to(self.device)
