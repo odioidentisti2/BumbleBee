@@ -71,6 +71,7 @@ def main_loop(dataset_info, device, model_name=None):
     set_torch_seed()  # Reproducibility
     
     trainer = Trainer(dataset_info['task'], device)
+    train_loader = val_loader = test_loader = None
 
     if not model_name:  # Train model
         ### Load training set
@@ -80,7 +81,6 @@ def main_loop(dataset_info, device, model_name=None):
                                 #   generator=g(), shuffle=True, drop_last=True)
                                   shuffle=True, drop_last=True)
 
-        val_loader = None
         ### Load validation set
         # print(f"\nValidation set: {dataset_info['path']}")
         # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
@@ -89,9 +89,6 @@ def main_loop(dataset_info, device, model_name=None):
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader, val_loader)
-        # trainer.calibration_stats(model, train_loader)  # Needed for Explainer
-
-        explainer = Explainer(model, train_loader)
 
         ### Statistics on Training setset_baseline_target
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
@@ -115,6 +112,10 @@ def main_loop(dataset_info, device, model_name=None):
 
     ### Explain
     utils.print_header("CALIBRATION")
+    if train_loader is not None:
+        explainer = Explainer(model, train_loader)
+    else:
+        pass
     print(f"Prediction distribution mean/std: {explainer.training_predictions.mean():.2f} / {explainer.training_predictions.std():.2f}")
     print(f"Prediction range: {explainer.training_predictions.min():.2f} to {explainer.training_predictions.max():.2f}")
     # explainer = Explainer(att_top=model.att_factor_top, ig_top=model.training_predictions.std().item())
@@ -131,8 +132,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp.pt'
