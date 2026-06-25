@@ -60,8 +60,9 @@ class Trainer:
         return total_loss / total
 
     def train(self, model, loader, val_loader=None):
+        self.model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 1  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
 
         # Configuration: validation + early stop
