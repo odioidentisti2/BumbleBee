@@ -83,9 +83,9 @@ def main_loop(dataset_info, device, model_name=None):
 
         val_loader = None
         ### Load validation set
-        # print(f"\nValidation set: {dataset_info['path']}")
-        # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        # val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
+        print(f"\nValidation set: {dataset_info['path']}")
+        validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
@@ -131,8 +131,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp.pt'
