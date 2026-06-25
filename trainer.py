@@ -34,9 +34,9 @@ class Trainer:
             batch = batch.to(self.device)
             batch = self._injected_batch(batch)  # INJECTION
             targets = batch.y
-            logits = model(batch)  # forward pass
+            logits = model(batch)  # Forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
-            self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning
+            self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning step
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
         return total_loss / total
@@ -70,8 +70,8 @@ class Trainer:
             if PARAMS['early_stop']:
                 stopper = EarlyStop()
 
-        # Injection
-        self.set_baseline(loader.dataset.targets)  # For baseline injection
+        # Baseline injection (for Explainer)
+        self.set_baseline(loader.dataset.targets)
         print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
         # Training loop
