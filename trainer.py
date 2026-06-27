@@ -27,6 +27,7 @@ class Trainer:
             self.baseline = sum(targets) / len(targets)
         
     def _train(self, model, loader):
+        model.train()  # set training mode  
         model = model.to(self.device)
         total_loss = 0
         total = 0
@@ -42,10 +43,11 @@ class Trainer:
         return total_loss / total
 
     def _eval(self, model, loader):
-        self.statistics.init()
+        model.eval()  # set evaluation mode
         model = model.to(self.device)
         total_loss = 0
         total = 0
+        self.statistics.init()
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
@@ -78,8 +80,7 @@ class Trainer:
         # Training loop
         print("\nTraining...")
         start_time = time.time()
-        for epoch in range(1, max_epochs + 1):
-            model.train()  # set training mode      
+        for epoch in range(1, max_epochs + 1):    
             loss = self._train(model, loader)
             print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
@@ -92,7 +93,6 @@ class Trainer:
                     break
 
     def eval(self, model, loader, flag):
-        model.eval()  # set evaluation mode
         if flag == 'Test': 
             print("\nTesting...")
         loss = self._eval(model, loader)
@@ -124,13 +124,15 @@ class Trainer:
         """Collect calibration data on training set for the Explainer."""
         print("\nCalibrating...")
         start_time = time.time()
-        model = model.to('cpu')  # IS IT NEEDED? LET"S KEEP IT WHERE IT WAS!
+        model = model.to('cpu')
+        # model = model.to(self.device)
         model.eval()
         training_attn_weights = []
         training_predictions = []
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to('cpu')
+                # batch = batch.to(self.device)
                 preds, attn_weights = model(batch, return_attention=True)
                 training_predictions.append(preds.detach().cpu())
                 training_attn_weights.extend([aw.detach().cpu() for aw in attn_weights])
