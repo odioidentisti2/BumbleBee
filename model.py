@@ -89,7 +89,7 @@ class MAG(nn.Module):
         if (not PARAMS['BATCH_DEBUG'] and
             edge_feat.device.type == 'cpu' and
             batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
-            ##  WARNING: chekcing num_graphs implies that the last batch can follow a different path!!!!!
+            ##  WARNING: checking num_graphs implies that the last batch can follow a different path!!!!!!!!!!
             return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
         else:  # Batch attention
             return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
