@@ -98,10 +98,10 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ### Save model
-        save("MODELS/logp_calibration.pt", model, calibration)
+        save("MODELS/muta_calibration.pt", model, calibration)
 
     else:  # Load saved model
-        model_name = "logp_calibration.pt"
+        model_name = "muta_calibration.pt"
         model, calibration = load(f"MODELS/{model_name}", device)
 
     ### Test
@@ -129,8 +129,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp_explainer.pt'
