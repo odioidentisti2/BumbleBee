@@ -124,13 +124,13 @@ class Trainer:
         """Collect calibration data on training set for the Explainer."""
         print("\nCalibrating...")
         start_time = time.time()
-        model = model.to(self.device)  # IS IT NEEDED? LET"S KEEP IT WHERE IT WAS!
-        # model.eval()
+        model = model.to('cpu')  # IS IT NEEDED? LET"S KEEP IT WHERE IT WAS!
+        model.eval()
         training_attn_weights = []
         training_predictions = []
         with torch.no_grad():
             for batch in loader:
-                batch = batch.to(self.device)
+                batch = batch.to('cpu')
                 preds, attn_weights = model(batch, return_attention=True)
                 training_predictions.append(preds.detach().cpu())
                 training_attn_weights.extend([aw.detach().cpu() for aw in attn_weights])
