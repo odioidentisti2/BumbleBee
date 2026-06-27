@@ -36,8 +36,12 @@ class MAG(nn.Module):
         # ESA forward
         out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
         if return_attention:
-            attention = self.esa.get_attention()  # [batch_size, num_heads, seq_len, seq_len]
-            batch_attention = attention.unbind(dim=0)
+            attention = self.esa.get_attention()  # [batch_size, seq_len]
+            batch_attention = []
+            for i, graph_attention in enumerate(attention.unbind(dim=0)):
+                # Crop padded positions so attention lengths match graph sizes.
+                graph_attention = graph_attention[pad_mask[i]]
+                batch_attention.append(graph_attention)
             # att_list.extend(batch_attention)
             # enc_repr.extend(self.esa.enc_out.unbind(dim=0))
             # dec_repr.extend(self.esa.dec_out.unbind(dim=0))
