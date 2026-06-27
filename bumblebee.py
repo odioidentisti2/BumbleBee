@@ -36,6 +36,7 @@ def load(model_path, device):
     model.eval()
     model.task = ckpt['task']
     calibration = ckpt.get('calibration')
+    print(f"\nLoaded model from {model_path} with task: {model.task}")
     return model, calibration
 
 
