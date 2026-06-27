@@ -1,5 +1,3 @@
-from xml.parsers.expat import model
-
 import torch
 from torch_geometric.loader import DataLoader
 
@@ -11,6 +9,7 @@ from reproducibility import use_deterministic_algorithms, set_torch_seed, torch_
 import utils
 import statistics
 
+from pprint import pprint
 import datasets
 from parameters import print_parameters, train_params as PARAMS
 
@@ -18,14 +17,13 @@ from parameters import print_parameters, train_params as PARAMS
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
 
 
-def save(model, explainer, path):
+def save(path, model, calibration=None):
     # if not path:
     #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'task': model.task,
         'state_dict': model.state_dict(),
-        'att_factor_top': getattr(explainer, 'att_factor_top'),
-        'training_predictions': getattr(explainer, 'training_predictions', None),  # DEBUG
+        'calibration': calibration,
     }
     torch.save(ckpt, path)
     print(f"\nModel checkpoint saved to: {path}")
@@ -37,11 +35,8 @@ def load(model_path, device):
     model.load_state_dict(ckpt['state_dict'])
     model.eval()
     model.task = ckpt['task']
-    explainer = Explainer()
-    explainer.initialize(ckpt.get('att_factor_top'), ckpt.get('training_predictions'))
-    # model.att_factor_top = ckpt.get('att_factor_top')
-    # model.training_predictions = ckpt.get('training_predictions')  # DEBUG
-    return model, explainer
+    calibration = ckpt.get('calibration')
+    return model, calibration
 
 
 def crossvalidation(dataset_info, device, folds=5):
@@ -95,27 +90,18 @@ def main_loop(dataset_info, device, model_name=None):
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, train_loader, val_loader)
+        calibration = trainer.calibration(model, train_loader)
 
         ### Statistics on Training setset_baseline_target
         # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
         # trainer.eval(model, loader, flag="Train")
 
-        def print_model_device(prefix, model):
-            print(prefix, id(model), next(model.parameters()).device)
-
-        ### Calibrating Explainer
-        print("\nCalibrating Explainer...")
-        print_model_device("caller before ctor", model)
-        explainer = Explainer()
-        explainer.calibrate(model, train_loader)
-        print_model_device("caller after ctor", model)
-
         ### Save model
-        save(model, explainer, "MODELS/logp_explainer.pt")
+        save("MODELS/logp_calibration.pt", model, calibration)
 
     else:  # Load saved model
-        model_name = "logp_explainer.pt"
-        model, explainer = load(f"MODELS/{model_name}", device)
+        model_name = "logp_calibration.pt"
+        model, calibration = load(f"MODELS/{model_name}", device)
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
@@ -125,7 +111,10 @@ def main_loop(dataset_info, device, model_name=None):
     trainer.eval(model, test_loader, flag="Test")
 
     ### Explain
-    explainer.print_calibration()
+    utils.print_header("CALIBRATION")
+    explainer = Explainer(calibration)
+    pprint(explainer.calibration)
+    # explainer.print_calibration()
     return explainer.explain(model, test_loader)
 
 
@@ -143,7 +132,7 @@ if __name__ == "__main__":
     # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        model_name = 'logp_explainer.pt'
+        # model_name = 'logp_explainer.pt'
         # model_name = 'muta_explainer.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
