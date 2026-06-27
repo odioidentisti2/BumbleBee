@@ -125,7 +125,7 @@ class Trainer:
         print("\nCalibrating...")
         start_time = time.time()
         model = model.to(self.device)  # IS IT NEEDED? LET"S KEEP IT WHERE IT WAS!
-        model.eval()
+        # model.eval()
         training_attn_weights = []
         training_predictions = []
         with torch.no_grad():
