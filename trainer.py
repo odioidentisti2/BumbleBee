@@ -62,7 +62,7 @@ class Trainer:
     def train(self, model, loader, val_loader=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 1  # max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
 
         # Configuration: validation + early stop
@@ -123,6 +123,7 @@ class Trainer:
     @staticmethod
     def calibration(model, loader):
         """Collect calibration data on training set for the Explainer."""
+        print("\nCalibrating...")
         start_time = time.time()
         model = model.to('cpu')  # IS IT NEEDED? LET"S KEEP IT WHERE IT WAS!
         training_attn_weights = []

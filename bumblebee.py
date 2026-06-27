@@ -107,7 +107,7 @@ def main_loop(dataset_info, device, model_name=None):
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    print("\nTEST BATCH SIZE = 2")
+    print("\nDEBUG: TEST BATCH SIZE = 2")
     test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
     trainer.eval(model, test_loader, flag="Test")
 

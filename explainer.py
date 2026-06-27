@@ -128,7 +128,7 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
-        print(f"BATCH BASELINES: {baseline_pred}") 
+        print(f"\nDEBUG:BATCH BASELINES: {baseline_pred}") 
         if baseline_pred.shape[0] > 1:
             assert baseline_pred.std() < 1e-4, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:
