@@ -12,49 +12,6 @@ class Explainer:
         self.calibration = calibration
         self.att_depicter = Att_Depicter(top=calibration['attn_factor_mean'] + calibration['attn_factor_std'])
         self.ig_depicter = IG_Depicter(top=calibration['prediction_std'])  # using PREDICTION std (not actual target)
-
-    # def __init__(self):
-    #     self.att_depicter = None
-    #     self.ig_depicter = None
-    #     self.ig_top = None
-    #     self.training_predictions = None
-    #     self.att_factor_top = None
-
-    # def initialize(self, att_factor_top, training_predictions):
-    #     self.att_factor_top = att_factor_top
-    #     self.training_predictions = training_predictions
-    #     self.ig_top = self.training_predictions.std().item()  # using PREDICTION std (not actual target)
-    #     self.att_depicter = Att_Depicter(top=self.att_factor_top)
-    #     self.ig_depicter = IG_Depicter(top=self.ig_top)  # using PREDICTION std (not actual target)
-
-    # def calibrate(self, model, train_loader):
-    #     """Collect attention weights statistics on training."""
-    #     model = model.to('cpu')  # WHY?
-    #     # model in eval mode??????
-    #     training_attn_weights = []
-    #     training_predictions = []  # DEBUG
-    #     with torch.no_grad():
-    #         for batch in train_loader:
-    #             batch = batch.to('cpu')
-    #             preds, attn_weights = model(batch, return_attention=True)
-    #             training_predictions.extend(preds)  # DEBUG
-    #             training_attn_weights.extend(attn_weights)
-    #     training_att_factors = torch.stack([aw.max() * aw.numel() for aw in training_attn_weights])
-    #     att_factor_top = training_att_factors.mean().item() + training_att_factors.std().item()
-    #     training_prediction_tensor = torch.tensor(training_predictions)  # DEBUG
-    #     self.initialize(att_factor_top, training_prediction_tensor)
-    #     # self.att_factor_top = training_att_factors.mean().item() + training_att_factors.std().item()
-    #     # self.training_predictions = torch.tensor(training_predictions)  # DEBUG
-    #     # self.ig_top = self.training_predictions.std().item()  # using PREDICTION std (not actual target)
-    #     # self.att_depicter = Att_Depicter(top=self.att_factor_top)
-    #     # self.ig_depicter = IG_Depicter(top=self.ig_top)
-
-    # def print_calibration(self):
-    #     utils.print_header("CALIBRATION")
-    #     print(self.calibration)
-        # print(f"Prediction distribution mean/std: {self.training_predictions.mean():.2f} / {self.training_predictions.std():.2f}")
-        # print(f"Prediction range: {self.training_predictions.min():.2f} to {self.training_predictions.max():.2f}")
-
         
     def explain(self, model, loader):
         device = next(model.parameters()).device
@@ -128,7 +85,7 @@ class Explainer:
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
-        print(f"\nDEBUG:BATCH BASELINES: {baseline_pred}") 
+        print(f"\nDEBUG: BATCH BASELINES: {baseline_pred}") 
         if baseline_pred.shape[0] > 1:
             assert baseline_pred.std() < 1e-4, "Baseline predictions are not constant!"
         if self.ig_depicter.baseline_pred is not None:

@@ -50,7 +50,7 @@ class MAG(nn.Module):
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
         return (logits, batch_attention) if return_attention else logits
-    
+
     def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
         self.esa.expose_attention(return_attention)
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
