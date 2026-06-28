@@ -65,7 +65,7 @@ class Trainer:
     def train(self, model, loader, val_loader=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
 
         # Configuration: validation + early stop
@@ -103,7 +103,7 @@ class Trainer:
 
     def _injected_batch(self, batch, interval=1000):
         # WHAT IF NUMBER OF SAMPLES IS LESS THAN INTERVAL???
-        """Deterministically inject synthetic zero-feature samples every N molecules."""
+        """Deterministically inject synthetic zero-feature samples every 'interval' molecules."""
         global_indices = \
             torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
         local_indices = torch.where(global_indices)[0]
