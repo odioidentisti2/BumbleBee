@@ -34,7 +34,7 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            # batch = self._injected_batch(batch)  # INJECTION
+            batch = self._injected_batch(batch)  # INJECTION
             targets = batch.y
             logits = model(batch)  # Forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
@@ -65,7 +65,7 @@ class Trainer:
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
+        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
         val_interval = stopper = None
 
         # Configuration of validation + early stop
@@ -101,51 +101,51 @@ class Trainer:
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
 
-    # def _injected_batch(self, batch, interval=1000):
-    #     # WHAT IF NUMBER OF SAMPLES IS LESS THAN INTERVAL???
-    #     """Deterministically inject synthetic zero-feature samples every 'interval' molecules."""
-    #     global_indices = \
-    #         torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
-    #     local_indices = torch.where(global_indices)[0]
-        
-    #     if len(local_indices) > 0:
-    #         # Zero features
-    #         for idx in local_indices:
-    #             graph_mask = (batch.batch == idx)
-    #             batch.x[graph_mask] = 0
-    #             edge_mask = graph_mask[batch.edge_index[0]]
-    #             batch.edge_attr[edge_mask] = 0            
-    #         # Set target for baseline
-    #         batch.y[local_indices] = self.baseline
-        
-    #     self.count += batch.num_graphs
-    #     return batch
-
     def _injected_batch(self, batch, interval=1000):
-        """Deterministically inject synthetic zero-feature samples every 'interval' molecules.
-        Also print the dataset indices of injected samples for inspection.
-        """
-        global_indices = torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
+        # WHAT IF NUMBER OF SAMPLES IS LESS THAN INTERVAL???
+        """Deterministically inject synthetic zero-feature samples every 'interval' molecules."""
+        global_indices = \
+            torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
         local_indices = torch.where(global_indices)[0]
+        
         if len(local_indices) > 0:
-            # get dataset indices of injected graphs (requires Data to carry _orig_idx)
-            if hasattr(batch, "_orig_idx"):
-                ds_idxs = batch._orig_idx[local_indices].tolist()
-                print(f"Injected dataset indices (epoch order positions -> dataset ids): {ds_idxs}")
-            else:
-                print("Warning: batch has no _orig_idx attribute; cannot print dataset indices.")
-
-            # Zero features like before
+            # Zero features
             for idx in local_indices:
                 graph_mask = (batch.batch == idx)
                 batch.x[graph_mask] = 0
                 edge_mask = graph_mask[batch.edge_index[0]]
-                batch.edge_attr[edge_mask] = 0
+                batch.edge_attr[edge_mask] = 0            
             # Set target for baseline
             batch.y[local_indices] = self.baseline
-
+        
         self.count += batch.num_graphs
         return batch
+
+    # def _injected_batch(self, batch, interval=1000):
+    #     """Deterministically inject synthetic zero-feature samples every 'interval' molecules.
+    #     Also print the dataset indices of injected samples for inspection.
+    #     """
+    #     global_indices = torch.arange(self.count, self.count + batch.num_graphs) % interval == 0
+    #     local_indices = torch.where(global_indices)[0]
+    #     if len(local_indices) > 0:
+    #         # get dataset indices of injected graphs (requires Data to carry _orig_idx)
+    #         if hasattr(batch, "_orig_idx"):
+    #             ds_idxs = batch._orig_idx[local_indices].tolist()
+    #             print(f"Injected dataset indices (epoch order positions -> dataset ids): {ds_idxs}")
+    #         else:
+    #             print("Warning: batch has no _orig_idx attribute; cannot print dataset indices.")
+
+    #         # Zero features like before
+    #         for idx in local_indices:
+    #             graph_mask = (batch.batch == idx)
+    #             batch.x[graph_mask] = 0
+    #             edge_mask = graph_mask[batch.edge_index[0]]
+    #             batch.edge_attr[edge_mask] = 0
+    #         # Set target for baseline
+    #         batch.y[local_indices] = self.baseline
+
+    #     self.count += batch.num_graphs
+    #     return batch
 
 
     def _calibration_data(self, model, loader):

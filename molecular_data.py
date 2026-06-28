@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import  DataLoader
-from reproducibility import torch_generator as g
+from reproducibility import torch_generator
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 import csv
@@ -138,18 +138,19 @@ class GraphDataset(Dataset):
     
     def get(self, idx):
         data = self.graphs[idx]
-        data._orig_idx = torch.tensor(idx, dtype=torch.long)
+        # data._orig_idx = torch.tensor(idx, dtype=torch.long)
         return data
     
-    def get_loader(self, batch_size, is_train=False):
-        generator = None if is_train else g()  # DEBUG
+    def get_loader(self, batch_size, is_train=False):  # REMOVE is_train!!!!!!!!!!!
+        generator = None if is_train else torch_generator()  # DEBUG
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
-class InjectedDataset(GraphDataset):
+class Trainingset(GraphDataset):
     def __init__(self, dataset_info, split=None):
         super().__init__(dataset_info, split)
-        self.inj_interval = 1000
+        self.injection_interval = 1000
+        self.generator = torch_generator()
         if self.task == 'binary_classification':
             self.baseline = 0.5  # Decision boundary
             # Otherwise, if I use the mean of an unbalanced datasets, 
@@ -159,10 +160,18 @@ class InjectedDataset(GraphDataset):
         
     def get(self, idx):
         data = super().get(idx)
-        if idx % self.inj_interval == 0:
+        if torch.rand(1, generator=self.generator).item() < 1.0 / self.injection_interval:
+            data = data.clone()
+            data.x = torch.zeros_like(data.x)
+            data.edge_attr = torch.zeros_like(data.edge_attr)
             # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
         return data
+    
+    def get_loader(self, batch_size):
+        self.generator =  torch_generator()
+        return DataLoader(self, batch_size=batch_size, shuffle=True, drop_last=True, generator=self.generator)
+
 
 
 # def encoding(value, choices, include_unknown=True):
