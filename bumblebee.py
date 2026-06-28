@@ -67,32 +67,23 @@ def main_loop(dataset_info, device, model_name=None):
     set_torch_seed()  # Reproducibility
     
     trainer = Trainer(dataset_info['task'], device)
-    validation_set = None
-    # train_loader = val_loader = test_loader = None
 
     if not model_name:  # Train model
         ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
-
-        # # ADD GENERATOR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], \
-        #                         #   generator=g(), shuffle=True, drop_last=True)
-        #                           shuffle=True, drop_last=True)
+        validation_set = None
 
         ### Load validation set
         print(f"\nValidation set: {dataset_info['path']}")
         validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
-        # val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         calibration_data = trainer.train(model, trainingset, validation_set)
-        # calibration_data = trainer.calibration_data(model, train_loader)
 
-        ### Statistics on Training setset_baseline_target
-        # loader = DataLoader(trainingset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
-        # trainer.eval(model, loader, flag="Train")
+        ### Statistics on Training set
+        trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
         # model_name = "logp_calibration.pt"
