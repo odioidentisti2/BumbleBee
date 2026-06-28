@@ -97,8 +97,8 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ### Save model
-        model_name = "muta_calibration"
-        save(f"MODELS/{model_name}.pt", model, calibration)
+        model_name = "muta_calibration.pt"
+        save(f"MODELS/{model_name}", model, calibration)
 
     # else:  # Load saved model
         model, calibration = load(f"MODELS/{model_name}", device)

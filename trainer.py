@@ -22,7 +22,8 @@ class Trainer:
     def set_baseline(self, targets):
         if self.task == 'binary_classification':
             self.baseline = 0.5  # Decision boundary
-            # Otherwise, if I use the mean with unbalanced datasets, it can be that in the heat-map there's no red nor green, still it's toxic
+            # Otherwise, if I use the mean of an unbalanced datasets, 
+            # it can be that in the heat-map there's no red nor green, still it's toxic
         else:
             self.baseline = sum(targets) / len(targets)
         
