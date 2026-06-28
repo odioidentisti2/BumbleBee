@@ -75,8 +75,8 @@ def main_loop(dataset_info, device, model_name=None):
         validation_set = None
 
         ### Load validation set
-        print(f"\nValidation set: {dataset_info['path']}")
-        validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        # print(f"\nValidation set: {dataset_info['path']}")
+        # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)

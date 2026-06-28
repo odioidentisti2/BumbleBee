@@ -133,8 +133,13 @@ class GraphDataset(Dataset):
     def len(self):
         return len(self.graphs)
 
+    # def get(self, idx):
+    #     return self.graphs[idx]
+    
     def get(self, idx):
-        return self.graphs[idx]
+        data = self.graphs[idx]
+        data._orig_idx = torch.tensor(idx, dtype=torch.long)
+        return data
     
     def get_loader(self, batch_size, is_train=False):
         generator = None if is_train else g()  # DEBUG
