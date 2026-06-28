@@ -1,5 +1,5 @@
 import torch
-from torch_geometric.data import Data, Dataset
+from torch_geometric.data import Data, Dataset as PyGDataset
 from torch_geometric.loader import  DataLoader
 from reproducibility import torch_generator
 from rdkit import Chem
@@ -98,7 +98,7 @@ def smiles2graph(smiles):
     ], dtype=torch.float)
     return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
 
-class GraphDataset(Dataset):
+class Dataset(PyGDataset):
     def __init__(self, dataset_info, split=None):
         super().__init__()
         self.task = dataset_info['task']
@@ -146,7 +146,7 @@ class GraphDataset(Dataset):
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
-class Trainingset(GraphDataset):
+class InjectedDataset(Dataset):
     def __init__(self, dataset_info, split=None):
         super().__init__(dataset_info, split)
         self.injection_interval = 1000

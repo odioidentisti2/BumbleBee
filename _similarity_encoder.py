@@ -15,7 +15,7 @@ trainer = Trainer(dataset_info['task'], device)
 model = load(f"MODELS/{model_name}", device)
 
 ## Dataset
-dataset = GraphDataset(dataset_info, split=dataset_info['test_split'])
+dataset = Dataset(dataset_info, split=dataset_info['test_split'])
 dataset_loader = DataLoader(dataset, batch_size=test_batch_size)
 trainer.eval(model, dataset_loader, flag="Test")
 

@@ -1,6 +1,6 @@
 import torch
 
-from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
+from molecular_data import Dataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
@@ -38,7 +38,7 @@ def load(model_path, device):
 def crossvalidation(dataset_info, device, folds=5):
     from preprocessing import cv_subsets
     print(f"\nCross-Validation on: {dataset_info['path']}")
-    dataset = GraphDataset(dataset_info)
+    dataset = Dataset(dataset_info)
     cv_tracker = statistics.CVTracker()
     
     for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
@@ -71,7 +71,7 @@ def main_loop(dataset_info, device, model_name=None):
     if not model_name:  # Train model
         ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
-        trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
+        trainingset = Dataset(dataset_info, split=dataset_info['train_split'])
         validation_set = None
 
         ### Load validation set
@@ -96,7 +96,7 @@ def main_loop(dataset_info, device, model_name=None):
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
-    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
+    testset = Dataset(dataset_info, split=dataset_info['test_split'])
     print("\nTesting...")
     trainer.eval(model, testset, flag="Test")
 
