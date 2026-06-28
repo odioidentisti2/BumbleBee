@@ -7,7 +7,9 @@ from parameters import train_params as PARAMS
 from copy import deepcopy  # early stop
 
 
-OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
+print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
+OPTIMAL_BATCH_SIZE = {'cpu': 2, 'cuda': 2}  # DEBUG
+# OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
 
 
 def get_loader(dataset, batch_size, is_train=False):
@@ -89,7 +91,6 @@ class Trainer:
         print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
         # Training loop
-        print("\nTraining...")
         loader = get_loader(trainingset, batch_size=PARAMS['train_batch_size'], is_train=True)
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):    
@@ -106,10 +107,7 @@ class Trainer:
         return self.calibration_data(model, loader)  # Return calibration data for Explainer
 
     def eval(self, model, testset, flag):
-        if flag == 'Test': 
-            print("\nTesting...")
-        loader = get_loader(testset, batch_size=2)  # DEBUG
-        # loader = get_loader(testset, batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
+        loader = get_loader(testset, batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")

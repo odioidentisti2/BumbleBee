@@ -80,10 +80,12 @@ def main_loop(dataset_info, device, model_name=None):
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
+        print("\nTraining...")
         calibration_data = trainer.train(model, trainingset, validation_set)
 
         ### Statistics on Training set
-        trainer.eval(model, trainingset, flag="Train")
+        # print("\nEvaluating on training set...")
+        # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
         # model_name = "logp_calibration.pt"
@@ -94,16 +96,15 @@ def main_loop(dataset_info, device, model_name=None):
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
-    print("\nDEBUG: TEST BATCH SIZE = 2")
     testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
-    # test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
+    print("\nTesting...")
     trainer.eval(model, testset, flag="Test")
 
     ### Explain
-    # utils.print_header("CALIBRATION")
-    # explainer = Explainer(calibration_data)
-    # pprint(explainer.calibration)
-    # return explainer.explain(model, test_loader)
+    utils.print_header("CALIBRATION")
+    explainer = Explainer(calibration_data)
+    pprint(explainer.calibration)
+    return explainer.explain(model, test_loader)
 
 
 if __name__ == "__main__":
