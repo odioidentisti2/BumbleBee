@@ -1,5 +1,6 @@
 import torch
-from torch_geometric.data import Data, Dataset, DataLoader
+from torch_geometric.data import Data, Dataset
+from torch_geometric.loader import  DataLoader
 from reproducibility import torch_generator as g
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
@@ -140,6 +141,23 @@ class GraphDataset(Dataset):
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
+class InjectedDataset(GraphDataset):
+    def __init__(self, dataset_info, split=None):
+        super().__init__(dataset_info, split)
+        self.inj_interval = 1000
+        if self.task == 'binary_classification':
+            self.baseline = 0.5  # Decision boundary
+            # Otherwise, if I use the mean of an unbalanced datasets, 
+            # it can be that in the heat-map there's no red nor green, still it's toxic
+        else:
+            self.baseline = sum(self.targets) / len(self.targets)
+        
+    def get(self, idx):
+        data = super().get(idx)
+        if idx % self.inj_interval == 0:
+            # Inject baseline target
+            data.y = torch.tensor(self.baseline, dtype=torch.float)
+        return data
 
 
 # def encoding(value, choices, include_unknown=True):
