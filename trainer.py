@@ -1,20 +1,8 @@
 import time
 import torch
-from torch_geometric.loader import DataLoader
-from reproducibility import torch_generator as g
 from statistics import AccuracyTracker, R2Tracker
-from parameters import train_params as PARAMS
+from parameters import OPTIMAL_BATCH_SIZE, train_params as PARAMS
 from copy import deepcopy  # early stop
-
-
-print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
-OPTIMAL_BATCH_SIZE = {'cpu': 2, 'cuda': 2}  # DEBUG
-# OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
-
-
-def get_loader(dataset, batch_size, is_train=False):
-    generator = None if is_train else g()  # DEBUG
-    return DataLoader(dataset, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
 class Trainer:
@@ -91,7 +79,7 @@ class Trainer:
         print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
         # Training loop
-        loader = get_loader(trainingset, batch_size=PARAMS['train_batch_size'], is_train=True)
+        loader = trainingset.get_loader(batch_size=PARAMS['train_batch_size'], is_train=True)
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):    
             loss = self._train(model, loader)
@@ -104,10 +92,10 @@ class Trainer:
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
-        return self.calibration_data(model, loader)  # Return calibration data for Explainer
+        return self._calibration_data(model, loader)  # Return calibration data for Explainer
 
     def eval(self, model, testset, flag):
-        loader = get_loader(testset, batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
+        loader = testset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
@@ -133,7 +121,7 @@ class Trainer:
         self.count += batch.num_graphs
         return batch
     
-    def calibration_data(self, model, loader):
+    def _calibration_data(self, model, loader):
         """Collect calibration data on training set for the Explainer."""
         model = model.to(self.device)
         model.eval()

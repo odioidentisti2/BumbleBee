@@ -1,5 +1,6 @@
 import torch
-from torch_geometric.data import Data, Dataset
+from torch_geometric.data import Data, Dataset, DataLoader
+from reproducibility import torch_generator as g
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 import csv
@@ -133,6 +134,10 @@ class GraphDataset(Dataset):
 
     def get(self, idx):
         return self.graphs[idx]
+    
+    def get_loader(self, batch_size, is_train=False):
+        generator = None if is_train else g()  # DEBUG
+        return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
 

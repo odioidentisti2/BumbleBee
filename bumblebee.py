@@ -104,7 +104,7 @@ def main_loop(dataset_info, device, model_name=None):
     utils.print_header("CALIBRATION")
     explainer = Explainer(calibration_data)
     pprint(explainer.calibration)
-    return explainer.explain(model, test_loader)
+    return explainer.explain(model, testset)
 
 
 if __name__ == "__main__":

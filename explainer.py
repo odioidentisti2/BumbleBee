@@ -4,6 +4,7 @@ from graphic import *
 import utils
 
 from molecular_data import ATOM_DIM
+from parameters import OPTIMAL_BATCH_SIZE
 
 
 class Explainer:
@@ -13,7 +14,7 @@ class Explainer:
         self.att_depicter = Att_Depicter(top=calibration['attn_factor_mean'] + calibration['attn_factor_std'])
         self.ig_depicter = IG_Depicter(top=calibration['prediction_std'])  # using PREDICTION std (not actual target)
         
-    def explain(self, model, loader):
+    def explain(self, model, dataset):
         device = next(model.parameters()).device
         model.eval()
         all_att_weights = []
@@ -22,6 +23,7 @@ class Explainer:
         # ig_atom_bond_list = []
         # ig_edge_list = []
         c = 0
+        loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
         for batch in loader:
             batch = batch.to(device)
             ## Attention

@@ -1,6 +1,10 @@
 from pprint import pprint
 
 
+print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
+OPTIMAL_BATCH_SIZE = {'cpu': 2, 'cuda': 2}  # DEBUG
+# OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
+
 train_params = {
     'train_batch_size': 32,
     'lr': 1e-4,
