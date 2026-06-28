@@ -29,7 +29,6 @@ def save(path, model, calibration=None):
     print(f"\nModel checkpoint saved to: {path}")
 
 def load(model_path, device):
-    print(f"\nLoading model {model_path}")
     ckpt = torch.load(model_path, map_location=device)
     model = MAG(ATOM_DIM, BOND_DIM).to(device)
     model.load_state_dict(ckpt['state_dict'])
@@ -98,10 +97,10 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ### Save model
-        # save("MODELS/muta_calibration.pt", model, calibration)
+        model_name = "muta_calibration"
+        save(f"MODELS/{model_name}.pt", model, calibration)
 
-    else:  # Load saved model
-        # model_name = "muta_calibration.pt"
+    # else:  # Load saved model
         model, calibration = load(f"MODELS/{model_name}", device)
 
     ### Test
@@ -115,7 +114,6 @@ def main_loop(dataset_info, device, model_name=None):
     utils.print_header("CALIBRATION")
     explainer = Explainer(calibration)
     pprint(explainer.calibration)
-    # explainer.print_calibration()
     return explainer.explain(model, test_loader)
 
 

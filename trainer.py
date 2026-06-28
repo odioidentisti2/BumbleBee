@@ -64,7 +64,7 @@ class Trainer:
     def train(self, model, loader, val_loader=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(loader))
         val_interval = stopper = None
 
         # Configuration: validation + early stop
@@ -122,34 +122,26 @@ class Trainer:
     
     def calibration(self, model, loader):
         """Collect calibration data on training set for the Explainer."""
-        print("\nCalibrating...")
-        start_time = time.time()
-        # model = model.to('cpu')
         model = model.to(self.device)
         model.eval()
         training_attn_weights = []
         training_predictions = []
         with torch.no_grad():
             for batch in loader:
-                # batch = batch.to('cpu')
                 batch = batch.to(self.device)
                 preds, attn_weights = model(batch, return_attention=True)
                 training_predictions.append(preds.detach().cpu())
                 training_attn_weights.extend([aw.detach().cpu() for aw in attn_weights])
         pred_tensor = torch.cat(training_predictions)
         attn_factors = torch.stack([aw.max() * aw.numel() for aw in training_attn_weights])
-        # att_factor_top = attn_factors.mean().item() + attn_factors.std().item()
-        calibration = {
+        return {
             "attn_factor_mean": attn_factors.mean().item(),
             "attn_factor_std": attn_factors.std().item(),
-            # "att_factor_top": attn_factors.mean().item() + attn_factors.std().item(),
             "prediction_mean": pred_tensor.mean().item(),
             "prediction_std": pred_tensor.std().item(),
             "prediction_min": pred_tensor.min().item(),
             "prediction_max": pred_tensor.max().item(),
         }
-        print(f"Calibration time: {time.time() - start_time:.0f}s")
-        return calibration
 
 
 class EarlyStop:
