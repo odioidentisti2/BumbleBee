@@ -1,8 +1,18 @@
 import time
 import torch
+from torch_geometric.loader import DataLoader
+from reproducibility import torch_generator as g
 from statistics import AccuracyTracker, R2Tracker
 from parameters import train_params as PARAMS
 from copy import deepcopy  # early stop
+
+
+OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
+
+
+def get_loader(dataset, batch_size, is_train=False):
+    generator = None if is_train else g()  # DEBUG
+    return DataLoader(dataset, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
 
 
 class Trainer:
@@ -62,21 +72,24 @@ class Trainer:
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
         return total_loss / total
 
-    def train(self, model, loader, val_loader=None):
+    def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(loader))
+        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(train_set))
         val_interval = stopper = None
 
-        # Configuration: validation + early stop
-        if val_loader:
+        # Configuration of validation + early stop
+        if val_set:
             val_interval = 5  # max(1, round(max_epochs / 100))
             if PARAMS['early_stop']:
                 stopper = EarlyStop()
 
         # Baseline injection (for Explainer)
-        self.set_baseline(loader.dataset.targets)
+        self.set_baseline(trainingset.targets)
         print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
+
+        # Loader
+        loader = get_loader(trainingset, batch_size=PARAMS['train_batch_size'], is_train=True)
 
         # Training loop
         print("\nTraining...")
@@ -87,15 +100,18 @@ class Trainer:
 
             # Validation + early stop
             if val_interval and epoch % val_interval == 0:
-                metric = self.eval(model, val_loader, flag='Validation')
+                metric = self.eval(model, val_set, flag='Validation')
                 if stopper and stopper.check(metric, model, epoch):
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
+        return self.calibration_data(model, loader)  # Return calibration data for Explainer
 
-    def eval(self, model, loader, flag):
+    def eval(self, model, testset, flag):
         if flag == 'Test': 
             print("\nTesting...")
+        loader = get_loader(testset, batch_size=2)  # DEBUG
+        # loader = get_loader(testset, batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
@@ -121,7 +137,7 @@ class Trainer:
         self.count += batch.num_graphs
         return batch
     
-    def calibration(self, model, loader):
+    def calibration_data(self, model, loader):
         """Collect calibration data on training set for the Explainer."""
         model = model.to(self.device)
         model.eval()

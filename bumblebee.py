@@ -1,20 +1,16 @@
 import torch
-from torch_geometric.loader import DataLoader
 
 from molecular_data import GraphDataset, ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
-from reproducibility import use_deterministic_algorithms, set_torch_seed, torch_generator as g
+from reproducibility import use_deterministic_algorithms, set_torch_seed
 import utils
 import statistics
 
 from pprint import pprint
 import datasets
-from parameters import print_parameters, train_params as PARAMS
-
-
-OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (USE CUSTOM SIZE FOR TRAINING!)
+from parameters import print_parameters
 
 
 def save(path, model, calibration=None):
@@ -51,9 +47,8 @@ def crossvalidation(dataset_info, device, folds=5):
 
         utils.print_header(f"Fold {fold}/{folds}")
         print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
-        # g = torch.Generator()
-        # g.manual_seed(RAND_SEED)
 
+        # ADD GENERATOR!!!!!!!!!!!!!!!!!!!!!!!!
         # train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], generator=g(), \
         train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], \
                                   shuffle=True, drop_last=True)
@@ -72,15 +67,18 @@ def main_loop(dataset_info, device, model_name=None):
     set_torch_seed()  # Reproducibility
     
     trainer = Trainer(dataset_info['task'], device)
-    train_loader = val_loader = test_loader = None
+    validation_set = None
+    # train_loader = val_loader = test_loader = None
 
     if not model_name:  # Train model
         ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
         trainingset = GraphDataset(dataset_info, split=dataset_info['train_split'])
-        train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], \
-                                #   generator=g(), shuffle=True, drop_last=True)
-                                  shuffle=True, drop_last=True)
+
+        # # ADD GENERATOR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # train_loader = DataLoader(trainingset, batch_size=PARAMS['train_batch_size'], \
+        #                         #   generator=g(), shuffle=True, drop_last=True)
+        #                           shuffle=True, drop_last=True)
 
         ### Load validation set
         # print(f"\nValidation set: {dataset_info['path']}")
@@ -89,11 +87,11 @@ def main_loop(dataset_info, device, model_name=None):
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
-        trainer.train(model, train_loader, val_loader)
-        calibration = trainer.calibration(model, train_loader)
+        calibration_data = trainer.train(model, trainingset, validation_set)
+        # calibration_data = trainer.calibration_data(model, train_loader)
 
         ### Statistics on Training setset_baseline_target
-        # loader = DataLoader(trainingset, batch_size=PARAMS['batch_size'])
+        # loader = DataLoader(trainingset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
         # trainer.eval(model, loader, flag="Train")
 
         ### Save model
@@ -101,20 +99,20 @@ def main_loop(dataset_info, device, model_name=None):
         # save(f"MODELS/{model_name}", model, calibration)
 
     else:  # Load saved model
-        model, calibration = load(f"MODELS/{model_name}", device)
+        model, calibration_data = load(f"MODELS/{model_name}", device)
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
-    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
     print("\nDEBUG: TEST BATCH SIZE = 2")
-    test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
-    trainer.eval(model, test_loader, flag="Test")
+    testset = GraphDataset(dataset_info, split=dataset_info['test_split'])
+    # test_loader = DataLoader(testset, batch_size=2, generator=g())  # OPTIMAL_BATCH_SIZE[device.type]
+    trainer.eval(model, testset, flag="Test")
 
     ### Explain
-    utils.print_header("CALIBRATION")
-    explainer = Explainer(calibration)
-    pprint(explainer.calibration)
-    return explainer.explain(model, test_loader)
+    # utils.print_header("CALIBRATION")
+    # explainer = Explainer(calibration_data)
+    # pprint(explainer.calibration)
+    # return explainer.explain(model, test_loader)
 
 
 if __name__ == "__main__":
