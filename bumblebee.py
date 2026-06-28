@@ -26,7 +26,7 @@ def save(path, model, calibration=None):
         'calibration': calibration,
     }
     torch.save(ckpt, path)
-    print(f"\nModel checkpoint saved to: {path}")
+    print(f"\nModel saved to: {path}")
 
 def load(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
@@ -97,7 +97,7 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, loader, flag="Train")
 
         ### Save model
-        model_name = "muta_calibration.pt"
+        model_name = "logp_calibration.pt"
         save(f"MODELS/{model_name}", model, calibration)
 
     # else:  # Load saved model
@@ -127,12 +127,12 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        # model_name = 'logp_explainer.pt'
-        # model_name = 'muta_explainer.pt'
+        # model_name = 'logp_calibration.pt'
+        # model_name = 'muta_calibration.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
