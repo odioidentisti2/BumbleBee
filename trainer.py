@@ -88,11 +88,9 @@ class Trainer:
         self.set_baseline(trainingset.targets)
         print(f"\nBaseline target: {self.baseline:.2f}")  # DEBUG
 
-        # Loader
-        loader = get_loader(trainingset, batch_size=PARAMS['train_batch_size'], is_train=True)
-
         # Training loop
         print("\nTraining...")
+        loader = get_loader(trainingset, batch_size=PARAMS['train_batch_size'], is_train=True)
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):    
             loss = self._train(model, loader)

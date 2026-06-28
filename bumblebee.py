@@ -81,8 +81,8 @@ def main_loop(dataset_info, device, model_name=None):
         #                           shuffle=True, drop_last=True)
 
         ### Load validation set
-        # print(f"\nValidation set: {dataset_info['path']}")
-        # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        print(f"\nValidation set: {dataset_info['path']}")
+        validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
         # val_loader = DataLoader(validation_set, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
 
         ### Train model
