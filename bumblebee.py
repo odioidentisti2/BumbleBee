@@ -75,21 +75,23 @@ def main_loop(dataset_info, device, model_name=None):
         validation_set = None
 
         ### Load validation set
-        # print(f"\nValidation set: {dataset_info['path']}")
-        # validation_set = GraphDataset(dataset_info, split=dataset_info['test_split'])
+        print(f"\nValidation set: {dataset_info['path']}")
+        validation_set = Dataset(dataset_info, split=dataset_info['test_split'])
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
         print("\nTraining...")
         calibration_data = trainer.train(model, trainingset, validation_set)
+        trainer.train(model, trainingset, validation_set)
+
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
         # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
-        model_name = "LOGP_new_inj.pt"
-        save(f"MODELS/{model_name}", model, calibration_data)
+        # model_name = "LOGP_new_inj.pt"
+        # save(f"MODELS/{model_name}", model, calibration_data)
 
     else:  # Load saved model
         model, calibration_data = load(f"MODELS/{model_name}", device)
@@ -121,8 +123,8 @@ if __name__ == "__main__":
     # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        # model_name = 'logp_calibration.pt'
-        # model_name = 'muta_calibration.pt'
+        # model_name = 'LOGP_new_inj.pt'
+        # model_name = 'MUTA_new_inj.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
