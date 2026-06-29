@@ -34,7 +34,7 @@ class Trainer:
         total = 0
         for batch in loader:
             batch = batch.to(self.device)
-            batch = self._injected_batch(batch)  # INJECTION
+            # batch = self._injected_batch(batch)  # INJECTION
             targets = batch.y
             logits = model(batch)  # Forward pass
             loss = self.criterion(logits, targets)  # Calculate loss
@@ -118,14 +118,14 @@ class Trainer:
             # Set target for baseline
             batch.y[local_indices] = self.baseline
 
-            # Print AFTER zeroing
-            for idx in local_indices:
-                graph_mask = (batch.batch == idx)
-                edge_mask = graph_mask[batch.edge_index[0]]
-                print(f"  [Injected] global={self.count + idx.item():>5} | "
-                    f"nodes={graph_mask.sum():>3}  x_sum={batch.x[graph_mask].sum():.0f} | "
-                    f"edges={edge_mask.sum():>3}  ea_sum={batch.edge_attr[edge_mask].sum():.0f} | "
-                    f"y={batch.y[idx].item():.2f}")
+            # # Print AFTER zeroing
+            # for idx in local_indices:
+            #     graph_mask = (batch.batch == idx)
+            #     edge_mask = graph_mask[batch.edge_index[0]]
+            #     print(f"  [Injected] global={self.count + idx.item():>5} | "
+            #         f"nodes={graph_mask.sum():>3}  x_sum={batch.x[graph_mask].sum():.0f} | "
+            #         f"edges={edge_mask.sum():>3}  ea_sum={batch.edge_attr[edge_mask].sum():.0f} | "
+            #         f"y={batch.y[idx].item():.2f}")
 
         self.count += batch.num_graphs
         return batch

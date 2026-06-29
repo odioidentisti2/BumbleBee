@@ -1,6 +1,6 @@
 import torch
 
-from molecular_data import Dataset, ATOM_DIM, BOND_DIM
+from molecular_data import Dataset, InjectedDataset,  ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer

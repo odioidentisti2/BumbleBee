@@ -149,7 +149,7 @@ class Dataset(PyGDataset):
 class InjectedDataset(Dataset):
     def __init__(self, dataset_info, split=None):
         super().__init__(dataset_info, split)
-        self.injection_interval = 1000
+        self.injection_probability = 0.001
         self.generator = torch_generator()
         if self.task == 'binary_classification':
             self.baseline = 0.5  # Decision boundary
@@ -160,12 +160,17 @@ class InjectedDataset(Dataset):
         
     def get(self, idx):
         data = super().get(idx)
-        if torch.rand(1, generator=self.generator).item() < 1.0 / self.injection_interval:
+        if torch.rand(1, generator=self.generator).item() < self.injection_probability:
             data = data.clone()
             data.x = torch.zeros_like(data.x)
             data.edge_attr = torch.zeros_like(data.edge_attr)
             # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
+
+            print(f"  [Injected] idx={idx:>5} | "
+                    f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
+                    f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
+                    f"y={data.y.item():.2f}")
         return data
     
     def get_loader(self, batch_size):
