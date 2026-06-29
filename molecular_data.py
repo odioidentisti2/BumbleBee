@@ -149,7 +149,7 @@ class Dataset(PyGDataset):
 class InjectedDataset(Dataset):
     def __init__(self, dataset_info, split=None):
         super().__init__(dataset_info, split)
-        self.injection_probability = 0  # 0.001
+        self.injection_probability = 0.001
         self.generator = torch_generator()
         if self.task == 'binary_classification':
             self.baseline = 0.5  # Decision boundary
