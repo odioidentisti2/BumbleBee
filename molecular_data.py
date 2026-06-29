@@ -133,13 +133,8 @@ class Dataset(PyGDataset):
     def len(self):
         return len(self.graphs)
 
-    # def get(self, idx):
-    #     return self.graphs[idx]
-    
     def get(self, idx):
-        data = self.graphs[idx]
-        # data._orig_idx = torch.tensor(idx, dtype=torch.long)
-        return data
+        return self.graphs[idx]    
     
     def get_loader(self, batch_size, is_train=False):  # REMOVE is_train!!!!!!!!!!!
         generator = None if is_train else torch_generator()  # DEBUG
@@ -158,13 +153,27 @@ class InjectedDataset(Dataset):
         else:
             self.baseline = sum(self.targets) / len(self.targets)
         
+    # def get(self, idx):
+    #     data = super().get(idx)
+    #     if torch.rand(1, generator=self.generator).item() < self.injection_probability:
+    #         data = data.clone()
+    #         data.x = torch.zeros_like(data.x)
+    #         data.edge_attr = torch.zeros_like(data.edge_attr)
+    #         # Inject baseline target
+    #         data.y = torch.tensor(self.baseline, dtype=torch.float)
+
+    #         print(f"  [Injected] idx={idx:>5} | "
+    #                 f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
+    #                 f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
+    #                 f"y={data.y.item():.2f}")
+    #     return data
+    
     def get(self, idx):
         data = super().get(idx)
-        if torch.rand(1, generator=self.generator).item() < self.injection_probability:
+        if idx % self.injection_interval == 0:
             data = data.clone()
             data.x = torch.zeros_like(data.x)
             data.edge_attr = torch.zeros_like(data.edge_attr)
-            # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
 
             print(f"  [Injected] idx={idx:>5} | "
