@@ -153,7 +153,7 @@ class InjectedDataset(Dataset):
             # it can be that in the heat-map there's no red nor green, still it's toxic
         else:
             self.baseline = sum(self.targets) / len(self.targets)
-        # self.counter = 0
+        self.counter = 0
         
     # def get(self, idx):
     #     data = super().get(idx)
