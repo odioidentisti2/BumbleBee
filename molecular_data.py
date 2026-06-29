@@ -155,6 +155,7 @@ class InjectedDataset(Dataset):
             # it can be that in the heat-map there's no red nor green, still it's toxic
         else:
             self.baseline = sum(self.targets) / len(self.targets)
+        print(f"DEBUG: baseline = {self.baseline:.2f}")
         # self.injection_interval = 1000
         # self.counter = 0
         
