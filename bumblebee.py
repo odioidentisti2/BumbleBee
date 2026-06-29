@@ -84,8 +84,8 @@ def main_loop(dataset_info, device, model_name=None):
         calibration_data = trainer.train(model, trainingset, validation_set)
 
         ## Statistics on Training set
-        print("\nEvaluating on training set...")
-        trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
+        # print("\nEvaluating on training set...")
+        # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
         # model_name = "logp_calibration.pt"
@@ -117,8 +117,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'logp_calibration.pt'
