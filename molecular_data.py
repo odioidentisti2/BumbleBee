@@ -181,7 +181,7 @@ class InjectedDataset(Dataset):
     
     def get_loader(self, batch_size, is_train=False):
         self.inject = is_train
-        generator = None if is_train else torch_generator()  # DEBUG
+        self.generator = None if is_train else torch_generator()  # DEBUG
         # self.generator =  torch_generator()
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
