@@ -101,6 +101,7 @@ def smiles2graph(smiles):
 class Dataset(PyGDataset):
     def __init__(self, dataset_info, split=None):
         super().__init__()
+        self.generator = torch_generator()
         self.task = dataset_info['task']
         self.graphs = []
         self.targets = []
@@ -136,53 +137,56 @@ class Dataset(PyGDataset):
     def get(self, idx):
         return self.graphs[idx]    
     
-    def get_loader(self, batch_size, is_train=False):  # REMOVE is_train!!!!!!!!!!!
-        generator = None if is_train else torch_generator()  # DEBUG
-        return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=generator)
+    def get_loader(self, batch_size, is_train=False):  
+        self.generator = torch_generator()  # DEBUG
+        return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
 
 class InjectedDataset(Dataset):
+
+    injection_probability = 0.001
+
     def __init__(self, dataset_info, split=None):
         super().__init__(dataset_info, split)
-        self.injection_probability = 0.001
-        self.injection_interval = 1000
-        self.generator = torch_generator()
+        self.inject = False
         if self.task == 'binary_classification':
             self.baseline = 0.5  # Decision boundary
             # Otherwise, if I use the mean of an unbalanced datasets, 
             # it can be that in the heat-map there's no red nor green, still it's toxic
         else:
             self.baseline = sum(self.targets) / len(self.targets)
-        self.counter = 0
+        # self.injection_interval = 1000
+        # self.counter = 0
         
-    # def get(self, idx):
-    #     data = super().get(idx)
-    #     if torch.rand(1, generator=self.generator).item() < self.injection_probability:
-    #         data = data.clone()
-    #         data.x = torch.zeros_like(data.x)
-    #         data.edge_attr = torch.zeros_like(data.edge_attr)
-    #         # Inject baseline target
-    #         data.y = torch.tensor(self.baseline, dtype=torch.float)
-    #         print(f"  [Injected] idx={idx:>5} | "
-    #                 f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
-    #                 f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
-    #                 f"y={data.y.item():.2f}")
-    #     return data
-    
     def get(self, idx):
         data = super().get(idx)
-        if self.inject and self.counter % self.injection_interval == 0:
+        if self.inject and \
+            torch.rand(1, generator=self.generator).item() < InjectedDataset.injection_probability:
             data = data.clone()
             data.x = torch.zeros_like(data.x)
             data.edge_attr = torch.zeros_like(data.edge_attr)
+            # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
-        self.counter += 1
+            print(f"  [Injected] idx={idx:>5} | "
+                    f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
+                    f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
+                    f"y={data.y.item():.2f}")
         return data
+    
+    # def get(self, idx):
+    #     data = super().get(idx)
+    #     if self.inject and self.counter % self.injection_interval == 0:
+    #         data = data.clone()
+    #         data.x = torch.zeros_like(data.x)
+    #         data.edge_attr = torch.zeros_like(data.edge_attr)
+    #         data.y = torch.tensor(self.baseline, dtype=torch.float)
+    #     self.counter += 1
+    #     return data
     
     def get_loader(self, batch_size, is_train=False):
         self.inject = is_train
-        self.generator = None if is_train else torch_generator()  # DEBUG
-        # self.generator =  torch_generator()
+        # self.generator = None if is_train else torch_generator()  # DEBUG
+        self.generator =  torch_generator()
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
 
