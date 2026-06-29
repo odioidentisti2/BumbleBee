@@ -173,9 +173,9 @@ class InjectedDataset(Dataset):
                     f"y={data.y.item():.2f}")
         return data
     
-    def get_loader(self, batch_size):
+    def get_loader(self, batch_size, is_train=False):
         self.generator =  torch_generator()
-        return DataLoader(self, batch_size=batch_size, shuffle=True, drop_last=True)  #, generator=self.generator)
+        return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train)  #, generator=self.generator)
 
 
 
