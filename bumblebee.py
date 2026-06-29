@@ -71,7 +71,7 @@ def main_loop(dataset_info, device, model_name=None):
     if not model_name:  # Train model
         ### Load training set
         print(f"\nTraining set: {dataset_info['path']}")
-        trainingset = Dataset(dataset_info, split=dataset_info['train_split'])
+        trainingset = InjectedDataset(dataset_info, split=dataset_info['train_split'])
         validation_set = None
 
         ### Load validation set
