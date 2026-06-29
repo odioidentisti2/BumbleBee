@@ -88,8 +88,8 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
-        # model_name = "logp_calibration.pt"
-        # save(f"MODELS/{model_name}", model, calibration)
+        model_name = "MUTA_new_inj.pt"
+        save(f"MODELS/{model_name}", model, calibration_data)
 
     else:  # Load saved model
         model, calibration_data = load(f"MODELS/{model_name}", device)
