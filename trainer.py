@@ -112,8 +112,14 @@ class Trainer:
             # Zero features
             for idx in local_indices:
                 graph_mask = (batch.batch == idx)
-                batch.x[graph_mask] = 0
                 edge_mask = graph_mask[batch.edge_index[0]]
+                # Print BEFORE zeroing
+                print(f"  Injected sample (batch idx {idx.item()}, global {self.count + idx.item()}):")
+                print(f"    x:         {batch.x[graph_mask]}")
+                print(f"    edge_attr: {batch.edge_attr[edge_mask]}")
+                print(f"    y:         {batch.y[idx]}")
+            
+                batch.x[graph_mask] = 0
                 batch.edge_attr[edge_mask] = 0            
             # Set target for baseline
             batch.y[local_indices] = self.baseline
