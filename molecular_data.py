@@ -167,10 +167,10 @@ class InjectedDataset(Dataset):
             data.edge_attr = torch.zeros_like(data.edge_attr)
             # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
-            print(f"  [Injected] idx={idx:>5} | "
-                    f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
-                    f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
-                    f"y={data.y.item():.2f}")
+            # print(f"  [Injected] idx={idx:>5} | "
+            #         f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
+            #         f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
+            #         f"y={data.y.item():.2f}")
         return data
     
     # def get(self, idx):
