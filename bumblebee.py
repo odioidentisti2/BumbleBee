@@ -82,6 +82,8 @@ def main_loop(dataset_info, device, model_name=None):
         model = MAG(ATOM_DIM, BOND_DIM)
         print("\nTraining...")
         calibration_data = trainer.train(model, trainingset, validation_set)
+
+        model = MAG(ATOM_DIM, BOND_DIM)
         trainer.train(model, trainingset, validation_set)
 
 
