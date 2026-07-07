@@ -98,38 +98,12 @@ def smiles2graph(smiles):
     ], dtype=torch.float)
     return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
 
+
 class Dataset(PyGDataset):
-    def __init__(self, dataset_info, split=None):
+    def __init__(self, graphs):
         super().__init__()
-        self.generator = torch_generator()
-        self.task = dataset_info['task']
-        self.graphs = []
-        self.targets = []
-        with open(dataset_info['path'], 'r') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if split and row[dataset_info['split_header']] != split:
-                    continue                    
-                smiles = row[dataset_info['smiles_header']]
-                data = smiles2graph(smiles)
-                if not (data
-                        and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
-                        and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
-                    print(f"Invalid SMILES: {smiles}")
-                    continue
-                target = row[dataset_info['target_header']]
-                if self.task == 'binary_classification':
-                    data.label = target
-                    target = dataset_info['tox_map'][target]
-                elif self.task == 'regression':
-                    target = float(target)                
-                data.y = torch.tensor(target, dtype=torch.float)  # does it need to be a tensor?
-                self.graphs.append(data)
-                self.targets.append(target)
-        print(f"Loaded {len(self.graphs)} molecules")
-        
-        if not self.graphs:
-            raise ValueError(f"No data")
+        self.graphs = graphs
+        self.generator = torch_generator()  # for reproducibility
 
     def len(self):
         return len(self.graphs)
@@ -137,27 +111,24 @@ class Dataset(PyGDataset):
     def get(self, idx):
         return self.graphs[idx]    
     
-    def get_loader(self, batch_size, is_train=False):  
-        self.generator = torch_generator()  # DEBUG
+    def get_loader(self, batch_size, is_train=False):
+        self.generator = torch_generator()
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
 
 class InjectedDataset(Dataset):
-
     injection_probability = 0.001
 
-    def __init__(self, dataset_info, split=None):
-        super().__init__(dataset_info, split)
+    def __init__(self, graphs):
+        super().__init__(graphs)
         self.inject = False
-        if self.task == 'binary_classification':
-            self.baseline = 0.5  # Decision boundary
-            # Otherwise, if I use the mean of an unbalanced datasets, 
-            # it can be that in the heat-map there's no red nor green, still it's toxic
-        else:
-            self.baseline = sum(self.targets) / len(self.targets)
+        sample = graphs[0].target
+        if isinstance(sample, float):
+            self.baseline = sum(g.target for g in graphs) / len(graphs)
+        elif isinstance(sample, str):
+            unique_y = set(g.y.item() for g in graphs)
+            self.baseline = sum(unique_y) / len(unique_y)
         print(f"DEBUG: baseline = {self.baseline:.2f}")
-        # self.injection_interval = 1000
-        # self.counter = 0
         
     def get(self, idx):
         data = super().get(idx)
@@ -168,29 +139,43 @@ class InjectedDataset(Dataset):
             data.edge_attr = torch.zeros_like(data.edge_attr)
             # Inject baseline target
             data.y = torch.tensor(self.baseline, dtype=torch.float)
-            # print(f"  [Injected] idx={idx:>5} | "
-            #         f"nodes={data.x.shape[0]:>3}  x_sum={data.x.sum():.0f} | "
-            #         f"edges={data.edge_attr.shape[0]:>3}  ea_sum={data.edge_attr.sum():.0f} | "
-            #         f"y={data.y.item():.2f}")
         return data
-    
-    # def get(self, idx):
-    #     data = super().get(idx)
-    #     if self.inject and self.counter % self.injection_interval == 0:
-    #         data = data.clone()
-    #         data.x = torch.zeros_like(data.x)
-    #         data.edge_attr = torch.zeros_like(data.edge_attr)
-    #         data.y = torch.tensor(self.baseline, dtype=torch.float)
-    #     self.counter += 1
-    #     return data
-    
+        
     def get_loader(self, batch_size, is_train=False):
         self.inject = is_train
-        # self.generator = None if is_train else torch_generator()  # DEBUG
         return super().get_loader(batch_size, is_train)
-        # self.generator =  torch_generator()
-        # return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
+
+def load_from_csv(dataset_info, split=None):
+    task = dataset_info['task']
+    graphs = []
+    with open(dataset_info['path'], 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if split and row[dataset_info['split_header']] != split:
+                continue
+            smiles = row[dataset_info['smiles_header']]
+            data = smiles2graph(smiles)
+            if not (data
+                    and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
+                    and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
+                print(f"Invalid SMILES: {smiles}")
+                continue
+            label = row[dataset_info['target_header']]
+            if task == 'binary_classification':
+                data.target = label                                      # str
+                data.y = torch.tensor(dataset_info['tox_map'][label], dtype=torch.float)
+            elif task == 'regression':
+                data.target = float(label)                               # float
+                data.y = torch.tensor(data.target, dtype=torch.float)
+            graphs.append(data)
+    if not graphs:
+        raise ValueError("No data")
+    if task == 'binary_classification':
+        classes = set(g.target for g in graphs)
+        if len(classes) != 2:
+            raise ValueError(f"Multiclass not supported, got {len(classes)} classes: {classes}")  # HANDLE IT!
+    return graphs
 
 
 # def encoding(value, choices, include_unknown=True):

@@ -1,6 +1,6 @@
 import torch
 
-from molecular_data import Dataset, InjectedDataset,  ATOM_DIM, BOND_DIM
+from molecular_data import Dataset, InjectedDataset, load_from_csv, ATOM_DIM, BOND_DIM
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
@@ -38,25 +38,21 @@ def load(model_path, device):
 def crossvalidation(dataset_info, device, folds=5):
     from preprocessing import cv_subsets
     print(f"\nCross-Validation on: {dataset_info['path']}")
-    dataset = Dataset(dataset_info)
+    graphs = load_from_csv(dataset_info)
     cv_tracker = statistics.CVTracker()
     
-    for fold, (train_subset, test_subset) in enumerate(cv_subsets(dataset, folds), start=1):
-        print_parameters()        
-        set_torch_seed()  # Reproducibility
-
+    for fold, (train_indices, test_indices) in enumerate(cv_subsets(len(graphs), folds), start=1):
+        print_parameters()
+        set_torch_seed()
         utils.print_header(f"Fold {fold}/{folds}")
-        print(f"Train size: {len(train_subset)}, Test size: {len(test_subset)}")
 
-        # ADD GENERATOR!!!!!!!!!!!!!!!!!!!!!!!!
-        # train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], generator=g(), \
-        train_loader = DataLoader(train_subset, batch_size=PARAMS['train_batch_size'], \
-                                  shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_subset, batch_size=OPTIMAL_BATCH_SIZE[device.type], generator=g())
-        
+        trainingset  = InjectedDataset([graphs[i] for i in train_indices])
+        testset      = Dataset([graphs[i] for i in test_indices])
+        print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
+
         model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
-        trainer.train(model, train_loader, val_loader=test_loader)   
+        trainer.train(model, trainingset, val_set=testset)
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
     cv_tracker.summary()  # Print summary
@@ -69,14 +65,17 @@ def main_loop(dataset_info, device, model_name=None):
     trainer = Trainer(dataset_info['task'], device)
 
     if not model_name:  # Train model
-        ### Load training set
+
+        ### Training set
         print(f"\nTraining set: {dataset_info['path']}")
-        trainingset = InjectedDataset(dataset_info, split=dataset_info['train_split'])
+        train_molecules = load_from_csv(dataset_info, split=dataset_info['train_split'])
+        trainingset = InjectedDataset(train_molecules)
         validation_set = None
 
         ### Load validation set
         print(f"\nValidation set: {dataset_info['path']}")
-        validation_set = Dataset(dataset_info, split=dataset_info['test_split'])
+        val_molecules = load_from_csv(dataset_info, split=dataset_info['test_split'])
+        validation_set = Dataset(val_molecules)
 
         ### Train model
         model = MAG(ATOM_DIM, BOND_DIM)
@@ -96,7 +95,8 @@ def main_loop(dataset_info, device, model_name=None):
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
-    testset = Dataset(dataset_info, split=dataset_info['test_split'])
+    test_molecules = load_from_csv(dataset_info, split=dataset_info['test_split'])
+    testset = Dataset(test_molecules)
     print("\nTesting...")
     trainer.eval(model, testset, flag="Test")
 
@@ -117,8 +117,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'LOGP_new_inj.pt'
@@ -129,8 +129,8 @@ if __name__ == "__main__":
             use_deterministic_algorithms(device)
 
         start_time = time.time()
-        # crossvalidation(dataset_info, device)   
-        main_loop(dataset_info, device, model_name)
+        crossvalidation(dataset_info, device)   
+        # main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
