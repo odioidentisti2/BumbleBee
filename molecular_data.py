@@ -1,9 +1,9 @@
 import torch
 from torch_geometric.data import Data, Dataset as PyGDataset
 from torch_geometric.loader import  DataLoader
-from reproducibility import torch_generator
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
+import reproducibility
 import csv
 
 from rdkit import RDLogger
@@ -103,8 +103,7 @@ class Dataset(PyGDataset):
     def __init__(self, graphs):
         super().__init__()
         self.graphs = graphs
-        self.generator = torch_generator()  # for reproducibility
-
+        self.generator = reproducibility.torch_generator()
     def len(self):
         return len(self.graphs)
 
@@ -112,7 +111,7 @@ class Dataset(PyGDataset):
         return self.graphs[idx]    
     
     def get_loader(self, batch_size, is_train=False):
-        self.generator = torch_generator()
+        self.generator = reproducibility.torch_generator()
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
 
@@ -163,10 +162,10 @@ def load_from_csv(dataset_info, split=None):
                 continue
             label = row[dataset_info['target_header']]
             if task == 'binary_classification':
-                data.target = label                                      # str
+                data.target = label
                 data.y = torch.tensor(dataset_info['tox_map'][label], dtype=torch.float)
             elif task == 'regression':
-                data.target = float(label)                               # float
+                data.target = float(label)
                 data.y = torch.tensor(data.target, dtype=torch.float)
             graphs.append(data)
     if not graphs:
