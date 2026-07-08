@@ -4,9 +4,10 @@ from molecular_data import Dataset, InjectedDataset, load_from_csv, ATOM_DIM, BO
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
-from reproducibility import use_deterministic_algorithms, set_torch_seed
-import utils
+from preprocessing import cv_subsets
+import reproducibility
 import statistics
+import utils
 
 from pprint import pprint
 import datasets
@@ -36,14 +37,13 @@ def load(model_path, device):
 
 
 def crossvalidation(dataset_info, device, folds=5):
-    from preprocessing import cv_subsets
     print(f"\nCross-Validation on: {dataset_info['path']}")
     graphs = load_from_csv(dataset_info)
     cv_tracker = statistics.CVTracker()
     
     for fold, (train_indices, test_indices) in enumerate(cv_subsets(len(graphs), folds), start=1):
         print_parameters()
-        set_torch_seed()
+        reproducibility.set_torch_seed()
         utils.print_header(f"Fold {fold}/{folds}")
 
         trainingset  = InjectedDataset([graphs[i] for i in train_indices])
@@ -60,7 +60,7 @@ def crossvalidation(dataset_info, device, folds=5):
 
 def main_loop(dataset_info, device, model_name=None):
     print_parameters()
-    set_torch_seed()  # Reproducibility
+    reproducibility.set_torch_seed()
     
     trainer = Trainer(dataset_info['task'], device)
 
@@ -126,11 +126,11 @@ if __name__ == "__main__":
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
-            use_deterministic_algorithms(device)
+            reproducibility.use_deterministic_algorithms(device)
 
         start_time = time.time()
-        crossvalidation(dataset_info, device)   
-        # main_loop(dataset_info, device, model_name)
+        # crossvalidation(dataset_info, device)   
+        main_loop(dataset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
