@@ -27,7 +27,6 @@ def load(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
     model = MAG().to(device)
     model.load_state_dict(ckpt['state_dict'])
-    # model.eval()
     model.task = ckpt['task']
     calibration = ckpt['calibration']
     print(f"\nLoaded model from {model_path} with task: {model.task}")
@@ -114,12 +113,12 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        # model_name = 'LOGP_new_inj.pt'
-        # model_name = 'MUTA_new_inj.pt'
+        # model_name = 'L4_LOGP_new_inj.pt'
+        # model_name = 'L4_MUTA_new_inj.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
         if dataset_info['task'] == 'binary_classification':
