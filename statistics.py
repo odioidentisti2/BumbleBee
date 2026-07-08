@@ -11,7 +11,6 @@ class MetricTracker:
     def __init__(self):
         self.stats = []
         self.values['logits'] = []  # DEBUG
-        self.values['predictions'] = []  # DEBUG
         self.values['targets'] = []  # DEBUG
     
     def init(self):
@@ -20,7 +19,7 @@ class MetricTracker:
     
     def update(self, logits, targets):
         """Update statistics for current run."""
-        self.stats[-1]['predictions'].append(logits)  # DEBUG
+        self.stats[-1]['logits'].append(logits)  # DEBUG
         self.stats[-1]['targets'].append(targets)  # DEBUG
     
     def metric(self, index=-1):
