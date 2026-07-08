@@ -1,6 +1,6 @@
 import torch
 
-from molecular_data import Dataset, InjectedDataset, load_from_csv, ATOM_DIM, BOND_DIM
+from molecular_data import Dataset, InjectedDataset, load_from_csv
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
@@ -15,8 +15,6 @@ from parameters import print_parameters
 
 
 def save(path, model, calibration=None):
-    # if not path:
-    #     path = f"model_{time.strftime('%Y%m%d_%H%M')}.pt"
     ckpt = {
         'task': model.task,
         'state_dict': model.state_dict(),
@@ -27,9 +25,9 @@ def save(path, model, calibration=None):
 
 def load(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
-    model = MAG(ATOM_DIM, BOND_DIM).to(device)
+    model = MAG()  # .to(device)
     model.load_state_dict(ckpt['state_dict'])
-    model.eval()
+    # model.eval()
     model.task = ckpt['task']
     calibration = ckpt.get('calibration')
     print(f"\nLoaded model from {model_path} with task: {model.task}")
@@ -50,9 +48,8 @@ def crossvalidation(dataset_info, device, folds=5):
         testset      = Dataset([graphs[i] for i in test_indices])
         print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
 
-        model = MAG(ATOM_DIM, BOND_DIM)
         trainer = Trainer(dataset_info['task'], device)
-        trainer.train(model, trainingset, val_set=testset)
+        trainer.train(MAG(), trainingset, val_set=testset)
         cv_tracker.add_fold(trainer.statistics.metrics())    
     
     cv_tracker.summary()  # Print summary
@@ -78,7 +75,7 @@ def main_loop(dataset_info, device, model_name=None):
         validation_set = Dataset(val_molecules)
 
         ### Train model
-        model = MAG(ATOM_DIM, BOND_DIM)
+        model = MAG()
         print("\nTraining...")
         calibration_data = trainer.train(model, trainingset, validation_set)
 
@@ -87,8 +84,8 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
-        # model_name = "LOGP_new_inj.pt"
-        # save(f"MODELS/{model_name}", model, calibration_data)
+        model_name = "L4_MUTA_new_inj.pt"
+        save(f"MODELS/{model_name}", model, calibration_data)
 
     else:  # Load saved model
         model, calibration_data = load(f"MODELS/{model_name}", device)

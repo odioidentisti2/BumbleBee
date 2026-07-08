@@ -1,9 +1,9 @@
 import torch
-import torch.nn as nn
 from torch_geometric.utils import to_dense_batch
 from architectures import ESA, mlp
 from adj_mask_utils import edge_adjacency, edge_mask
 
+from molecular_data import ATOM_DIM, BOND_DIM
 from parameters import model_params as PARAMS
 
 # # to be detached
@@ -12,9 +12,9 @@ from parameters import model_params as PARAMS
 # att_list = []
 
 
-class MAG(nn.Module):
+class MAG(torch.nn.Module):
     
-    def __init__(self, node_dim, edge_dim):
+    def __init__(self, node_dim=ATOM_DIM, edge_dim=BOND_DIM):
         super(MAG, self).__init__()
         self.layer_types = PARAMS['layer_types']
         self.hidden_dim = PARAMS['hidden_dim']

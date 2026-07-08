@@ -10,12 +10,11 @@ from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')  # Disable warnings
 
 
-# These param are hardcoded
-ATOM_DIM = 57
-BOND_DIM = 7
-ELEMENTS = ['H', 'Li', 'B', 'C', 'N', 'O', 'F', 'Na', 'Mg', 'Si', 'P', 'S', 'Cl', 'K', 'Ca', 'Cr', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Se', 'Br', 'Sn', 'I']
+# Atoms explicitly encoded (+ fallback category)
+ELEMENTS = ['H', 'Li', 'B', 'C', 'N', 'O', 'F', 'Na', 'Mg', 'Si', 'P', 'S', \
+            'Cl', 'K', 'Ca', 'Cr', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Se', 'Br', \
+            'Sn', 'I']  # Ge, As, Pb, Hg ?
 ATOMIC_NUMBERS = [Chem.GetPeriodicTable().GetAtomicNumber(element) for element in ELEMENTS]
-# Ge, As, Pb, Hg ?
 
 
 def encoding(value, allowed_values):
@@ -72,6 +71,10 @@ def bond_features(bond):
         [float(bond.GetIsConjugated()),  # 1
          float(bond.IsInRing())]  # 1
     )
+
+_mol = Chem.MolFromSmiles("CC")
+ATOM_DIM = len(atom_features(_mol.GetAtomWithIdx(0)))
+BOND_DIM = len(bond_features(_mol.GetBondWithIdx(0)))
 
 # ESA/data_loading/transforms.py > add_chemprop_features
 def smiles2graph(smiles):
