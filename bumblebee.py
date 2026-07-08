@@ -25,11 +25,11 @@ def save(path, model, calibration=None):
 
 def load(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
-    model = MAG()  # .to(device)
+    model = MAG().to(device)
     model.load_state_dict(ckpt['state_dict'])
     # model.eval()
     model.task = ckpt['task']
-    calibration = ckpt.get('calibration')
+    calibration = ckpt['calibration']
     print(f"\nLoaded model from {model_path} with task: {model.task}")
     return model, calibration
 
@@ -84,8 +84,8 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ### Save model
-        model_name = "L4_MUTA_new_inj.pt"
-        save(f"MODELS/{model_name}", model, calibration_data)
+        # model_name = "L4_LOGP_new_inj.pt"
+        # save(f"MODELS/{model_name}", model, calibration_data)
 
     else:  # Load saved model
         model, calibration_data = load(f"MODELS/{model_name}", device)
@@ -114,8 +114,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'LOGP_new_inj.pt'
