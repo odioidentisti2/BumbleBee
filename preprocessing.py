@@ -1,25 +1,9 @@
 import torch
-from reproducibility import torch_generator
-    
-# def cv_subsets(dataset, num_folds):
-#     dataset_size = len(dataset)
-#     g = torch.Generator()
-#     g.manual_seed(42)
-#     indices = torch.randperm(dataset_size, generator=g).tolist()
-#     fold_size = dataset_size // num_folds 
-#     for fold in range(num_folds):
-#         # Create indices
-#         test_start = fold * fold_size
-#         test_end = (fold + 1) * fold_size if fold < num_folds - 1 else dataset_size
-#         test_indices = indices[test_start:test_end]
-#         train_indices = indices[:test_start] + indices[test_end:]        
-#         # Create subsets
-#         train_subset = torch.utils.data.Subset(dataset, train_indices)
-#         test_subset = torch.utils.data.Subset(dataset, test_indices)
-#         yield train_subset, test_subset
+import reproducibility
+
 
 def cv_subsets(dataset_size, num_folds):
-    g = torch_generator()  # for reproducibility
+    g = reproducibility.torch_generator()
     indices = torch.randperm(dataset_size, generator=g).tolist()
     fold_size = dataset_size // num_folds
     for fold in range(num_folds):
@@ -29,17 +13,14 @@ def cv_subsets(dataset_size, num_folds):
         train_indices = indices[:test_start] + indices[test_end:]
         yield train_indices, test_indices
 
-def random_subsets(dataset, test_fraction=0.2):
-    dataset_size = len(dataset)
-    indices = torch.randperm(dataset_size).tolist()
+def random_subsets(dataset_size, test_fraction=0.2):
+    g = reproducibility.torch_generator()
+    indices = torch.randperm(dataset_size, generator=g).tolist()
     test_size = int(dataset_size * test_fraction)
     # Create indices
     test_indices = indices[0:test_size]
-    train_indices = indices[test_size:]        
-    # Create subsets
-    train_subset = torch.utils.data.Subset(dataset, train_indices)
-    test_subset = torch.utils.data.Subset(dataset, test_indices)
-    return train_subset, test_subset
+    train_indices = indices[test_size:]  
+    return train_indices, test_indices
 
 # import csv
 
