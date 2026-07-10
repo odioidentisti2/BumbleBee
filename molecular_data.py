@@ -124,6 +124,7 @@ class InjectedDataset(Dataset):
     def __init__(self, graphs):
         super().__init__(graphs)
         self.inject = False
+        # self.inject_generator = reproducibility.torch_generator()
         sample = graphs[0].target
         if isinstance(sample, float):
             self.baseline = sum(g.target for g in graphs) / len(graphs)
@@ -145,6 +146,7 @@ class InjectedDataset(Dataset):
         
     def get_loader(self, batch_size, is_train=False):
         self.inject = is_train
+        # self.inject_generator = reproducibility.torch_generator()
         return super().get_loader(batch_size, is_train)
 
 

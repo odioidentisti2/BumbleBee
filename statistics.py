@@ -1,4 +1,5 @@
 import torch
+from copy import deepcopy
 from utils import print_header
 
 
@@ -18,7 +19,7 @@ class MetricTracker:
         """Start tracking a new run."""
         if not self.accumulate:
             self.stats.clear()
-        self.stats.append(self.values.copy())
+        self.stats.append(deepcopy(self.values))
     
     def update(self, logits, targets):
         """Update statistics for current run."""

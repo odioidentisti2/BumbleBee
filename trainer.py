@@ -31,31 +31,37 @@ class Trainer:
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning step
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
-        return total_loss / total
+        mean_loss = total_loss / total
+        return mean_loss
 
-    def _eval(self, model, loader):
+    def _eval(self, model, loader, return_attention=False):
         model.eval()  # set evaluation mode
         model = model.to(self.device)
         total_loss = 0
         total = 0
+        all_attn = []
         self.statistics.init()
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
                 targets = batch.y
-                logits = model(batch)
-                # logits, _ = model(batch, return_attention=True)
+                if return_attention:
+                    logits, attn_weights = model(batch, return_attention=True)
+                    all_attn.extend([aw.detach().cpu() for aw in attn_weights])
+                else:
+                    logits = model(batch)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
                 total += batch.num_graphs
                 # Record statistics
                 self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
-        return total_loss / total
+        mean_loss = total_loss / total
+        return (mean_loss, all_attn) if return_attention else mean_loss
 
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
+        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
         val_interval = stopper = None
 
         # Configuration of validation + early stop
@@ -66,10 +72,13 @@ class Trainer:
 
         # Training loop
         loader = trainingset.get_loader(batch_size=PARAMS['train_batch_size'], is_train=True)
+        # loader2 = trainingset.get_loader(batch_size=PARAMS['train_batch_size'], is_train=True)
         start_time = time.time()
-        for epoch in range(1, max_epochs + 1):    
+        for epoch in range(1, max_epochs + 1):
             loss = self._train(model, loader)
-            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
+            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")  
+            # loss2 = self._eval(model, loader2)
+            # print(f"_eval: Loss {loss2:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Validation + early stop
             if val_interval and epoch % val_interval == 0:
@@ -78,7 +87,6 @@ class Trainer:
                     stopper.restore(model)
                     print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
-        return self._calibration_data(model, loader)  # Return calibration data for Explainer
 
     def eval(self, model, testset, flag):
         loader = testset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
@@ -86,29 +94,23 @@ class Trainer:
         metric = self.statistics.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
-
-    def _calibration_data(self, model, loader):
-        """Collect calibration data on training set for the Explainer."""
-        model = model.to(self.device)
-        model.eval()
-        training_attn_weights = []
-        training_predictions = []
-        with torch.no_grad():
-            for batch in loader:
-                batch = batch.to(self.device)
-                preds, attn_weights = model(batch, return_attention=True)
-                training_predictions.append(preds.detach().cpu())
-                training_attn_weights.extend([aw.detach().cpu() for aw in attn_weights])
-        pred_tensor = torch.cat(training_predictions)
-        attn_factors = torch.stack([aw.max() * aw.numel() for aw in training_attn_weights])
-        return {
+    
+    def calibrate(self, model, trainingset):
+        loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
+        loss, attn_weights = self._eval(model, loader, return_attention=True)
+        logit_tensor = torch.cat(self.statistics.stats[-1]["logits"])
+        attn_factors = torch.stack([aw.max() * aw.numel() for aw in attn_weights])
+        model.calibration_data = {
             "attn_factor_mean": attn_factors.mean().item(),
             "attn_factor_std": attn_factors.std().item(),
-            "prediction_mean": pred_tensor.mean().item(),
-            "prediction_std": pred_tensor.std().item(),
-            "prediction_min": pred_tensor.min().item(),
-            "prediction_max": pred_tensor.max().item(),
+            "logit_mean": logit_tensor.mean().item(),
+            "logit_std": logit_tensor.std().item(),
+            "logit_min": logit_tensor.min().item(),
+            "logit_max": logit_tensor.max().item(),
         }
+        metric = self.statistics.metric()
+        print(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
+        return model.calibration_data
 
 
 class EarlyStop:

@@ -9,10 +9,10 @@ from parameters import OPTIMAL_BATCH_SIZE
 
 class Explainer:
 
-    def __init__(self, calibration):
-        self.calibration = calibration
-        self.att_depicter = Att_Depicter(top=calibration['attn_factor_mean'] + calibration['attn_factor_std'])
-        self.ig_depicter = IG_Depicter(top=calibration['prediction_std'])  # using PREDICTION std (not actual target)
+    def __init__(self, calibration_data):
+        self.calibration_data = calibration_data
+        self.att_depicter = Att_Depicter(top=calibration_data['attn_factor_mean'] + calibration_data['attn_factor_std'])
+        self.ig_depicter = IG_Depicter(top=calibration_data['logit_std'])  # using PREDICTION std (not actual target)
         
     def explain(self, model, dataset):
         device = next(model.parameters()).device

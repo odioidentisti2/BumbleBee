@@ -14,11 +14,11 @@ import datasets
 from parameters import print_parameters
 
 
-def save(path, model, calibration=None):
+def save(path, model):
     ckpt = {
         'task': model.task,
         'state_dict': model.state_dict(),
-        'calibration': calibration,
+        'calibration': getattr(model, 'calibration_data', None),
     }
     torch.save(ckpt, path)
     print(f"\nModel saved to: {path}")
@@ -28,9 +28,9 @@ def load(model_path, device):
     model = MAG().to(device)
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
-    calibration = ckpt['calibration']
+    model.calibration_data = ckpt['calibration']
     print(f"\nLoaded model from {model_path} with task: {model.task}")
-    return model, calibration
+    return model
 
 
 def crossvalidation(dataset_info, device, folds=5):
@@ -77,18 +77,23 @@ def main_loop(dataset_info, device, model_name=None):
         ### Train model
         model = MAG()
         print("\nTraining...")
-        calibration_data = trainer.train(model, trainingset, validation_set)
+        trainer.train(model, trainingset, val_set=validation_set)
+
+        ### Calibration (for Explainer)
+        print("\nCalibrating...")
+        trainer.calibrate(model, trainingset)  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
-        # trainer.eval(model, trainingset, flag="Train")  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
+        # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        # model_name = "L4_LOGP_new_inj.pt"
-        # save(f"MODELS/{model_name}", model, calibration_data)
+        # model_name = "L4_LOGP_new_inj_10e.pt"
+        # save(f"MODELS/{model_name}", model)
+        # model = load(f"MODELS/{model_name}", device)
 
     else:  # Load saved model
-        model, calibration_data = load(f"MODELS/{model_name}", device)
+        model = load(f"MODELS/{model_name}", device)
 
     ### Test
     print(f"\nTest set: {dataset_info['path']}")
@@ -98,10 +103,11 @@ def main_loop(dataset_info, device, model_name=None):
     trainer.eval(model, testset, flag="Test")
 
     ### Explain
-    utils.print_header("CALIBRATION")
-    explainer = Explainer(calibration_data)
-    pprint(explainer.calibration)
-    return explainer.explain(model, testset)
+    if hasattr(model, "calibration_data") and model.calibration_data is not None:
+        utils.print_header("CALIBRATION")
+        pprint(model.calibration_data)
+        explainer = Explainer(model.calibration_data)
+        return explainer.explain(model, testset)
 
 
 if __name__ == "__main__":
@@ -114,8 +120,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'L4_LOGP_new_inj.pt'
