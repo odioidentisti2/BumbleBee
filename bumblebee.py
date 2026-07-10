@@ -48,6 +48,7 @@ def crossvalidation(dataset_info, device, folds=5):
         print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
 
         trainer = Trainer(dataset_info['task'], device)
+        trainer.statistics.accumulate = True  # keep all runs
         trainer.train(MAG(), trainingset, val_set=testset)
         cv_tracker.add_fold(trainer.statistics.metrics())    
     

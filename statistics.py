@@ -10,23 +10,27 @@ class MetricTracker:
     
     def __init__(self):
         self.stats = []
+        self.accumulate = False  # set True for cross-validation
         self.values['logits'] = []  # DEBUG
         self.values['targets'] = []  # DEBUG
     
     def init(self):
         """Start tracking a new run."""
+        if not self.accumulate:
+            self.stats.clear()
         self.stats.append(self.values.copy())
     
     def update(self, logits, targets):
         """Update statistics for current run."""
-        self.stats[-1]['logits'].append(logits)  # DEBUG
-        self.stats[-1]['targets'].append(targets)  # DEBUG
+        stats = self.stats[-1]
+        stats['logits'].append(logits)  # DEBUG
+        stats['targets'].append(targets)  # DEBUG
     
     def metric(self, index=-1):
         """Compute metric for specific run. Default: last run."""
         pass
     
-    def metrics(self):
+    def metrics(self):  # for cross-validation
         """Get metrics for all runs."""
         return [self.metric(i) for i in range(len(self.stats))]
 
