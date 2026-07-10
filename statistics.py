@@ -24,7 +24,7 @@ class MetricTracker:
     def update(self, logits, targets):
         """Update statistics for current run."""
         stats = self.stats[-1]
-        stats['logits'].append(logits)  # DEBUG
+        stats['logits'].append(logits)  # Read by trainer.calibrate!!!!!!!!!!
         stats['targets'].append(targets)  # DEBUG
     
     def metric(self, index=-1):
@@ -77,7 +77,6 @@ class AccuracyTracker(MetricTracker):
         super().update(logits, targets)
         stats = self.stats[-1]
         preds = (torch.sigmoid(logits) > 0.5)
-        stats['predictions'].append(preds)  # DEBUG
         stats['total_samples'] += len(targets)
         stats['num_correct'] += (preds == targets).sum().item()
 

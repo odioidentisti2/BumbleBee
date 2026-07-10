@@ -13,10 +13,10 @@ class Trainer:
         self.optim = None
         if self.task == 'binary_classification':
             self.criterion = BinaryHingeLoss()
-            self.statistics = AccuracyTracker()
+            self.tracker = AccuracyTracker()
         else:  # regression
             self.criterion = torch.nn.MSELoss()  # Mean Squared Error
-            self.statistics =  R2Tracker()
+            self.tracker =  R2Tracker()
         
     def _train(self, model, loader):
         model.train()  # set training mode  
@@ -40,7 +40,7 @@ class Trainer:
         total_loss = 0
         total = 0
         all_attn = []
-        self.statistics.init()
+        self.tracker.init()
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
@@ -53,15 +53,15 @@ class Trainer:
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
                 total += batch.num_graphs
-                # Record statistics
-                self.statistics.update(logits.detach().cpu(), targets.detach().cpu())
+                # Record progress
+                self.tracker.update(logits.detach().cpu(), targets.detach().cpu())
         mean_loss = total_loss / total
         return (mean_loss, all_attn) if return_attention else mean_loss
 
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
+        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
         val_interval = stopper = None
 
         # Configuration of validation + early stop
@@ -72,13 +72,10 @@ class Trainer:
 
         # Training loop
         loader = trainingset.get_loader(batch_size=PARAMS['train_batch_size'], is_train=True)
-        # loader2 = trainingset.get_loader(batch_size=PARAMS['train_batch_size'], is_train=True)
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):
             loss = self._train(model, loader)
-            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")  
-            # loss2 = self._eval(model, loader2)
-            # print(f"_eval: Loss {loss2:.3f}   ({time.time() - start_time:.0f}s)")
+            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Validation + early stop
             if val_interval and epoch % val_interval == 0:
@@ -91,14 +88,14 @@ class Trainer:
     def eval(self, model, testset, flag):
         loader = testset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
-        metric = self.statistics.metric()
+        metric = self.tracker.metric()
         print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
     
     def calibrate(self, model, trainingset):
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss, attn_weights = self._eval(model, loader, return_attention=True)
-        logit_tensor = torch.cat(self.statistics.stats[-1]["logits"])
+        logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])
         attn_factors = torch.stack([aw.max() * aw.numel() for aw in attn_weights])
         model.calibration_data = {
             "attn_factor_mean": attn_factors.mean().item(),
@@ -108,7 +105,7 @@ class Trainer:
             "logit_min": logit_tensor.min().item(),
             "logit_max": logit_tensor.max().item(),
         }
-        metric = self.statistics.metric()
+        metric = self.tracker.metric()
         print(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
         return model.calibration_data
 

@@ -42,8 +42,8 @@ print(f"\nCollected {len(dec_repr)} molecule representations")
 print(f"Representation dimension: {dec_repr[0].shape[0]}")
 
 import copy
-all_predictions = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['predictions'])).cpu()
-all_targets = torch.cat(copy.deepcopy(trainer.statistics.stats[-1]['targets'])).cpu()
+all_predictions = torch.cat(copy.deepcopy(trainer.tracker.stats[-1]['predictions'])).cpu()
+all_targets = torch.cat(copy.deepcopy(trainer.tracker.stats[-1]['targets'])).cpu()
 print(f"Collected {all_predictions.shape[0]} predictions and {all_targets.shape[0]} targets")
 
 # ============================================================================

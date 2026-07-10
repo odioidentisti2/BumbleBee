@@ -1,0 +1,56 @@
+DEBUG: OPTIMAL BATCH SIZE = 2
+
+2026-07-10 19:57:31
+DEVICE: cuda
+
+PARAMETERS:
+{'early_stop': False, 'lr': 0.0001, 'max_steps': 100000, 'train_batch_size': 32}
+{'BATCH_DEBUG': False,
+ 'ESA_dropout': 0.0,
+ 'hidden_dim': 128,
+ 'in_out_mlp': 128,
+ 'layer_types': ['M', 'M', 'M', 'P'],
+ 'mlp_expansion': 2}
+{'PMA_dropout': 0.0, 'SAB_dropout': 0.0, 'heads': 8, 'seeds': 1}
+
+Training set: DATASETS/logp_split.csv
+DEBUG: baseline = 2.12
+
+Validation set: DATASETS/logp_split.csv
+
+Training...
+Using efficient attention kernel
+Epoch 1: Loss 2.191   (4s)
+Epoch 2: Loss 0.969   (7s)
+Epoch 3: Loss 0.771   (10s)
+Epoch 4: Loss 0.626   (14s)
+Epoch 5: Loss 0.513   (17s)
+> Validation: Loss 0.509  Metric 0.842
+Epoch 6: Loss 0.429   (23s)
+Epoch 7: Loss 0.351   (26s)
+Epoch 8: Loss 0.341   (29s)
+Epoch 9: Loss 0.292   (32s)
+Epoch 10: Loss 0.275   (36s)
+> Validation: Loss 0.331  Metric 0.897
+Epoch 11: Loss 0.252   (42s)
+Epoch 12: Loss 0.236   (45s)
+Epoch 13: Loss 0.216   (48s)
+Epoch 14: Loss 0.207   (52s)
+Epoch 15: Loss 0.199   (55s)
+> Validation: Loss 0.237  Metric 0.926
+Epoch 16: Loss 0.190   (62s)
+Epoch 17: Loss 0.189   (65s)
+Epoch 18: Loss 0.172   (68s)
+Epoch 19: Loss 0.161   (72s)
+Epoch 20: Loss 0.164   (75s)
+> Validation: Loss 0.212  Metric 0.934
+Epoch 21: Loss 0.147   (81s)
+Epoch 22: Loss 0.149   (85s)
+Epoch 23: Loss 0.135   (88s)
+Epoch 24: Loss 0.131   (91s)
+Epoch 25: Loss 0.131   (94s)
+> Validation: Loss 0.225  Metric 0.930
+Epoch 26: Loss 0.130   (100s)
+Epoch 27: Loss 0.120   (103s)
+Epoch 28: Loss 0.114   (107s)
+Epoch 29: Loss 0.115   (110s)
