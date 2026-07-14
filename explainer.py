@@ -58,10 +58,12 @@ class Explainer:
         return all_att_weights, all_ig_weights
 
     def att_attributions(self, model, batch):
+        model.track_attention()
         with torch.no_grad():
-            _, weights = model(batch, return_attention=True)  # [batch_size, seq_len]
-        weight_list = [weights[i][:graph.edge_index.size(1)] for i, graph in enumerate(batch.to_data_list())]  # Remove padding
-        return weight_list    
+            _ = model(batch)  # Forward pass to populate attention store
+        weight_list = [aw[:graph.edge_index.size(1)] for aw, graph in zip(model._attention_store, batch.to_data_list())]  # Remove padding
+        model.track_attention(enable=False)
+        return weight_list
 
     def ig_attributions(self, model, batch, steps=100):
         edge_feat = model.get_features(batch)   

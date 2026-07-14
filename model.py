@@ -24,9 +24,16 @@ class MAG(torch.nn.Module):
         self.esa = ESA(self.hidden_dim, self.layer_types, PARAMS['mlp_expansion'])
         # Predictor
         self.output_mlp = mlp(self.hidden_dim, PARAMS['in_out_mlp'], 1)
+        # Track attention weights for analysis
+        self._tracking_attention = False
+        self._attention_store = []
+        
+    def track_attention(self, enable=True):
+        self._tracking_attention = enable
+        self._attention_store = []
+        # self.esa.expose_attention(enable)
 
-    def batch_forward(self, edge_features, edge_index, node_batch, return_attention=False):
-        self.esa.expose_attention(return_attention)
+    def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
         max_edges = torch.bincount(edge_batch).max().item()
@@ -34,14 +41,13 @@ class MAG(torch.nn.Module):
         batch_size = node_batch.max().item() + 1
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
         # ESA forward
-        out = self.esa(dense_batch_h, adj_mask, pad_mask)  # [batch_size, hidden_dim]
-        if return_attention:
+        out = self.esa(dense_batch_h, adj_mask, pad_mask=pad_mask, \
+                       tracking_attention=self._tracking_attention)  # [batch_size, hidden_dim]
+        if self._tracking_attention:
             attention = self.esa.get_attention()  # [batch_size, seq_len]
-            batch_attention = []
             for i, graph_attention in enumerate(attention.unbind(dim=0)):
-                # Crop padded positions so attention lengths match graph sizes.
-                graph_attention = graph_attention[pad_mask[i]]
-                batch_attention.append(graph_attention)
+                graph_attention = graph_attention[pad_mask[i]] # Crop padded positions
+                self._attention_store.append(graph_attention.detach().cpu())
             # att_list.extend(batch_attention)
             # enc_repr.extend(self.esa.enc_out.unbind(dim=0))
             # dec_repr.extend(self.esa.dec_out.unbind(dim=0))
@@ -49,15 +55,13 @@ class MAG(torch.nn.Module):
         # <- DROPOUT here if needed
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
-        return (logits, batch_attention) if return_attention else logits
+        return  logits
 
-    def graph_forward(self, edge_features, edge_index, node_batch, return_attention=False):
-        self.esa.expose_attention(return_attention)
+    def graph_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
         edge_batch = self._edge_batch(edge_index, node_batch)  # [batch_edges]
         batch_size = node_batch.max().item() + 1
         src, dst = edge_index
-        batch_attention = []
         out = torch.zeros((batch_size, self.hidden_dim), device=edge_features.device)
         # Per-graph
         for i in range(batch_size):
@@ -68,18 +72,18 @@ class MAG(torch.nn.Module):
             adj_mask = adj_mask.unsqueeze(0)
             h = h.unsqueeze(0)
             # ESA forward
-            out[i] = self.esa(h, adj_mask)  # [hidden_dim]  (pythorch auto-removes batch dimension)
-            if return_attention:
+            out[i] = self.esa(h, adj_mask, tracking_attention=self._tracking_attention)  # [hidden_dim]  (pythorch auto-removes batch dimension)
+            if self._tracking_attention:
                 graph_attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
-                batch_attention.append(graph_attention)
+                self._attention_store.append(graph_attention.detach().cpu())
                 # att_list.extend(graph_attention.unbind(dim=0))
                 # enc_repr.extend(self.esa.enc_out.unbind(dim=0))
                 # dec_repr.extend(self.esa.dec_out.unbind(dim=0))
         # MLP
         logits = torch.flatten(self.output_mlp(out))    # [batch_size]
-        return (logits, batch_attention) if return_attention else logits
+        return logits
     
-    def forward(self, batch, return_attention=False):
+    def forward(self, batch):
         """
         Args:
             batch: batch from DataLoader (torch_geometric.data.Batch)
@@ -94,9 +98,9 @@ class MAG(torch.nn.Module):
             edge_feat.device.type == 'cpu' and
             batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
             ##  WARNING: checking num_graphs implies that the last batch can follow a different path!!!!!!!!!!
-            return self.graph_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+            return self.graph_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # Batch attention
-            return self.batch_forward(edge_feat, batch.edge_index, batch.batch, return_attention)
+            return self.batch_forward(edge_feat, batch.edge_index, batch.batch)
 
         # DEBUG: Compare batch vs single graph Attention
         # if not torch.allclose(batch_logits, single_logits, rtol=1e-4, atol=1e-7):
