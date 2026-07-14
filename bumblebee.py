@@ -81,15 +81,15 @@ def main_loop(dataset_info, device, model_name=None):
 
         ### Calibration (for Explainer)
         print("\nCalibrating...")
-        trainer.calibrate(model, trainingset)  # WHY IS THIS SO DIFFERENT FROM TRAINING LOSS?
+        trainer.calibrate(model, trainingset)
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        # model_name = "L4_LOGP_calibration.pt"
-        # save(f"MODELS/{model_name}", model)
+        model_name = "L4_LOGP_10e.pt"
+        save(f"MODELS/{model_name}", model)
         # model = load(f"MODELS/{model_name}", device)
 
     else:  # Load saved model
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        # model_name = 'L4_LOGP_new_inj.pt'
+        model_name = 'L4_LOGP_10e.pt'
         # model_name = 'L4_MUTA_new_inj.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
