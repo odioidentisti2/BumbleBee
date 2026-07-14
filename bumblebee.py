@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
-        model_name = 'L4_LOGP_10e.pt'
+        # model_name = 'L4_LOGP_10e.pt'
         # model_name = 'L4_MUTA_new_inj.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)

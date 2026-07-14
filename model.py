@@ -29,9 +29,9 @@ class MAG(torch.nn.Module):
         self._attention_store = []
         
     def track_attention(self, enable=True):
+        """Enable or disable attention tracking."""
         self._tracking_attention = enable
         self._attention_store = []
-        # self.esa.expose_attention(enable)
 
     def batch_forward(self, edge_features, edge_index, node_batch):
         batched_h = self.input_mlp(edge_features)  # [batch_edges, hidden_dim]
@@ -42,9 +42,9 @@ class MAG(torch.nn.Module):
         adj_mask = edge_mask(edge_index, node_batch, batch_size, max_edges)  # [batch_size, max_edges, max_edges]
         # ESA forward
         out = self.esa(dense_batch_h, adj_mask, pad_mask=pad_mask, \
-                       tracking_attention=self._tracking_attention)  # [batch_size, hidden_dim]
+                       track_attention=self._tracking_attention)  # [batch_size, hidden_dim]
         if self._tracking_attention:
-            attention = self.esa.get_attention()  # [batch_size, seq_len]
+            attention = self.esa.get_last_attention()  # [batch_size, seq_len]
             for i, graph_attention in enumerate(attention.unbind(dim=0)):
                 graph_attention = graph_attention[pad_mask[i]] # Crop padded positions
                 self._attention_store.append(graph_attention.detach().cpu())
@@ -72,9 +72,9 @@ class MAG(torch.nn.Module):
             adj_mask = adj_mask.unsqueeze(0)
             h = h.unsqueeze(0)
             # ESA forward
-            out[i] = self.esa(h, adj_mask, tracking_attention=self._tracking_attention)  # [hidden_dim]  (pythorch auto-removes batch dimension)
+            out[i] = self.esa(h, adj_mask, track_attention=self._tracking_attention)  # [hidden_dim]  (pythorch auto-removes batch dimension)
             if self._tracking_attention:
-                graph_attention = self.esa.get_attention().squeeze(0)  # Remove batch dimension
+                graph_attention = self.esa.get_last_attention().squeeze(0)  # Remove batch dimension
                 self._attention_store.append(graph_attention.detach().cpu())
                 # att_list.extend(graph_attention.unbind(dim=0))
                 # enc_repr.extend(self.esa.enc_out.unbind(dim=0))

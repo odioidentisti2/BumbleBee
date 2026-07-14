@@ -6,12 +6,13 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from parameters import attention_params as PARAMS
 
-COUNTER = 0  # For debugging
+COUNTER = 0  # DEBUG
 
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, dropout):
         super(MultiHeadAttention, self).__init__()
+        self.weights = None  # Store attention weights for analysis
         self.num_heads = num_heads
         self.dropout = dropout  # rate of train elements randomly set to zero in each forward pass (prevent overfitting)
 
@@ -38,7 +39,7 @@ class MultiHeadAttention(nn.Module):
         self.ln_q = nn.LayerNorm(dim_Q, eps=1e-8)
         self.ln_k = nn.LayerNorm(dim_K, eps=1e-8)
 
-    # Scaled Dot-Product Attention with returned attention weights
+    # Manual Scaled Dot-Product Attention to track attention weights
     def _sdpa_with_weights(self, Q, K, V, mask):  
         scale = Q.size(-1) ** -0.5  # head_dim = Q.size(-1)
         attn_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
@@ -53,9 +54,10 @@ class MultiHeadAttention(nn.Module):
     
         out = torch.matmul(attn_weights, V)
         # Average attention accross heads (SHOULD I INSPECT fc_o WEIGHTS?)
-        return out, attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
+        self.weights = attn_weights.mean(dim=1)  # [batch, num_seeds, num_tokens]
+        return out  # [batch, num_seeds, num_tokens]
 
-    def forward(self, Q, K, mask=None, return_attention=False):
+    def forward(self, Q, K, mask=None, track_attention=False):
         # Project Q, K, V
         Q = self.fc_q(Q)
         V = self.fc_v(K)
@@ -79,8 +81,8 @@ class MultiHeadAttention(nn.Module):
         K = K.transpose(1, 2)
         V = V.transpose(1, 2)
 
-        if return_attention:
-            out, attn_weights = self._sdpa_with_weights(Q, K, V, mask)
+        if track_attention:
+            out = self._sdpa_with_weights(Q, K, V, mask)
         else:
             try:
                 # raise RuntimeError("Force fallback")  # DEBUG
@@ -107,8 +109,6 @@ class MultiHeadAttention(nn.Module):
         out = out.transpose(1, 2).reshape(batch_size, -1, self.num_heads * head_dim)
         # Final output projection with a residual connection and nonlinearity (Mish)
         out = out + F.mish(self.fc_o(out))
-        if return_attention:
-            return out, attn_weights
         return out
 
 # Same input for both Q and K
@@ -118,11 +118,11 @@ class SetAttention(nn.Module):
         super(SetAttention, self).__init__()
         self.mha = MultiHeadAttention(dim_in, dim_in, dim_out, PARAMS['heads'], PARAMS['SAB_dropout'])
 
-    def forward(self, X, mask=None, return_attention=False):
+    def forward(self, X, mask=None, track_attention=False):
         if mask is not None:
             mask = mask.unsqueeze(1)  # [batch, 1, seq_len, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, -1, -1)  # [batch, num_heads, seq_len, seq_len]
-        return self.mha(X, X, mask, return_attention)
+        return self.mha(X, X, mask=mask, track_attention=track_attention)
 
 
 # Pooling by Multihead Attention: Pools a set of elements to a fixed number of outputs (seeds)
@@ -137,13 +137,13 @@ class PMA(nn.Module):
         # MultiHeadAttention takes seeds as Q and the input set as K
         self.mha = MultiHeadAttention(dim, dim, dim, PARAMS['heads'], dropout=PARAMS['PMA_dropout'])
 
-    def forward(self, X, mask=None, return_attention=False):
+    def forward(self, X, mask=None, track_attention=False):
         # Repeat seeds across batch: use seeds as queries, X as keys/values
         seeds = self.S.repeat(X.size(0), 1, 1)
         if mask is not None: 
             mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
-        return self.mha(seeds, X, mask, return_attention)
+        return self.mha(seeds, X, mask=mask, track_attention=track_attention)
 
 
 

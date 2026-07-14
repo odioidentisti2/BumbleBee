@@ -31,7 +31,7 @@ class TransformerBlock(nn.Module):
             self.attention = SetAttention(hidden_dim, hidden_dim)
         self.mlp = mlp(hidden_dim, hidden_dim * mlp_expansion, hidden_dim)
 
-    def forward(self, X, adj_mask=None, pad_mask=None, tracking_attention=False):
+    def forward(self, X, adj_mask=None, pad_mask=None, track_attention=False):
         # Mask
         if self.type == 'M':
             mask = adj_mask  # [batch, seq_len, seq_len]
@@ -43,10 +43,7 @@ class TransformerBlock(nn.Module):
         else:  # 'P'
             mask = pad_mask  # [batch, seq_len]
         # Attention
-        if tracking_attention:
-            out, self.attn_weights = self.attention(self.norm(X), mask=mask, return_attention=True)
-        else:
-            out = self.attention(self.norm(X), mask=mask)
+        out = self.attention(self.norm(X), mask=mask, track_attention=track_attention)
         # Residual connection
         if self.type != 'P':
             out = X + out
@@ -101,7 +98,7 @@ class ESA(nn.Module):
             self.decoder.append(TransformerBlock(hidden_dim, layer_type, mlp_expansion))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
 
-    def forward(self, X, adj_mask, pad_mask=None, tracking_attention=False):
+    def forward(self, X, adj_mask, pad_mask=None, track_attention=False):
         # Encoder
         enc = X
         for layer in self.encoder:
@@ -110,7 +107,7 @@ class ESA(nn.Module):
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
-            dec = layer(dec, pad_mask=pad_mask, tracking_attention=tracking_attention)
+            dec = layer(dec, pad_mask=pad_mask, track_attention=track_attention)
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
         self.dec_out = out  # DEBUG
@@ -118,10 +115,12 @@ class ESA(nn.Module):
         return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
 
-    def get_attention(self, index=-1):
-        attention = self.decoder[index].attention.weights  # [batch, num_seeds, seq_len]
+    def get_last_attention(self, index=-1):
+        attention = self.decoder[index].attention.mha.weights  # [batch, num_seeds, seq_len]
         return attention.mean(dim=1)  # [batch, seq_len] Aggregate seeds by mean
     
+
+
 
 
         # # Get top-5 attended edges for each seed
