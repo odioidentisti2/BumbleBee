@@ -88,8 +88,8 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        model_name = "L4_LOGP_10e.pt"
-        save(f"MODELS/{model_name}", model)
+        # model_name = "L4_LOGP_track_attention.pt"
+        # save(f"MODELS/{model_name}", model)
         # model = load(f"MODELS/{model_name}", device)
 
     else:  # Load saved model
