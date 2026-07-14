@@ -54,7 +54,7 @@ class Trainer:
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
+        max_epochs = 100  # max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG
         val_interval = stopper = None
 
         # Configuration of validation + early stop
@@ -89,7 +89,7 @@ class Trainer:
         model.track_attention()
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
-        logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])
+        logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])  # It gets logits from tracker (not very clean)
         attn_factors = torch.stack([aw.max() * aw.numel() for aw in model._attention_store])
         model.track_attention(enable=False)
         model.calibration_data = {
