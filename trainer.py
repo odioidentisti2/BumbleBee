@@ -31,37 +31,30 @@ class Trainer:
             self.optim.zero_grad(); loss.backward(); self.optim.step()  # Learning step
             total_loss += loss.item() * batch.num_graphs
             total += batch.num_graphs
-        mean_loss = total_loss / total
-        return mean_loss
+        return total_loss / total  # mean loss
 
-    def _eval(self, model, loader, return_attention=False):
+    def _eval(self, model, loader):
         model.eval()  # set evaluation mode
         model = model.to(self.device)
         total_loss = 0
         total = 0
-        all_attn = []
         self.tracker.init()
         with torch.no_grad():
             for batch in loader:
                 batch = batch.to(self.device)
                 targets = batch.y
-                if return_attention:
-                    logits, attn_weights = model(batch, return_attention=True)
-                    all_attn.extend([aw.detach().cpu() for aw in attn_weights])
-                else:
-                    logits = model(batch)
+                logits = model(batch)
                 loss = self.criterion(logits, targets)
                 total_loss += loss.item() * batch.num_graphs
                 total += batch.num_graphs
                 # Record progress
                 self.tracker.update(logits.detach().cpu(), targets.detach().cpu())
-        mean_loss = total_loss / total
-        return (mean_loss, all_attn) if return_attention else mean_loss
+        return total_loss / total  # mean loss
 
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
+        max_epochs = 10  # max(1, PARAMS['max_steps'] // len(train_set))  # DEBUG
         val_interval = stopper = None
 
         # Configuration of validation + early stop
@@ -93,10 +86,12 @@ class Trainer:
         return metric
     
     def calibrate(self, model, trainingset):
+        model.track_attention()
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
-        loss, attn_weights = self._eval(model, loader, return_attention=True)
+        loss = self._eval(model, loader)
         logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])
-        attn_factors = torch.stack([aw.max() * aw.numel() for aw in attn_weights])
+        attn_factors = torch.stack([aw.max() * aw.numel() for aw in model._attention_store])
+        model.track_attention(enable=False)
         model.calibration_data = {
             "attn_factor_mean": attn_factors.mean().item(),
             "attn_factor_std": attn_factors.std().item(),
@@ -105,6 +100,7 @@ class Trainer:
             "logit_min": logit_tensor.min().item(),
             "logit_max": logit_tensor.max().item(),
         }
+
         metric = self.tracker.metric()
         print(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
         return model.calibration_data
