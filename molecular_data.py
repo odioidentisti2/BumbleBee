@@ -1,3 +1,5 @@
+from random import sample
+
 import torch
 from torch_geometric.data import Data, Dataset as PyGDataset
 from torch_geometric.loader import  DataLoader
@@ -38,9 +40,11 @@ def atom_features(atom):
     return (
         # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
         encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
-        # TotalDegree and TotalValence can't be 0 because the mol would be rejected (atom with no bonds)
+
+        # WARNING: TotalDegree and TotalValence can't be 0 because the mol would be rejected (atom with no bonds)
         encoding(atom.GetTotalDegree(), [0, 1, 2, 3, 4, 5]) +  # 6 + 1
         # encoding(atom.GetTotalValence(), [1, 2, 3, 4, 5, 6]) +  # 6 + 1
+
         encoding(atom.GetFormalCharge(), [-2, -1, 0, 1, 2]) +  # 5 + 1
         encoding(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +  # 5 + 1
         encoding(atom.GetChiralTag(), [
@@ -88,7 +92,7 @@ def smiles2graph(smiles):
         if len(Chem.GetMolFrags(mol)) > 1:  # Disconnected
             return None
         else:
-            print(f"Removed salts from: {smiles}")    
+            print(f"Removed salts from: {smiles}")  # DEBUG
 
     mol = Chem.AddHs(mol)
 
@@ -131,6 +135,8 @@ class InjectedDataset(Dataset):
         elif isinstance(sample, str):
             unique_y = set(g.y.item() for g in graphs)
             self.baseline = sum(unique_y) / len(unique_y)
+        else:
+            raise ValueError(f"Unexpected target type: {type(sample)}")
         print(f"DEBUG: baseline = {self.baseline:.2f}")
         
     def get(self, idx):
