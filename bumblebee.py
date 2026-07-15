@@ -49,7 +49,7 @@ def crossvalidation(dataset_info, device, folds=5):
 
         trainer = Trainer(dataset_info['task'], device)
         trainer.tracker.accumulate = True  # keep all runs
-        trainer.train(MAG(device)), trainingset, val_set=testset)
+        trainer.train(MAG(device), trainingset, val_set=testset)
         cv_tracker.add_fold(trainer.tracker.metrics())    
     
     cv_tracker.summary()  # Print summary
@@ -120,8 +120,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    _datasets.append(datasets.logp_split)
-    # _datasets.append(datasets.muta)
+    # _datasets.append(datasets.logp_split)
+    _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'L4_LOGP_10e.pt'

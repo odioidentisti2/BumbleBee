@@ -16,7 +16,6 @@ class MAG(torch.nn.Module):
     
     def __init__(self, device, node_dim=ATOM_DIM, edge_dim=BOND_DIM):
         super(MAG, self).__init__()
-        self.to(device)
         self.layer_types = PARAMS['layer_types']
         self.hidden_dim = PARAMS['hidden_dim']
         # Edge feature encoder (node-edge MLP)
@@ -28,6 +27,8 @@ class MAG(torch.nn.Module):
         # Track attention weights for analysis
         self._tracking_attention = False
         self._attention_store = []
+        
+        self.to(device)
         
     def track_attention(self, enable=True):
         """Enable or disable attention tracking."""
