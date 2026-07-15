@@ -88,7 +88,7 @@ def main_loop(dataset_info, device, model_name=None):
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        # model_name = "L4_LOGP_track_attention.pt"
+        # model_name = "L4_LOGP_early_stop.pt"
         # save(f"MODELS/{model_name}", model)
         # model = load(f"MODELS/{model_name}", device)
 
@@ -120,8 +120,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append(datasets.logp_split)
+    # _datasets.append(datasets.muta)
 
     for dataset_info in _datasets:
         # model_name = 'L4_LOGP_10e.pt'

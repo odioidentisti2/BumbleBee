@@ -54,12 +54,12 @@ class Trainer:
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 100  # max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG
-        val_interval = stopper = None
+        max_epochs = max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG
 
         # Configuration of validation + early stop
+        val_interval = stopper = None
         if val_set:
-            val_interval = 5  # max(1, round(max_epochs / 100))  # DEBUG
+            val_interval = max(1, round(max_epochs / 100))  # DEBUG
             if PARAMS['early_stop']:
                 stopper = EarlyStop()
 
@@ -114,6 +114,28 @@ class EarlyStop:
         self.counter = 0
         self.patience = 5
         self.min_delta = 0
+
+    # def check(self, metric, model, epoch):
+    #     improvement = metric > self.best_metric + self.min_delta
+        
+    #     print(f"  [EarlyStop] Epoch {epoch}: metric={metric:.4f}, best={self.best_metric:.4f}, "
+    #         f"improvement={improvement}, counter={self.counter}/{self.patience}")
+        
+    #     if improvement:
+    #         self.best_metric = metric
+    #         self.best_state = deepcopy(model.state_dict())
+    #         self.best_epoch = epoch
+    #         self.counter = 0
+    #         print(f"  [EarlyStop] ✓ New best! Counter reset to 0")
+    #     else:
+    #         self.counter += 1
+    #         print(f"  [EarlyStop] ✗ No improvement. Counter: {self.counter}/{self.patience}")
+        
+    #     should_stop = self.counter >= self.patience
+    #     if should_stop:
+    #         print(f"  [EarlyStop] STOPPING NOW! Patience {self.patience} reached")
+        
+    #     return should_stop
 
     def check(self, metric, model, epoch):
         if metric > self.best_metric + self.min_delta:
