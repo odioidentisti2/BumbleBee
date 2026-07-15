@@ -67,8 +67,9 @@ class ESA(nn.Module):
             - 'S': Self-attention layer.
             - 'M': Masked self-attention layer.
             - 'P': PMA (Pooling by Multihead Attention) decoder layer.
-            The string must contain exactly one 'P' layer. 'S' and 'M' layers can be arranged in any order before 'P'.
-            After 'P', only 'S' layers are allowed (but they make sense only if PMA seeds (k) > 1).
+            The string must contain exactly one 'P' layer. 'S' and 'M' layers can be arranged 
+            in any order before 'P'. After 'P', only 'S' layers are allowed.
+        mlp_expansion (int): Expansion factor for MLP hidden dimensions.
 
     Attributes:
         encoder (nn.ModuleList): List of transformer blocks for the encoder ('S' and 'M' layers).
@@ -76,7 +77,6 @@ class ESA(nn.Module):
 
     Returns:
         torch.Tensor: Output graph-level representation after pooling and non-linearity.
-        torch.Tensor (optional): Attention weights from the 'P' layer if `return_attention` is True.
     """
 
     def __init__(self, hidden_dim, layer_types, mlp_expansion):
@@ -94,6 +94,7 @@ class ESA(nn.Module):
         self.decoder = nn.ModuleList()
         self.decoder.append(TransformerBlock(hidden_dim, 'P', mlp_expansion))
         for layer_type in dec_layers:
+            # Layers after P make sense only if PMA seeds (k) > 1) !!!!!!!!!!!!!!!!!
             assert layer_type == 'S'
             self.decoder.append(TransformerBlock(hidden_dim, layer_type, mlp_expansion))
         # self.decoder_linear = nn.Linear(hidden_dim, hidden_dim, bias=True)  # no need since graph_dim = hidden_dim?
@@ -103,20 +104,25 @@ class ESA(nn.Module):
         enc = X
         for layer in self.encoder:
             enc = layer(enc, adj_mask=adj_mask, pad_mask=pad_mask)
-        self.enc_out = enc  # DEBUG
+        # self.enc_out = enc  # DEBUG
         dec = enc + X  # Residual connection
         # Decoder
         for layer in self.decoder:
             dec = layer(dec, pad_mask=pad_mask, track_attention=track_attention)
             pad_mask = None  # Only use pad_mask in the first decoder layer (PMA)
         out = dec.mean(dim=1)  # Aggregate seeds by mean
-        self.dec_out = out  # DEBUG
+        # self.dec_out = out  # DEBUG
         out = F.mish(out)
         return self.output_dropout(out)  # Pre-activation dropout
         # return F.mish(self.decoder_linear(out))
 
-    def get_last_attention(self, index=-1):
-        attention = self.decoder[index].attention.mha.weights  # [batch, num_seeds, seq_len]
+    def get_attention_weights(self, layer_index=0):
+        """Get attention weights from a specific decoder layer (default: PMA)."""
+        if layer_index >= len(self.decoder):
+            raise IndexError(f"Invalid layer index {layer_index}, decoder has {len(self.decoder)} layers")
+        attention = self.decoder[layer_index].attention.mha.weights
+        if attention is None:
+            raise RuntimeError("Attention weights not tracked. Forward pass must use track_attention=True")
         return attention.mean(dim=1)  # [batch, seq_len] Aggregate seeds by mean
     
 

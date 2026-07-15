@@ -46,7 +46,7 @@ class MAG(torch.nn.Module):
         out = self.esa(dense_batch_h, adj_mask, pad_mask=pad_mask, \
                        track_attention=self._tracking_attention)  # [batch_size, hidden_dim]
         if self._tracking_attention:
-            attention = self.esa.get_last_attention()  # [batch_size, seq_len]
+            attention = self.esa.get_attention_weights()  # [batch_size, seq_len]
             for i, graph_attention in enumerate(attention.unbind(dim=0)):
                 graph_attention = graph_attention[pad_mask[i]] # Crop padded positions
                 self._attention_store.append(graph_attention.detach().cpu())
@@ -76,7 +76,7 @@ class MAG(torch.nn.Module):
             # ESA forward
             out[i] = self.esa(h, adj_mask, track_attention=self._tracking_attention)  # [hidden_dim]  (pytorch auto-removes batch dimension)
             if self._tracking_attention:
-                graph_attention = self.esa.get_last_attention().squeeze(0)  # Remove batch dimension
+                graph_attention = self.esa.get_attention_weights().squeeze(0)  # Remove batch dimension
                 self._attention_store.append(graph_attention.detach().cpu())
                 # att_list.extend(graph_attention.unbind(dim=0))
                 # enc_repr.extend(self.esa.enc_out.unbind(dim=0))

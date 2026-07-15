@@ -52,7 +52,7 @@ class Trainer:
     def train(self, model, trainingset, val_set=None):
         model.task = self.task
         self.optim = torch.optim.AdamW(model.parameters(), lr=PARAMS['lr'])
-        max_epochs = 10  # max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG
+        max_epochs = 10  # max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG (does not reach max_steps)
 
         # Configuration of validation + early stop
         val_interval = stopper = None
