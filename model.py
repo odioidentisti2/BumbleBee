@@ -27,7 +27,7 @@ class MAG(torch.nn.Module):
         # Track attention weights for analysis
         self._tracking_attention = False
         self._attention_store = []
-        
+
         self.to(device)
         
     def track_attention(self, enable=True):
@@ -74,7 +74,7 @@ class MAG(torch.nn.Module):
             adj_mask = adj_mask.unsqueeze(0)
             h = h.unsqueeze(0)
             # ESA forward
-            out[i] = self.esa(h, adj_mask, track_attention=self._tracking_attention)  # [hidden_dim]  (pythorch auto-removes batch dimension)
+            out[i] = self.esa(h, adj_mask, track_attention=self._tracking_attention)  # [hidden_dim]  (pytorch auto-removes batch dimension)
             if self._tracking_attention:
                 graph_attention = self.esa.get_last_attention().squeeze(0)  # Remove batch dimension
                 self._attention_store.append(graph_attention.detach().cpu())
@@ -98,7 +98,7 @@ class MAG(torch.nn.Module):
 
         if (not PARAMS['BATCH_DEBUG'] and
             edge_feat.device.type == 'cpu' and
-            batch.num_graphs > 16):  # CPU + big batch: graph attention (faster, less peak memory)
+            batch.num_graphs > 16):  # CPU machines might be memory-constrained: process graphs serially to avoid swapping
             ##  WARNING: checking num_graphs implies that the last batch can follow a different path!!!!!!!!!!
             return self.graph_forward(edge_feat, batch.edge_index, batch.batch)
         else:  # Batch attention
