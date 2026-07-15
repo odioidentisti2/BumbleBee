@@ -6,7 +6,14 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from parameters import attention_params as PARAMS
 
-COUNTER = 0  # DEBUG
+
+# DEBUG
+try:
+    with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
+        pass
+    print("Using efficient attention kernel")
+except RuntimeError:
+    print("Efficient attention kernel not available, using standard SDPA")
 
 
 class MultiHeadAttention(nn.Module):
@@ -64,7 +71,7 @@ class MultiHeadAttention(nn.Module):
         K = self.fc_k(K)
 
         # Additional normalisation for queries/keys. See above
-        # IS THIS STLILL NEEDED? TRY without, INCREASING LEARNING RATE
+        # IS THIS STILL NEEDED? TRY without, INCREASING LEARNING RATE
         Q = self.ln_q(Q)
         K = self.ln_k(K)
 
@@ -85,15 +92,10 @@ class MultiHeadAttention(nn.Module):
             out = self._sdpa_with_weights(Q, K, V, mask)
         else:
             try:
-                # raise RuntimeError("Force fallback")  # DEBUG
                 with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
                     out = F.scaled_dot_product_attention(
                         Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
                     )
-                global COUNTER
-                if COUNTER == 0:
-                    COUNTER += 1
-                    print("Using efficient attention kernel")
             except RuntimeError as e:
                 out = F.scaled_dot_product_attention(
                     Q, K, V, attn_mask=mask, dropout_p=self.dropout if self.training else 0
@@ -144,9 +146,3 @@ class PMA(nn.Module):
             mask = mask.unsqueeze(1).unsqueeze(2)  # [batch, 1, 1, seq_len]
             mask = mask.expand(-1, self.mha.num_heads, seeds.size(1), -1)  # [batch, num_heads, num_seeds, seq_len]
         return self.mha(seeds, X, mask=mask, track_attention=track_attention)
-
-
-
-    # mask = torch.stack([mask[0]] + mask, dim=1) 
-    # assert self.mha.num_heads % mask.size(1) == 0
-    # mask = torch.repeat_interleave(mask, self.mha.num_heads // mask.size(1), dim=1)
