@@ -19,8 +19,7 @@ class Trainer:
             self.tracker =  R2Tracker()
         
     def _train(self, model, loader):
-        model.train()  # set training mode  
-        model = model.to(self.device)
+        model.train()  # set training mode
         total_loss = 0
         total = 0
         for batch in loader:
@@ -35,7 +34,6 @@ class Trainer:
 
     def _eval(self, model, loader):
         model.eval()  # set evaluation mode
-        model = model.to(self.device)
         total_loss = 0
         total = 0
         self.tracker.init()
@@ -115,28 +113,6 @@ class EarlyStop:
         self.patience = 5
         self.min_delta = 0
 
-    # def check(self, metric, model, epoch):
-    #     improvement = metric > self.best_metric + self.min_delta
-        
-    #     print(f"  [EarlyStop] Epoch {epoch}: metric={metric:.4f}, best={self.best_metric:.4f}, "
-    #         f"improvement={improvement}, counter={self.counter}/{self.patience}")
-        
-    #     if improvement:
-    #         self.best_metric = metric
-    #         self.best_state = deepcopy(model.state_dict())
-    #         self.best_epoch = epoch
-    #         self.counter = 0
-    #         print(f"  [EarlyStop] ✓ New best! Counter reset to 0")
-    #     else:
-    #         self.counter += 1
-    #         print(f"  [EarlyStop] ✗ No improvement. Counter: {self.counter}/{self.patience}")
-        
-    #     should_stop = self.counter >= self.patience
-    #     if should_stop:
-    #         print(f"  [EarlyStop] STOPPING NOW! Patience {self.patience} reached")
-        
-    #     return should_stop
-
     def check(self, metric, model, epoch):
         if metric > self.best_metric + self.min_delta:
             self.best_metric = metric
@@ -163,9 +139,3 @@ class BinaryHingeLoss(torch.nn.Module):
         # loss[mask_zero] = (pred[mask_zero] + 1).abs()  # Push injected samples toward -1
         loss[mask_nonzero] = torch.clamp(1 - y[mask_nonzero] * pred[mask_nonzero], min=0)
         return loss.mean()
-
-# class BinaryHingeLoss(torch.nn.Module):
-#     def forward(self, pred, target):
-#         y = 2 * target - 1  # Convert {0,1} → {-1,+1}
-#         loss = torch.clamp(1 - y * pred, min=0)  # max(0, 1 - y*pred)
-#         return loss.mean()

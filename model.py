@@ -14,8 +14,9 @@ from parameters import model_params as PARAMS
 
 class MAG(torch.nn.Module):
     
-    def __init__(self, node_dim=ATOM_DIM, edge_dim=BOND_DIM):
+    def __init__(self, device, node_dim=ATOM_DIM, edge_dim=BOND_DIM):
         super(MAG, self).__init__()
+        self.to(device)
         self.layer_types = PARAMS['layer_types']
         self.hidden_dim = PARAMS['hidden_dim']
         # Edge feature encoder (node-edge MLP)

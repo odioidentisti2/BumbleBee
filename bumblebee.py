@@ -25,7 +25,7 @@ def save(path, model):
 
 def load(model_path, device):
     ckpt = torch.load(model_path, map_location=device)
-    model = MAG().to(device)
+    model = MAG(device)
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
     model.calibration_data = ckpt['calibration']
@@ -49,7 +49,7 @@ def crossvalidation(dataset_info, device, folds=5):
 
         trainer = Trainer(dataset_info['task'], device)
         trainer.tracker.accumulate = True  # keep all runs
-        trainer.train(MAG(), trainingset, val_set=testset)
+        trainer.train(MAG(device)), trainingset, val_set=testset)
         cv_tracker.add_fold(trainer.tracker.metrics())    
     
     cv_tracker.summary()  # Print summary
@@ -75,7 +75,7 @@ def main_loop(dataset_info, device, model_name=None):
         validation_set = Dataset(val_molecules)
 
         ### Train model
-        model = MAG()
+        model = MAG(device)
         print("\nTraining...")
         trainer.train(model, trainingset, val_set=validation_set)
 
