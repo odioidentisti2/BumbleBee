@@ -32,9 +32,6 @@ def load(model_path, device):
     print(f"\nLoaded model from {model_path} with task: {model.task}")
     return model
 
-# def load_dataset(dataset_info, train=False):
-
-
 def crossvalidation(dataset_info, device, folds=5):
     print(f"\nCross-Validation on: {utils.get_name(dataset_info['path'])}")
     graphs = load_from_csv(dataset_info)
@@ -57,6 +54,28 @@ def crossvalidation(dataset_info, device, folds=5):
     cv_tracker.summary()  # Print summary
 
 
+def load_dataset(dataset_info, train=False, flag='Dataset'):
+    print(f"\n{flag}: {utils.get_name(dataset_info['path'])}")
+    graphs = load_from_csv(dataset_info)
+    if train:
+        return InjectedDataset(graphs)
+    else:
+        return Dataset(graphs)
+    
+def train(trainer, trainingset, validation_set=None):
+    model = MAG(trainer.device)
+    print("\nTraining...")
+    trainer.train(model, trainingset, val_set=validation_set)
+    ### Calibration (for Explainer)
+    print("\nCalibrating...")
+    trainer.calibrate(model, trainingset)
+    return model
+
+def test(trainer, model, testset):
+    print("\nTesting...")
+    trainer.eval(model, testset, flag="Test")
+
+
 def main_loop(trainingset_info, testset_info, device, model_name=None):
     print_parameters()
     reproducibility.set_torch_seed()
@@ -66,24 +85,14 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
     if not model_name:  # Train model
 
         ### Training set
-        print(f"\nTraining set: {utils.get_name(trainingset_info['path'])}")
-        train_molecules = load_from_csv(trainingset_info)
-        trainingset = InjectedDataset(train_molecules)
+        trainingset = load_dataset(trainingset_info, train=True, flag='Training set')
 
         ### Load validation set (optional)
         validation_set = None
-        print(f"\nValidation set: {utils.get_name(testset_info['path'])}")
-        val_molecules = load_from_csv(testset_info)
-        validation_set = Dataset(val_molecules)
+        validation_set = load_dataset(testset_info, flag='Validation set')
 
         ### Train model
-        model = MAG(device)
-        print("\nTraining...")
-        trainer.train(model, trainingset, val_set=validation_set)
-
-        ### Calibration (for Explainer)
-        print("\nCalibrating...")
-        trainer.calibrate(model, trainingset)
+        model = train(trainer, trainingset, validation_set)
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
@@ -98,11 +107,8 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
         model = load(f"MODELS/{model_name}", device)
 
     ### Test 
-    print(f"\nTest set: {utils.get_name(testset_info['path'])}")
-    test_molecules = load_from_csv(testset_info)
-    testset = Dataset(test_molecules)
-    print("\nTesting...")
-    trainer.eval(model, testset, flag="Test")
+    testset = load_dataset(testset_info, flag='Test set')
+    test(trainer, model, testset)
 
     ### Explain
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
@@ -122,8 +128,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append(datasets.logp_split)
-    _datasets.append((datasets.muta_train, datasets.muta_test))
+    _datasets.append((datasets.logp_train, datasets.logp_test))
+    # _datasets.append((datasets.muta_train, datasets.muta_test))
 
     for trainingset_info, testset_info in _datasets:
         # model_name = 'L4_LOGP_10e.pt'
