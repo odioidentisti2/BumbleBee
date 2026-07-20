@@ -1,0 +1,838 @@
+Id,CAS,SMILES,Status,Experimental_value,Predicted value,BINARY Predicted value,BINARY with unpredicted
+2,91-08-7,O=C=Nc1cccc(N=C=O)c1C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+9,614-00-6,O=NN(c1ccccc1)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+21,2849-98-1,O=C(OCCCCC)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+23,97-90-5,O=C(OCCOC(=O)C(=C)C)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+29,91-53-2,O(c1ccc2NC(C=C(c2(c1))C)(C)C)CC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+39,3807-77-0,O=[N+]([O-])c2ccc1cccc3c1c2CC3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+44,142438-73-1,O=C(OC)C1(OC1(C)(C(O)C(C)C))(C(=O)N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+53,119169-78-7,O=C(O)C4=CC3=CCC1C(CCC2(C)(C(C(=O)NC(C)(C)C)CCC12))C3(C)CC4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+56,106-38-7,c1cc(ccc1C)Br,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+58,482-27-9,O=C2Oc3c(OC)c1occc1c(OC)c3(C=C2),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+75,135-68-2,Nc1ccc(cc1)c2ccc(cc2)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+79,39720-27-9,O=C(Oc1ccc(cc1)CCl)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+81,123-92-2,O=C(OCCC(C)C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+82,36712-34-2,O=[N+]([O-])c1ccc(cc1)c2ccc(cc2[N+](=O)[O-])[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+89,88-88-0,O=[N+]([O-])c1cc(c(c(c1)[N+](=O)[O-])Cl)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+98,77121-90-5,O=C1c5cccc(OC)c5(C(=O)c2c(O)c4c(c(O)c12)CC(O)(C(=O)CO)CC4(OC3OC(C)C(OC)C(N)C3)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+101,96563-10-9,Fc2ccc3c1ccc(F)cc1C(c3(c2))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+102,2508-20-5,O=Nc2ccc3c1ccccc1Cc3(c2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+107,96-99-1,O=C(O)c1ccc(c(c1)[N+](=O)[O-])Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+117,108-70-3,c1c(cc(cc1Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+138,2012-00-2,O=[N+]([O-])c2ccc(OP(=O)(OCC)c1ccccc1)cc2,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+139,102822-04-8,O=C1C(=O)c3ccc(c4ccc2cccc1c2c34)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+119,57-13-6,O=C(N)N,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+120,29916-56-1,[O-][N+]([O-])=C1CCCC1,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+123,98-95-3,O=[N+]([O-])c1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+128,108-89-4,n1ccc(cc1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+129,93780-96-2,OC3c2ccc1cc5ccc6ccccc6(c5(nc1c2C4OC4(C3(O)))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+131,578-06-3,n1c3ccccc3(cc2c1cccc2(N)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+132,42200-33-9,OC(COc1cccc2c1CC(O)C(O)C2)CNC(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+144,161697-03-6,n1c2ccc(N)c(c2(nc(c1C)C))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+152,133831-60-4,O=[N+]([O-])c1ccccc1SSC(=C(Cl)Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+155,6884-87-3,O=C(Nc1ccc(cc1)S(=O)(=O)NC)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+158,123-73-9,O=CC=CC,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+165,116505-02-3,O=C(ON(c1ccc(cc1)Sc2ccccc2)C(=O)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+166,96910-73-5,O=CC1=CC(C)C2CC(C)(C)CC2(O)(C=C1(C=O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+168,50-32-8,c1ccc2c(c1)cc3ccc4cccc5ccc2c3c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+170,212-54-4,c1ccc5c(c1)ccc4ccc3c2ccccc2Cc3c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+173,95-70-5,Nc1ccc(N)c(c1)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+175,6358-53-8,Oc2ccc3ccccc3(c2(N=Nc1cc(OC)ccc1(OC))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+177,96-69-5,Oc1cc(c(cc1C(C)(C)C)Sc2cc(c(O)cc2C)C(C)(C)C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+180,598-55-0,O=C(OC)N,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+183,3018-12-0,N#CC(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+207,2397-76-4,O=C(OCC(C)(C)C)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+210,33089-36-0,O1CCOCCOCCOCCOCCOCCOCC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+212,299-88-7,O=C(OCCC(=C(NC(=O)Cc1cnc(nc1(N))C)C)SC(=O)c2ccccc2)c3ccccc3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+216,75-36-5,O=C(C)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+228,6257-64-3,N(=Nc1ccc(cc1)N(C)C)c2ccc(cc2)N(C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+232,836-37-3,N#CC(=Cc1oc(cc1)[N+](=O)[O-])C(=O)OC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+253,2224-15-9,O(CCOCC1OC1)CC2OC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+264,626-43-7,Nc1cc(cc(c1)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+273,67-71-0,O=S(=O)(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+285,3688-53-7,O=C(N)C(=Cc1oc(cc1)[N+](=O)[O-])c2occc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+288,96839-34-8,O=[N+]([O-])c1cccc(c1CO)[N+](=O)[O-],Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+291,116-66-5,O=[N+]([O-])c1cc2c(c(c1C)[N+](=O)[O-])C(C)(C)CC2(C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+299,115-86-6,O=P(Oc1ccccc1)(Oc2ccccc2)Oc3ccccc3,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+300,58-90-2,Oc1c(cc(c(c1Cl)Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+305,62-50-0,O=S(=O)(OCC)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+308,159394-73-7,N#Cc1ccc(cc1)C=Cc2ccc(cc2)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+313,19600-63-6,O1CC1CCCCC=C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+324,709-49-9,O=[N+]([O-])c1ccc(c(c1)[N+](=O)[O-])I,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+325,316-14-3,c1ccc2cc3c(cc2(c1))c4ccccc4(cc3C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+327,74367-78-5,O=[N+]([O-])c1cc(cc(c1)CCl)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+328,1013-96-3,O=C(O)C=Cc1ccccc1[N+](=O)[O-],Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+329,16430-32-3,O=C(OCc2c3ccccc3(cc1ccccc12))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+340,18234-46-3,O=CC2=CC=C1C2(=COC=C1COC(=O)C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+341,4812-40-2,O=[N+]([O-])c1cnc(n1CCO)CO,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+355,94500-54-6,c1ccc2c(c1)cc3ccc4cccc5cc(c2c3c45)CCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+374,2303-16-4,O=C(N(C(C)C)C(C)C)SCC(=CCl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+363,607-35-2,O=[N+]([O-])c2cccc1cccnc12,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+367,51630-58-1,N#CC(OC(=O)C(c1ccc(cc1)Cl)C(C)C)c3cccc(Oc2ccccc2)c3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+368,13952-84-6,NC(C)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+614,96563-06-3,c1ccc3c(c1)c2cc(c(cc2C3C)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+616,2984-50-1,O1CC1CCCCCC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+736,215-62-3,n1c5ccccc5(cc4c1c2ccccc2c3ccccc34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1066,106589-49-5,n2c5ccc1ccccc1c5(cc4c2ccc3c4(C=CCC3)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1068,76629-87-3,O=C(OC(C)CN(CC)CC)Nc1ccccc1(OCCCCCCC),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1712,27758-60-7,NN(c1ccc(cc1)C)c2ccc(cc2)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+377,141-91-3,O1C(C)CNCC1C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+383,609-31-4,O=[N+]([O-])C(CO)CC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+388,63019-38-5,Oc4cccc1c4(ccc2c3ccccc3(ccc12)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+393,965-52-6,O=C(NN=Cc1oc(cc1)[N+](=O)[O-])c2ccc(O)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+396,24424-99-5,O=C(OC(=O)OC(C)(C)C)OC(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+398,101-18-8,Oc1cccc(c1)Nc2ccccc2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+399,5806-00-8,O=[N+]([O-])c2cccc(N=[N+]([O-])c1cccc(c1C)[N+](=O)[O-])c2C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+405,96563-11-0,Fc2ccc3c1ccccc1C(c3(c2))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+416,3531-19-9,O=[N+]([O-])c1cc(c(N)c(c1)Cl)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+421,99-76-3,O=C(OC)c1ccc(O)cc1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+428,202-03-9,c1ccc2c(c1)cc4cccc3C=Cc2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+432,125239-65-8,n1c3ccc(N)cc3(nc2cc(OC)c(N)cc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+433,3132-64-7,O1CC1CBr,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+437,52101-49-2,O=C(c3oc(c(c1ccccc1)c3(c2ccccc2))[N+](=O)[O-])C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+438,116-06-3,O=C(ON=CC(C)(C)SC)NC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+440,26651-23-0,O=S(=O)(O)c4ccc1ccc2cccc3ccc4(c1c23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+445,100593-23-5,O=Nc1ccc2ccc3ccc(c4ccc1c2c34)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+450,627-18-9,OCCCBr,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+452,230-27-3,n2cccc3ccc1ccccc1c23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+469,313-80-4,n1ccc2ccc4cccc3ccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+483,109460-96-0,N#CC(=Cc1ccccc1Br)C(=O)OC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+489,132335-15-0,c1ccc3c(c1)ccc4c2ccccc2C5NC5(c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+492,109-21-7,O=C(OCCCC)CCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+494,142-96-1,O(CCCC)CCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+498,21738-42-1,O=[N+]([O-])c1cc2NC(CNC(C)C)CCc2(cc1CO),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+506,253-52-1,n1ncc2ccccc2(c1),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+508,83-38-5,O=Cc1c(cccc1Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+546,198-55-0,c1cc2cccc3c5cccc4cccc(c(c1)c23)c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+548,95896-78-9,n1cc(nc3c1cc(c2c3(nc(N)n2C))C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+551,137-05-3,N#CC(=C)C(=O)OC,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+561,20426-12-4,O=C(C=Cc1ccc(O)cc1)c2ccccc2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+565,93673-39-3,Oc5cccc1c5(ccc2c4C=Cc3cccc(cc12)c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+570,5466-84-2,O=C1OC(=O)c2cc(ccc12)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+574,104-55-2,O=CC=Cc1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+590,120209-97-4,n1c3ccc(N)cc3(nc2ccc(N)cc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+583,30747-87-6,O=[N+]([O-])c1ccc2c(c1)c(ns2)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+584,107-31-3,O=COC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+587,112022-07-8,O=C(NCCN(C)C)c2cccc3C(=O)c1ccccc1Sc23,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+595,82-28-0,O=C1c3ccccc3(C(=O)c2c(N)c(ccc12)C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+599,100-14-1,O=[N+]([O-])c1ccc(cc1)CCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+604,759-94-4,O=C(N(CCC)CCC)SCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+620,99-52-5,O=[N+]([O-])c1ccc(N)c(c1)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+623,53473-85-1,n2cc1cc(N)ccc1s2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+624,93-15-2,O(c1ccc(cc1(OC))CC=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+631,109143-16-0,O=[N+]([O-])c1oc2ccc(cc2(c1))N(CCCl)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+636,194-69-4,c1ccc5c(c1)ccc4c5(ccc3ccc2ccccc2c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+640,6264-66-0,O(c1ccc(N)cc1)c2ccc(N)c(N)c2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+650,115453-72-0,O=C(O)C(N)CSC(=C(C(Cl)(Cl)Cl)Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+652,872-50-4,O=C1N(C)CCC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+659,103302-38-1,OC1C=CC=CC1(O),Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+667,830-07-9,O=[N+]([O-])C=Cc1oc(cc1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+668,52-90-4,O=C(O)C(N)CS,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+675,119613-62-6,OC4c2ccc1c5ccccc5(cc(c1c2C3OC3C4(O))CC),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+677,627-30-5,OCCCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+683,52671-42-8,O=Nc2ccc(Oc1ccccc1)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+686,122367-97-9,c3c1c4c(cn1CC2CC2)CC5N(C)CC(C)CC5(c4(cc3Br)),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+707,3198-41-2,n1c3c(N)cccc3(cc2c1CCCC2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+709,114231-14-0,O=C4C=C(c1ccccc1)N(c2cc(OC)cc(OC)c2Cl)C(c3ccc(F)cc3)=C4C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+711,4196-86-5,O=C(OCC(COC(=O)c1ccccc1)(COC(=O)c2ccccc2)COC(=O)c3ccccc3)c4ccccc4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+720,153-78-6,Nc2ccc3c1ccccc1Cc3(c2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+723,78865-83-5,c1c[n+](cn1CSCCCCCCCCCC)C,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+738,501-92-8,Oc1ccc(cc1)CC=C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+740,95860-07-4,O=[N+]([O-])c1ccc(c(c1)NO)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+741,92072-09-8,O=[N+]([O-])c3ccc1c5cccc4ccc(c(c2cccc3(c12))c45)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+746,77784-21-5,O=C2C(=O)N(c4cc1c(OC)c(OC)ccc1c3c5OCOc5(cc2c34))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+759,117929-15-4,O=[N+]([O-])c1cc2ccc3cc(cc4ccc(c1)c2c34)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+779,116374-67-5,O=[N+]([O-])c3ccc(c2nc1ccccc1c(NCCCN(C)C)c23)N(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+784,1503-91-9,O=C(N(O)c1ccc(cc1)Cl)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+785,126572-80-3,O=C(O)C(=C(C(=O)O)Cl)C(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+791,106-46-7,c1cc(ccc1Cl)Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+798,26761-45-5,O=C(OCC1OC1)CCCCCC(C)(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+802,146795-39-3,O=C(Nc1cccc(c1)Cl)c2cc([N+](=O)[O-])sc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+817,24367-94-0,O=C(Nc1ccc(cc1)Cc2ccc(N)cc2)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+824,84850-16-8,O4C5c1ccccc1c3c6ccccc6(c2ccccc2c3C45),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+826,771-03-9,O=C1OC(=CC(O)=C1C(=O)C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+840,2438-88-2,O=[N+]([O-])c1c(c(c(OC)c(c1Cl)Cl)Cl)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+856,91-79-2,n1ccccc1N(Cc2ccsc2)CCN(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+863,63104-32-5,c2cc3ccc4cc1cccc(c1c5ccc(c2)c3c45)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+867,6201-87-2,O=C(O)c1cc(N)cc(c1(O))S(=O)(=O)O,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+881,7473-93-0,O=C(C=Cc1ccccc1[N+](=O)[O-])c2ccccc2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+890,148193-32-2,O=[N+]([O-])c1ccc2c(nsc2(c1))OC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+894,700-00-5,n2cnc1c(ncn1C)c2N,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+895,933-78-8,Oc1cc(cc(c1Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+904,135086-91-8,O=C2c3[nH]c4ccccc4(c3(N=NN2(N=Cc1ccc(cc1)[N+](=O)[O-]))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+919,7156-07-2,c2cc1cccc3c1c(c2)C4NC34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+921,108283-47-2,[N-]=[N+]=NCC(N)C(=O)OC(C)(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+922,109143-17-1,O=[N+]([O-])c1oc2cc(ccc2(c1))N(CCCl)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+925,833-50-1,n1c(oc2ccccc12)c3ccccc3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+931,55268-74-1,O=C4N2CCc1ccccc1C2CN(C(=O)C3CCCCC3)C4,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+932,61064-66-2,c1ccc3c(c1)c2ccc(cc2C3)NCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+936,121-44-8,N(CC)(CC)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+940,23703-14-2,O1CC1Cc2ccc(cc2)c3ccccc3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+946,109-83-1,OCCNC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+951,99593-25-6,O=C(c1ccccc1Cl)c2cc(ccc2n3nc(nc3CNC(=O)CN)C(=O)N(C)C)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+952,575-44-0,Oc1ccc2c(O)cccc2(c1),Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+954,37393-11-6,O=C3c5ccccc5(C(=O)c4c(O)c(c(OC2OC(COC1OCC(O)C(O)C1(O))C(O)C(O)C2(O))cc34)CO),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+959,98151-92-9,Nc1ccc2ccc4c5ccccc5(cc3ccc1c2c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+960,86451-37-8,O=NN(C)CC(O)CO,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+966,97166-13-7,CC(C(CBr)Br)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+970,21490-63-1,O1C(C)C1C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+985,33213-65-9,O=S1OCC2C(CO1)C3(C(=C(C2(C3(Cl)Cl)Cl)Cl)Cl)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+989,80-39-7,O=S(=O)(NCC)c1ccc(cc1)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+993,91687-67-1,O=C(NCc1ccc(cc1)Cl)C(C)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+997,30039-44-2,O=C(OCc1ccc(cc1)[N+](=O)[O-])CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+998,134-72-5,OC(c1ccccc1)C(NC)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1000,1918-00-9,O=C(O)c1c(OC)c(ccc1Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1012,81-55-0,O=C1c3c(O)ccc(c3(C(=O)c2c(ccc(O)c12)[N+](=O)[O-]))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1017,118174-26-8,O=C(OC(C)(C)C)NN=Cc2c[n+]([O-])c1ccccc1[n+]2([O-]),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1018,2508-23-8,O=C(N(O)c1ccc2ccccc2(c1))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1024,124-09-4,NCCCCCCN,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1038,113163-21-6,OC2C=Cc1c3ncccc3(ccc1C2(O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1045,3722-54-1,O=C1c3cc(OC)ccc3(Oc2cc(OC)cc(OC)c12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1056,75-69-4,FC(Cl)(Cl)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1075,824-94-2,O(c1ccc(cc1)CCl)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1079,2244-16-8,O=C1C(=CCC(C(=C)C)C1)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1086,18810-04-3,O=C(O)C(N)CNCCCCC(N)C(=O)O,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1087,394-69-4,Fc1cccc2ncccc12,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1089,1694-20-8,O=[N+]([O-])c2ccc(C=Cc1ccccc1)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1090,20702-77-6,O=C(c3c(O)cc(OC2OC(CO)C(O)C(O)C2(OC1OC(C)C(O)C(O)C1(O)))cc3(O))CCc4ccc(OC)c(O)c4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1095,80657-17-6,O=C4C=C2C(=C1C=CC3(C)(C(O)CCC3(C1CC2)))CC4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1096,59-67-6,O=C(O)c1cnccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1100,73-24-5,n1cnc2[nH]cnc2(c1N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1106,78-81-9,NCC(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1107,101901-07-9,O=C(O)CC2(OCCc1c3ccc(O)c(c3([nH]c12))CC)CC,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1108,623-15-4,O=C(C=Cc1occc1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1126,29852-26-4,c1ccc5c(c1)cc2c4c5(ccc3cccc(cc2CCl)c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1113,42978-43-8,O=C(OCc4c5ccccc5(c1ccc2cccc3ccc4(c1c23)))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1121,16051-77-7,O=[N+]([O-])OC1COC2C(O)COC12,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1124,95741-57-4,c1ccc2cc3c(cc2(c1))c5cccc4cc(cc3c45)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1125,23452-05-3,O=C2Oc1cc(O)cc(c1c3cc(OC)cc(O)c23)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1132,109-78-4,N#CCCO,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1137,152-20-5,O=P(OC)(OC)SC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1138,3648-20-2,O=C(OCCCCCCCCCCC)c1ccccc1(C(=O)OCCCCCCCCCCC),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1141,96-23-1,OC(CCl)CCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1142,74014-51-0,O=CCC3CC(C)C(O)C=CC=CCC(OC(=O)CC(O)C(OC)C3(OC2OC(C)C(OC1OC(C)C(OC(=O)CCC)C(OC(=O)CC)(C)C1)C(N(C)C)C2(O)))C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1145,92-67-1,Nc1ccc(cc1)c2ccccc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1146,874-42-0,O=Cc1ccc(cc1Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1161,80-15-9,OOC(c1ccccc1)(C)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1162,150-60-7,c1ccc(cc1)CSSCc2ccccc2,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1165,4332-51-8,c1ccc(cc1)CSCCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1166,2051-10-7,O=C1C(=O)c3c4ccccc4(ccc3(c2ccccc12)),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1169,55256-53-6,O=C1c5c(O)ccc(c5(Oc2cc3OC4OC=CC4(O)(c3(c(O)c12))))CCC(O)(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1170,461-58-5,N#CNC(=N)N,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1172,78-51-3,O=P(OCCOCCCC)(OCCOCCCC)OCCOCCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1188,110-13-4,O=C(C)CCC(=O)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1196,148193-33-3,n2c(OC)c1ccc(N)cc1s2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1197,75-09-2,C(Cl)Cl,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1198,577-71-9,O=[N+]([O-])c1ccc(O)cc1[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1203,96563-08-5,c1ccc3c(c1)c2c(cccc2C3C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1208,135086-92-9,O=C2c3[nH]c4ccccc4(c3(N=NN2(N=Cc1ccccc1))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1219,15176-29-1,O=C1NC(=O)N(C=C1CC)C2OC(CO)C(O)C2,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1221,89-83-8,Oc1cc(ccc1C(C)C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1223,129018-59-3,O=[N+]([O-])c2nc1ncc(cc1n2C)c3ccccc3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1241,1806-29-7,Oc1ccccc1c2ccccc2(O),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1244,811-97-2,FCC(F)(F)F,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1246,113393-59-2,OCC2=CC=C1C2(=CC(=CC=C1C)C(=C)C),Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1267,91-93-0,O=C=Nc1ccc(cc1(OC))c2ccc(N=C=O)c(OC)c2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1269,96-48-0,O=C1OCCC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1282,95-68-1,Nc1ccc(cc1C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1285,622-96-8,c1cc(ccc1C)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1290,1466-88-2,O=CC=Cc1ccccc1[N+](=O)[O-],Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1302,2687-41-4,O=C(Nc2ccc(Oc1ccc(N)cc1)cc2)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1306,159092-80-5,O=[N+]([O-])c1ccc3c(c1)c(cc2cccc(c23)[N+](=O)[O-])[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1308,28657-80-9,O=C(O)C1=NN(c2cc3OCOc3(cc2(C1(=O))))CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1321,50935-04-1,O=C1c5cccc(O)c5(C(=O)c2c(O)c4c(c(O)c12)CC(O)(C(=O)C)CC4(OC3OC(C)C(O)C(N)C3)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1337,91-63-4,n1c2ccccc2(ccc1C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1340,105-13-5,OCc1ccc(OC)cc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1342,1711-06-4,O=C(c1cccc(c1)C)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1344,120-71-8,O(c1ccc(cc1(N))C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1347,551-06-4,C(=Nc1cccc2ccccc12)=S,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1350,5862-77-1,O(c1ccc(N)cc1(N))CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1353,108354-48-9,n1ccnc3c1cc(c2c3(nc(N)n2C))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1365,70021-99-7,O=[N+]([O-])c5ccc2ccc3cc1ccccc1c4ccc5(c2c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1367,14191-22-1,O=[N+]([O-])c1ccc3c(c1)[nH]c2ccccc23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1377,127128-50-1,OCC(O)COC=CC=CC=CC=CCC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1382,120812-50-2,O=[N+]([O-])c5cc(c3c2c5(ccc1cccc(c12)c4c3CCCC4))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1384,523-47-7,C2=C(C)CC1C(C(=CCC1(C(C)C))C)C2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1390,104-03-0,O=C(O)Cc1ccc(cc1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1393,26541-56-0,O=C(ON(c1ccc(cc1)c2ccccc2)C(=O)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1396,21919-05-1,O=C(N)c1cc(c(cc1[N+](=O)[O-])[N+](=O)[O-])N2CC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1402,18699-02-0,O=C(O)Cc1ccc(cc1)NC(=O)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1406,67-20-9,O=C2NC(=O)CN2(N=Cc1oc(cc1)[N+](=O)[O-]),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1417,55-63-0,O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-],Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1427,90421-79-7,n3c(OCC1OC1)c2ccccc2s3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1428,35077-51-1,O=C(N(c2ccc(N=Nc1ccc(cc1)N(C(=O)C)C)cc2)C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1436,7665-72-7,O1CC1COC(C)(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1437,74339-98-3,OC6C=Cc2c(cc4c5ccccc5(cc3c1ccccc1c2c34))C6(O),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1438,117467-28-4,O=C(OCOC(=O)C(C)(C)C)C4=C(C=Cc1c(ncs1)C)CSC3N4(C(=O)C3(NC(=O)C(=NOC)c2nc(N)sc2)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1440,6281-32-9,OCc2ccnc1ccccc12,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1441,580-16-5,Oc1ccc2ncccc2(c1),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1445,74-96-4,CCBr,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1447,57835-92-4,O=[N+]([O-])c4cc3cccc2ccc1cccc4(c1c23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1448,61396-61-0,O1CC1CCc2ccc(cc2)c3ccccc3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1451,123-72-8,O=CCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1452,2873-97-4,O=C(C=C)NC(C)(C)CC(=O)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1465,610-30-0,O=C(O)c1ccc(cc1[N+](=O)[O-])[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1466,80-52-4,NC(C)(C)C1CCC(N)(C)CC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1474,556-52-5,OCC1OC1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1475,4548-53-2,O=S(=O)(O)c3cc(N=Nc1cc(c(cc1C)C)S(=O)(=O)O)c(O)c2ccccc23,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1479,73-31-4,O=C(NCCc2c[nH]c1ccc(OC)cc12)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1480,139-40-2,n1c(nc(nc1NC(C)C)Cl)NC(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1482,99-55-8,O=[N+]([O-])c1ccc(c(N)c1)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1488,585-07-9,O=C(OC(C)(C)C)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1512,28322-02-3,O=C(Nc1cccc3c1c2ccccc2C3)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1516,821-95-4,C=CCCCCCCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1496,33399-00-7,O=P(OC(=CBr)c1ccc(cc1Cl)Cl)(OCC)OCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1498,84174-20-9,O=NN(C)Cc1ccc(OC)cc1,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1500,13071-79-9,O(CC)P(OCC)(=S)SCSC(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1502,321-60-8,Fc1ccccc1c2ccccc2,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1503,91-58-7,c1ccc2cc(ccc2(c1))Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1508,97509-27-8,O=[N+]([O-])c2c3ccccc3(cc1c2(C=CC(O)C1(O))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1509,5355-16-8,n1cc(c(nc1N)N)Cc2ccc(OC)c(OC)c2,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1517,5694-00-8,O=C(N)C1OC1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1532,1148-79-4,n1ccccc1c2nc(ccc2)c3ncccc3,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1539,1520-21-4,C=Cc1ccc(N)cc1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1559,4651-67-6,O=C(O)CCC(C)C3CCC2C4C(=O)CC1CC(O)CCC1(C)C4(CCC23(C)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1561,98644-23-6,O=S(=O)(O)OCc3c1ccccc1c(c2c4ccccc4(ccc23))CO,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1563,107534-94-1,O=C(OC2CCC3C4CC=C1NC(=O)CCC1(C)C4(CCC23(C)))CCCc5ccc(cc5)N(CCCl)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1543,67411-86-3,OCc4cc1ccccc1c3ccc2ccccc2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1554,155379-83-2,O=[N+]([O-])c1c(N)c(cc(N)c1C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1556,518-83-2,O=C1c3ccccc3(C(=O)c2c(O)cc(O)cc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1558,634-90-2,c1c(cc(c(c1Cl)Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1568,548-93-6,O=C(O)c1cccc(O)c1(N),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1570,126-73-8,O=P(OCCCC)(OCCCC)OCCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1571,542-56-3,O=NOCC(C)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1576,105837-00-1,O=[N+]([O-])c1ccc2nc3ccc(cc3(nc2(c1)))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1585,109-55-7,NCCCN(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1593,54779-53-2,n1ccc3c(c1)c(c2c4cc(N)ccc4([nH]c2c3C))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1596,603-34-9,c1ccc(cc1)N(c2ccccc2)c3ccccc3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1608,2892-51-5,O=C1C(=O)C(O)=C1(O),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1614,65954-42-9,OC(c4ccc1ccc2cccc3ccc4(c1c23))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1623,7300-59-6,O=C(O)C(N)CCC(=O)Nc1ccc(cc1)[N+](=O)[O-],Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1635,108-09-8,NC(C)CC(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1637,3375-84-6,O=C1OC(C)CN1CC(O)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1640,88-44-8,O=S(=O)(O)c1cc(ccc1(N))C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1641,5343-65-7,O=C(Nc1ccc(cc1)C)CBr,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1647,64091-91-4,O=NN(C)CCCC(=O)c1cnccc1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1651,759-73-9,O=NN(C(=O)N)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1654,2719-05-3,O=C(Nc1ccc(cc1)Cc2ccc(cc2)NC(=O)C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1655,620-22-4,N#Cc1cccc(c1)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1658,13394-86-0,Nc1ccc(cc1C)c2ccccc2C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1669,108-45-2,Nc1cccc(N)c1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1671,56980-93-9,O=C(Nc1ccc(OCC(O)CNC(C)(C)C)c(c1)C(=O)C)N(CC)CC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1672,91575-28-9,O=C(Nc1ccc(cc1Cl)Cc2ccc(N)c(c2)Cl)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1678,83053-57-0,O=C3c2cc(OCC)c1c4ccccc4(ccc1c2CC3),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1683,96-91-3,O=[N+]([O-])c1cc(N)c(O)c(c1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1693,67-21-0,O=C(O)C(N)CCSCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1700,529-19-1,N#Cc1ccccc1C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1706,5221-17-0,O=CC(CBr)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1708,92-69-3,Oc1ccc(cc1)c2ccccc2,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1710,122-57-6,O=C(C=Cc1ccccc1)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1718,606-35-9,O=[N+]([O-])c1cc(c(OC)c(c1)[N+](=O)[O-])[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1722,583-78-8,Oc1cc(ccc1Cl)Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1728,13177-31-6,O=[N+]([O-])c4cccc3c2cccc1cccc(c12)c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1731,112965-21-6,OC(C=CC(C)C3CCC2C(=CC=C1C(=C)C(O)CC(O)C1)CCCC23(C))C4CC4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1733,5910-89-4,n1ccnc(c1C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1735,604-75-1,O=C1Nc3ccc(cc3(C(=NC1(O))c2ccccc2))Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1739,23491-44-3,Oc1ccc(cc1)c2nc3cc(ccc3([nH]2))c4nc5cc(ccc5([nH]4))N6CCN(C)CC6,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1741,57775-29-8,OC(COc2cccc3[nH]c1ccccc1c23)CNC(C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1744,64431-93-2,N1=C(NCC1)c2ccc(cc2)c3cc4ccc(cc4([nH]3))C5=NCCN5,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1747,482-44-0,O=C1Oc2c(OCC=C(C)C)c3occc3(cc2(C=C1)),Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1749,478-08-0,O=C1c3ccccc3(C(=O)c2c(O)c(c(O)cc12)CO),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1752,120-12-7,c1ccc2cc3ccccc3(cc2(c1)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1753,1421-63-2,O=C(c1cc(O)c(O)cc1(O))CCC,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1754,155798-37-1,n3c1ccccc1c(NCCCCCOc2ccc(cc2)N(CC)CCCl)c4ccccc34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1762,93535-04-7,Nc1ccc(cc1)C=Cc2cccc(c2)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1764,535-11-5,O=C(OCC)C(C)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1771,3029-19-4,O=Cc1ccc2ccc3cccc4ccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1777,90243-66-6,O=C(N)C3N(C(=O)C(NC(=O)C1NC(=O)C(C)SC1)Cc2nc[nH]c2)CCC3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1781,25155-23-1,O=P(Oc1ccc(cc1C)C)(Oc2ccc(cc2C)C)Oc3ccc(cc3C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1805,91-59-8,Nc1ccc2ccccc2(c1),Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1806,121-47-1,O=S(=O)(O)c1cccc(N)c1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1796,839-90-7,O=C1N(C(=O)N(C(=O)N1CCO)CCO)CCO,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1808,4648-33-3,O=[N+]([O-])c2ccc(C=Cc1ccc(OC)cc1)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1810,645-49-8,c1ccc(cc1)C=Cc2ccccc2,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1812,85-44-9,O=C1OC(=O)c2ccccc12,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1814,114-26-1,O=C(Oc1ccccc1(OC(C)C))NC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1819,109-86-4,OCCOC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1822,205-99-2,c1ccc3c(c1)cc5c2ccccc2c4cccc3c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1823,107-05-1,C=CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1827,918-00-3,O=C(C)C(Cl)(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1831,524-89-0,n2c1occc1c(OC)c3cc4OCOc4(cc23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1832,105596-43-8,O=[N+]([O-])c3ccc2ccc1cccc4c1c2c3C5OC45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1833,57564-91-7,O=NSCC(NC(=O)CCC(N)C(=O)O)C(=O)NCC(=O)O,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1835,2516-93-0,O=C(O)COCCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1836,27093-62-5,c1ccc2c(c1)ccc4c2c3c5ccccc5(ccc3n4C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1841,39081-15-7,Oc2cccc3cc4c5ccccc5(c1ccccc1c4(cc23)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1845,136-35-6,N(=Nc1ccccc1)Nc2ccccc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1854,24191-98-8,OC5c4cc1OCOc1c3c2ccccc2CC(c34)N(C)C5,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1874,121-17-5,O=[N+]([O-])c1cc(ccc1Cl)C(F)(F)F,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1882,1805-02-3,n1c(N)n(c2ccc(OC)cc12)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1884,486-25-9,O=C2c1ccccc1c3ccccc23,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2117,127045-41-4,O=C(O)C2=CN1c3c(OCC1C)c(c(F)cc3(C2(=O)))C4(N)(CC4),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2905,1204-72-4,O=[N+]([O-])c1cc2ccccc2(cc1C),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1898,134-09-8,O=C(OC1CC(C)CCC1C(C)C)c2ccccc2(N),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1905,88741-68-8,O=C1c4ccc(OC)cc4(c2nccc3cc(OC)c(OC)c1c23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1907,19686-73-8,OC(C)CBr,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1908,2213-00-5,O=CC2=CC1CC(C)(C)CC1C3(C(=O)OC)(CC23(C=O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1909,144280-50-2,O=[N+]([O-])c2ccc3oc1ccc(cc1c3(c2))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1913,87-29-6,O=C(OCC=Cc1ccccc1)c2ccccc2(N),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1916,15980-15-1,O1CCSCC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1926,7195-43-9,O=C(OCC1OC1)c2cccc(c2)C(=O)OCC3OC3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1928,13088-34-1,O=C1OC(C=C1)=C(Cl)Cl,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1930,77314-23-9,ON=C2Nc1c3cccnc3(ccc1N2C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1936,102791-33-3,O=C1Oc3ccc(c4ccc2cccc1c2c34)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1938,89-25-8,O=C1N(N=C(C)C1)c2ccccc2,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1946,17526-17-9,O=C1c3ccccc3(C(=O)c2c(O)c(c(O)cc12)COCC),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1948,5598-13-0,n1c(OP(OC)(OC)=S)c(cc(c1Cl)Cl)Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1952,51-18-3,n1c(nc(nc1N2CC2)N3CC3)N4CC4,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1955,123-68-2,O=C(OCC=C)CCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1960,3351-31-3,c1ccc4c(c1)ccc3c4(ccc2ccc(cc23)C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1965,34256-82-1,O=C(N(c1c(cccc1CC)C)COCC)CCl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1966,2210-79-9,O(c1ccccc1C)CC2OC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1971,95-76-1,Nc1ccc(c(c1)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1975,53693-66-6,c1ccc(cc1)c3ccc(c(c3(c2ccccc2))N(CC)CC)N(CC)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+1982,56980-94-0,O=C(c1cc(N)ccc1(OCC(O)CNC(C)(C)C))C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1991,78-84-2,O=CC(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2015,33100-27-5,O1CCOCCOCCOCCOCC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+1995,934-73-6,O=S(c1ccc(cc1)Cl)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+1997,76-03-9,O=C(O)C(Cl)(Cl)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2003,120812-52-4,O=[N+]([O-])c3ccc2ccc1ccc(c4c1c2c3c5c4CCCC5)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2004,2540-82-1,O=CN(C(=O)CSP(OC)(OC)=S)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2018,85068-73-1,O=[N+]([O-])OCCN([N+](=O)[O-])CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2022,334-48-5,O=C(O)CCCCCCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2031,111070-55-4,O=[N+]([O-])c2oc(C=Nn1nccc1)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2032,42135-22-8,O=C2c1ccccc1c3cc(ccc23)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2033,2940-63-8,O=C1C=C(OC)C=C(C1(=O))C(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2035,78628-28-1,O=C(OCC(=O)NCCCOc1cccc(c1)CN2CCCCC2)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2036,95-46-5,c1ccc(c(c1)C)Br,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2037,16757-81-6,c1ccc2c(c1)cc3ccc5c4c(ccc2c34)ccc5C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2046,54854-14-7,O=C(OCC)c1ccccc1C3=C4C=C(C(=NCC)C=C4(Oc2cc(NCC)c(cc23)C))C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2050,111901-41-8,OC4c2cc(c1c5ccccc5(ccc1c2C3OC3C4(O)))C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2051,5845-67-0,O=C1NC(C(=O)NC1)CC(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2060,213-46-7,c1ccc5c(c1)ccc3c5(ccc2c4ccccc4(ccc23)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2068,6358-09-4,O=[N+]([O-])c1cc(N)c(O)c(c1)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2071,552-30-7,O=C(O)c1ccc2C(=O)OC(=O)c2(c1),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2073,91182-09-1,O=C(C=Cc1oc(cc1)[N+](=O)[O-])NCCCC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2075,110-17-8,O=C(O)C=CC(=O)O,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2081,66-97-7,O=C1Oc2cc3occc3(cc2(C=C1)),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2084,105-76-0,O=C(OCCCC)C=CC(=O)OCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2085,17557-23-2,O(CC1OC1)CC(C)(C)COCC2OC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2089,99-57-0,O=[N+]([O-])c1ccc(O)c(N)c1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2090,540-73-8,N(NC)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2091,363-03-1,O=C1C=CC(=O)C(=C1)c2ccccc2,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2097,82-50-8,O=C1c3cccc(c3(C(=O)c2cccc(c12)[N+](=O)[O-]))S(=O)(=O)O,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2100,84174-22-1,O=NN(C)Cc1ccc(cc1)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2102,89873-24-5,[N-]=[N+]=Nc1ccc(cc1)Nc3c4ccccc4(nc2ccccc23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2107,118745-15-6,O=Nc2c1ccccc1c3ccc5cccc4ccc2c3c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2108,94730-48-0,N#CC1N(CCOC1)C6CC(OC3c2c(O)c4C(=O)c5c(OC)cccc5(C(=O)c4(c(O)c2CC(O)(C(=O)CO)C3)))OC(C)C6(O),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2123,621-64-7,O=NN(CCC)CCC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2140,67-47-0,O=Cc1oc(cc1)CO,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2145,93673-31-5,O4C5c3cccc2cc1c6ccccc6(ccc1c(c23)C45),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2148,32954-58-8,O=C(c1cocc1)CCC(O)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2149,15254-64-5,c1ccc3c(c1)ccc2cc(cc(c23)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2151,24231-46-7,O=S(=O)(O)c5cc(ccc5(C=Cc1ccc(cc1S(=O)(=O)O)Nc2nc(nc(n2)N3CCOCC3)Nc4ccccc4))Nc6nc(nc(n6)N7CCOCC7)Nc8ccccc8,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2152,3096-62-6,ONc1cccc(c1C)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2163,41267-76-9,O=C4Oc1c(cc3c2c1CCCN2CCC3)C(=C4)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2174,100-25-4,O=[N+]([O-])c1ccc(cc1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2179,3958-57-4,O=[N+]([O-])c1cccc(c1)CBr,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2181,736-31-2,O=[N+]([O-])c2ccc(C=Cc1ccc(cc1)[N+](=O)[O-])cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2182,10312-83-1,O=CCOC,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2184,6164-98-3,N(=CN(C)C)c1ccc(cc1C)Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2193,107673-66-5,O=[N+]([O-])C4=Cc2cc1cc5ccccc5(cc1c3cccc4(c23)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2194,185-70-6,O1CC12(CCCCC2),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2196,109-57-9,C=CCNC(N)=S,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2202,98-83-9,C=C(c1ccccc1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2216,100-61-8,c1ccc(cc1)NC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2217,3778-73-2,O=P1(OCCCN1(CCCl))(NCCCl),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2231,107-12-0,N#CCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2233,79-29-8,CC(C)C(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2236,53340-16-2,N1=C4C=CC(C=C4(Oc2cc(N)c3ccccc3(c12)))=[N+](CC)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2254,132-86-5,Oc1cc(O)c2ccccc2(c1),Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2257,49562-28-9,O=C(c1ccc(OC(C(=O)OC(C)C)(C)C)cc1)c2ccc(cc2)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2270,470-90-6,O=P(OC(=CCl)c1ccc(cc1Cl)Cl)(OCC)OCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2278,72-48-0,O=C1c3ccccc3(C(=O)c2c(O)c(O)ccc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2285,25956-17-6,O=S(=O)(O)c2ccc3c(N=Nc1cc(c(cc1(OC))S(=O)(=O)O)C)c(O)ccc3(c2),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2292,106-87-6,O1CC1C2CCC3OC3(C2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2295,60564-31-0,O=[N+]([O-])c2cc3[nH]c1ccccc1c3(cc2(N)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2301,832-69-9,c1ccc3c(c1)ccc2c3(cccc2C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2303,122033-85-6,OC4c2ccc1c(c(ccc1C)C)c2C3OC3C4(O),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2309,91134-58-6,O=C(OCC(C)C)C=Cc1oc(cc1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2327,621-95-4,Nc1ccc(cc1)CCc2ccc(N)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2329,962-58-3,O=P(Oc1nc(nc(c1)C)C(C)C)(OCC)OCC,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2330,90147-19-6,O=C(OCCCC)C=Cc1oc(cc1)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2333,141691-42-1,N#Cc1ccc2nc(N)n(c2(c1))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2334,142457-04-3,O=C(OC)C12(OC2(C)(C(O)(NC1(=O))C(C)C)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2336,580-19-8,n1cccc2ccc(N)cc12,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2337,2186-24-5,O(c1ccc(cc1)C)CC2OC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2341,3083-25-8,O1CC1CC(Cl)(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2351,611-13-2,O=C(OC)c1occc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2367,131432-92-3,O=C(NCc1ccccc1)C(C)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2369,135086-96-3,O=C(Nc4ccc(C=NN1N=Nc2c3ccccc3([nH]c2(C1(=O))))cc4)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2355,1758-68-5,O=C1c3ccccc3(C(=O)c2c(N)c(N)ccc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2358,146795-31-5,O=C(Nc1ccccc1C)c2cc([N+](=O)[O-])sc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2374,25155-25-3,O(OC(C)(C)C)C(c1cccc(c1)C(OOC(C)(C)C)(C)C)(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2379,623-25-6,c1cc(ccc1CCl)CCl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2381,33813-20-6,N2=C1N(C(=S)SS1)CC2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2386,36164-42-8,O=C(Nc1ccc2cccnc2(c1))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2389,157730-35-3,n2ccc3cc1c(nc(N)n1C)nc3(c2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2393,13909-09-6,O=NN(C(=O)NC1CCC(C)CC1)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2395,133591-35-2,O=[N+]([O-])c1ccc2[nH]c3c(cc(c(c3(c2(c1)))C)[N+](=O)[O-])C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2396,81340-58-1,O=[N+]([O-])c5ccc2c1ccccc1c4cccc3ccc5(c2c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2415,1122-58-3,n1ccc(cc1)N(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2416,3096-63-7,ONc1c(cccc1C)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2418,15403-45-9,O=C(OC)c1cc(ccc1(N))c2ccc(N)c(c2)C(=O)OC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2401,3694-52-8,O=[N+]([O-])c1cccc(N)c1(N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2406,6691-68-5,O=[N+]([O-])c3cccc2c3(nc1ccccc1c2(NCCCN(C)C)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2410,16301-26-1,[O-][N+](=NCC)CC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2472,622-51-5,O=C(N)Nc1ccc(cc1)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2478,80830-42-8,O=C(O)C2N(C(=O)CCS)C(c1ccccc1(O))SC2,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2479,75-55-8,N1CC1C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2427,89-57-6,O=C(O)c1cc(N)ccc1(O),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2430,14097-03-1,O=[N+]([O-])c2ccc(N=Nc1ccc(cc1)N(CC)CC[N+](C)(C)C)c(c2)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2431,5522-43-0,O=[N+]([O-])c4ccc1ccc2cccc3ccc4(c1c23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2442,3025-52-3,O=[N+]([O-])c2ccc(N=Nc1ccc(cc1)N(CC)CC)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2447,112309-61-2,O=C1OC(O)C(=C1Cl)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2454,2393-18-2,O=C(O)C=Cc1ccc(N)cc1,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2460,4947-27-7,O=C3c4ccccc4(C(=O)c2c3(ccc(c2(Nc1ccccc1))C)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2462,118-75-2,O=C1C(=C(C(=O)C(=C1Cl)Cl)Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2466,138835-33-3,O=[N+]([O-])c3ccc1ccc5c2c(ccc3(c12))c4ccccc4[n+]5([O-]),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2480,98046-73-2,ONc3cnc2c(nc1ccccn12)c3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2488,25081-31-6,O=NN(CC(=O)O)CC(=O)O,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2501,5598-15-2,O=P(Oc1nc(c(cc1Cl)Cl)Cl)(OCC)OCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2508,87679-37-6,O=C(O)C2N(C(=O)C(NC(C(=O)OCC)CCc1ccccc1)C)C3CCCCC3(C2),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2516,111-94-4,N#CCCNCCC#N,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2520,142-84-7,N(CCC)CCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2543,145439-00-5,O=NN(C(=O)c1c(ncn1C)N(C(=O)OC(C)(C)C)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2544,591-27-5,Oc1cccc(N)c1,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2546,89-63-4,O=[N+]([O-])c1cc(ccc1(N))Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2531,3344-12-5,O=C(OCC)CC(C(=O)OCC)SP(=O)(OC)SC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2539,620-25-7,ONc1cccc(c1)C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2549,83-26-1,O=C2c1ccccc1C(=O)C2C(=O)C(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2551,144-80-9,O=C(NS(=O)(=O)c1ccc(N)cc1)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2555,1649-18-9,O=C(c1ccc(F)cc1)CCCN3CCN(c2ncccc2)CC3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2559,4539-51-9,Nc1ccc3c(c1)[nH]c2ccccc23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2575,119-61-9,O=C(c1ccccc1)c2ccccc2,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2579,79660-72-3,O=C(O)C1=CN(c2c(F)c(c(F)cc2(C1(=O)))N3CCN(C)CC3)CCF,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2581,142438-57-1,O=C(OC)C12(OC2(C)(C(O)(OC1(=O))C)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2584,88-17-5,FC(F)(F)c1ccccc1(N),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2590,1072-43-1,CC1CS1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2591,4560-58-1,O=C(O)CCC(C)C2CCC3C4CCC1CC(O)CCC1(C)C4(CC(=O)C23(C)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2594,97461-41-1,O=C(C=Cc1oc(cc1)[N+](=O)[O-])NCC(C)(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2595,112653-29-9,OCC(NC1CC(O)(CO)C(O)C(O)C1(O))CO,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2597,76186-07-7,O=S(=O)(O)c7cc8ccc(N=Nc1ccc(N)cc1(N))cc8(c(O)c7(N=Nc2ccc(cc2)Nc6ccc(N=Nc4c(O)c5cc(N=Nc3ccc(N)cc3(N))ccc5(cc4S(=O)(=O)O))cc6S(=O)(=O)O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2617,99803-60-8,O=Nc1ccc(OP(OC)(OC)=S)cc1C,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2619,2082-81-7,O=C(OCCCCOC(=O)C(=C)C)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2629,108-18-9,N(C(C)C)C(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2638,2451-62-9,O=C1N(C(=O)N(C(=O)N1CC2OC2)CC3OC3)CC4OC4,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2639,88-53-9,O=S(=O)(O)c1cc(c(cc1(N))C)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2645,75607-61-3,O=C(O)CNC(=O)C(NC(=O)CCC(N)C(=O)O)CSCCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2651,106-58-1,N1(C)CCN(C)CC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2653,159092-79-2,O=[N+]([O-])c1ccc2c3cccc(c3(cc(c2(c1))[N+](=O)[O-]))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2658,114460-40-1,Oc2ccc3ccc4c(cc1[nH]c(nc1c4(c3(c2)))C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2664,491-64-5,O=C1c3cc(OC)ccc3(Oc2cc(O)cc(O)c12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2665,1606-67-3,Nc1ccc2ccc3cccc4ccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2669,83996-50-3,O=C(OCC)C(CC(=O)C(NC(=O)C(N)Cc1ccc(F)cc1)Cc2cccc(c2)N(CCCl)CCCl)CCSC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2673,83-32-9,c2cc1cccc3c1c(c2)CC3,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2674,104-98-3,O=C(O)C=Cc1nc[nH]c1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2675,10048-13-2,O=C1c5c(O)cccc5(Oc3c1c(OC)cc2OC4OC=CC4(c23)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2685,479-27-6,Nc1cccc2cccc(N)c12,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2686,201-06-9,c1ccc2c(c1)cc4C=Cc3cccc2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2690,97-99-4,OCC1OCCC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2694,33389-33-2,O=C1NC(Nc2ccccc12)c3ccc([N+](=O)[O-])s3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2695,7085-55-4,O=C3C(OC2OC(CO)C(OC1OC(C)C(O)C(O)C1(O))C(O)C2(O))=C(Oc4cc(OCCO)cc(O)c34)c5ccc(OCCO)c(OCCO)c5,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2696,84434-45-7,N(=Nc1ccccc1C)c2ccc(N)c(c2(N))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2708,157730-36-4,n1ccc2nc3nc(N)n(c3(cc2(c1)))C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2716,105500-28-5,OC4c3ccc2nc6ccc1ccccc1c6(cc2c3C5OC5(C4(O))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2721,125486-24-0,n3c1ccccc1c(NCCCc2ccc(cc2)N(CC)CCCl)c4ccccc34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2730,17024-19-0,O=[N+]([O-])c2ccc3ccc1ccccc1c3(c2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2731,56-53-1,Oc1ccc(cc1)C(=C(c2ccc(O)cc2)CC)CC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2737,93673-33-7,O5C6c4cccc3cc2ccc1ccccc1c2c(c34)C56,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2740,25413-02-9,O=C(OCC)CNC(=O)C(C)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2744,22506-53-2,O=[N+]([O-])c3ccc4c1cccc2c1c(ccc2[N+](=O)[O-])c4(c3),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2750,25870-67-1,O=C(C=Cc1ccc(cc1)[N+](=O)[O-])c2ccc(cc2)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2754,103748-25-0,n1c(N)n(c2ccc(cc12)Cl)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2756,85-83-6,Oc3ccc4ccccc4(c3(N=Nc2ccc(N=Nc1ccccc1C)cc2C)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2761,645-45-4,O=C(CCc1ccccc1)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2765,630-17-1,CC(C)(C)CBr,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2779,100-27-6,O=[N+]([O-])c1ccc(cc1)CCO,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2784,20846-00-8,[O-][N+]([O-])=C(C)C,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2786,20589-85-9,C(=C(C(Cl)Cl)Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2790,68498-25-9,OCC4OC(n2cnc1c3nccn3(cnc12))CC4(O),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2792,136112-71-5,O=[N+]([O-])c1ccc(cc1)c3nc2c(ncnc2n3c4ccc(cc4)[N+](=O)[O-])N,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2793,64810-99-7,O=S(=O)(O)Oc2ccc3ccc4cc1ccccc1c5ccc2c3c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2804,111-40-0,NCCNCCN,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2805,930-55-2,O=NN1CCCC1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2814,107-99-3,N(C)(C)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2829,98931-07-8,N#CN2CC(C)CC3c4cccc1c4(c(cn1CC=C)CC23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2861,103554-58-1,O=C(NCCN(C)C)c1cccc2C(=O)c3ccccc3(Nc12),Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2849,326-61-4,O=C(OCc1ccc2OCOc2(c1))C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2868,555-03-3,O=[N+]([O-])c1cccc(OC)c1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2873,519-73-3,c1ccc(cc1)C(c2ccccc2)c3ccccc3,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2875,98-55-5,OC(C)(C)C1CC=C(C)CC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2883,138580-44-6,O=C4C=CC(=O)c1c4(nc(c2c3ccccc3([nH]c12))C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2892,7696-12-0,O=C(OCN1C(=O)C2=C(C1(=O))CCCC2)C3C(C=C(C)C)C3(C)(C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2896,146818-20-4,O=C(Nc1ccc(cc1)CC)c2cc([N+](=O)[O-])sc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2898,1126-76-7,O1CC1CCc2ccccc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2907,5307-14-2,O=[N+]([O-])c1cc(N)ccc1(N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2916,97461-42-2,O=C(C=Cc1oc(cc1)[N+](=O)[O-])NCCCCC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2917,96-29-7,ON=C(C)CC,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2918,7320-37-8,O1CC1CCCCCCCCCCCCCC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2945,484-08-2,n2c1occc1c(OC)c3cc(OC)c(OC)cc23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2948,80984-66-3,c1cc4c3c(c1)C6NC6(c2cccc(c23)C5NC45),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3170,132929-89-6,O=[N+]([O-])c5ccc2ccc3cc1C=CCCc1c4ccc5(c2c34),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3192,6325-54-8,c1ccc4c(c1)ccc3c4(cc2ccccc2c3CCl),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3194,1199-18-4,Oc1cc(O)c(cc1(O))CCN,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3195,6530-27-4,ONc2ccc(N=Nc1ccccc1)cc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3263,93-05-0,Nc1ccc(cc1)N(CC)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2932,95-49-8,c1ccc(c(c1)C)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2935,194-03-6,n1cc3cccc4ccc2cccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2936,1888-89-7,O1CC1CCC2OC2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2937,107-20-0,O=CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2938,54-88-6,N(=Nc1ccc(cc1C)N(C)C)c2ccccc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2939,1576-35-8,O=S(=O)(NN)c1ccc(cc1)C,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2940,609-15-4,O=C(OCC)C(C(=O)C)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2955,122587-22-8,O=C(OC)c1oc(c(c1Cl)Cl)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2959,39638-73-8,O=C1N=C(N)C(O)=CN1C2OC(CO)C(O)C2(O),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+2960,122-97-4,OCCCc1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2961,41840-28-2,O=C(OC(C)(C)C)Sc1nc(cc(n1)C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2963,140-10-3,O=C(O)C=Cc1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2980,118-52-5,O=C1N(C(=O)C(N1Cl)(C)C)Cl,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2981,1565-94-2,O=C(OCC(O)COc1ccc(cc1)C(c2ccc(OCC(O)COC(=O)C(=C)C)cc2)(C)C)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+2982,78-93-3,O=C(C)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+2999,631-64-1,O=C(O)C(Br)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3020,70-11-1,O=C(c1ccccc1)CBr,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3029,393-52-2,O=C(c1ccccc1(F))Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3032,130005-62-8,Oc1ccc2[nH]c3c(cc(N)c(c3(c2(c1)))C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3034,14918-69-5,O=C1c2c(O)ccc(O)c2(C(=O)C(=C1Cl)Cl),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3037,110-91-8,O1CCNCC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3042,59-49-4,O=C1Oc2ccccc2(N1),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3043,85-84-7,N(=Nc1c(N)ccc2ccccc12)c3ccccc3,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3048,30560-19-1,O=C(NP(=O)(OC)SC)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3055,7597-18-4,O=[N+]([O-])c1ccc2cn[nH]c2(c1),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3060,2435-76-9,[N-]=[N+]=C1C=NC(=O)NC1(=O),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3067,16452-01-0,O(c1cc(N)ccc1C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3069,3102-70-3,Nc1c(cc(c(N)c1C)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3073,619-73-8,O=[N+]([O-])c1ccc(cc1)CO,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3074,52-68-6,O=P(OC)(OC)C(O)C(Cl)(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3078,2210-28-8,O=C(OCCC)C(=C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3082,1147-55-3,O=C(Nc1ccc2c(c1)Cc3cccc(O)c23)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3083,2466-76-4,O=C(n1cncc1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3087,110-61-2,N#CCCC#N,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3096,3671-71-4,O=C(c1ccccc1)N(O)c3ccc4c2ccccc2Cc4(c3),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3097,98-01-1,O=Cc1occc1,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3099,98046-75-4,O=[N+]([O-])c3cnc2c(nc1ccccn12)c3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3108,119-93-7,Nc1ccc(cc1C)c2ccc(N)c(c2)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3111,51-03-6,O1c2cc(c(cc2(OC1))CCC)COCCOCCOCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3114,6471-49-4,O=C(Nc1cccc(c1)[N+](=O)[O-])c3cc4ccccc4(c(N=Nc2cc(ccc2(OC))[N+](=O)[O-])c3(O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3118,67-56-1,OC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3126,594-71-8,O=[N+]([O-])C(C)(C)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3150,98-56-6,FC(F)(F)c1ccc(cc1)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3151,144-82-1,O=S(=O)(Nc1nnc(C)s1)c2ccc(N)cc2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3153,2080-32-2,O=C(Nc1ccc(cc1)S(=O)(=O)N(CC)CC)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3159,1918-13-4,NC(c1c(cccc1Cl)Cl)=S,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3165,56-84-8,O=C(O)CC(N)C(=O)O,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3183,7756-96-9,O=C(OCCCC)c1ccccc1(N),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3184,73936-27-3,O=C(c1ccc(F)cc1)C3OC3(c2ccccc2),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3186,66291-31-4,c1ccc3c(c1)ccc2ccc(c(c23)C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3191,3586-69-4,O=[N+]([O-])c1ccc2cc3ccccc3(cc2(c1)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3210,2304-83-8,O=C4C=Cc2c(ccc1c3ccccc3(ccc12))C4(=O),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3213,134308-13-7,O=C(c1ccc(cc1)C)c2cc(O)c(O)c(c2)[N+](=O)[O-],Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3233,80984-67-4,c1ccc3c(c1)c2cc6c(cc2C4NC34)c5ccccc5C7NC67,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3234,89-02-1,O=[N+]([O-])c1ccc(c(c1)[N+](=O)[O-])S(=O)(=O)O,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3237,51-28-5,O=[N+]([O-])c1ccc(O)c(c1)[N+](=O)[O-],Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3244,2431-96-1,O=C(N(CC)CC)Cc1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3246,86334-95-4,O=NN(CC(=O)O)CC1(O)(OCC(O)C(O)C1(O)),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3252,140-11-4,O=C(OCc1ccccc1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3258,52645-53-1,O=C(OCc2cccc(Oc1ccccc1)c2)C3C(C=C(Cl)Cl)C3(C)(C),Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3259,557-91-5,CC(Br)Br,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3266,15121-84-3,O=[N+]([O-])c1ccccc1CCO,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3267,892-17-1,O=C3c2cc(c1c4ccccc4(ccc1c2CC3))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3283,2381-39-7,c1ccc5c(c1)c2ccc3cccc4ccc(c2c34)c5C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3297,13048-33-4,O=C(OCCCCCCOC(=O)C=C)C=C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3299,141-46-8,O=CCO,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3316,84-69-5,O=C(OCC(C)C)c1ccccc1(C(=O)OCC(C)C),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3317,5412-25-9,O=P(O)(OCC(CBr)Br)OCC(CBr)Br,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3322,112-52-7,CCCCCCCCCCCCCl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3337,121-88-0,O=[N+]([O-])c1ccc(N)c(O)c1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3338,15950-66-0,Oc1ccc(c(c1Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3348,500-66-3,Oc1cc(O)cc(c1)CCCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3354,67464-46-4,c1ccc3c(c1)c2ccccc2C4NC34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3360,120-23-0,O=C(O)COc1ccc2ccccc2(c1),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3384,1204-68-8,c1cc(ccc1N(CCCl)CCCl)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3387,1085-98-9,O=S(=O)(N(c1ccccc1)SC(F)(Cl)Cl)N(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3393,2815-45-4,O1CC12(CCC(CC2)C(C)(C)C),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3401,612-57-7,n1cccc2cc(ccc12)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3414,120-78-5,n2c1ccccc1sc2SSc4nc3ccccc3s4,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3419,109-97-7,c1cc[nH]c1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3428,21416-67-1,O=C1NC(=O)CN(C1)CCCN2CC(=O)NC(=O)C2,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3435,77500-04-0,n1cc(nc3c1ccc2c3(nc(N)n2C))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3437,522-19-0,n2c1occc1c(OC)c3cc(OC)cc(OC)c23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3441,939-99-1,FC(F)(F)c1ccc(cc1)CCl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3449,64099-28-1,n2c(OC)c1cc(N)ccc1s2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3451,128714-75-0,O=[N+]([O-])c3ccc1ccc5c2c(ccc3(c12))c4ccccc4c5[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3455,94-82-6,O=C(O)CCCOc1ccc(cc1Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3466,87619-82-7,O=C(O)C(N)CSC(=C(C(=C(Cl)Cl)Cl)Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3477,77-90-7,O=C(OC(C(=O)OCCCC)(CC(=O)OCCCC)CC(=O)OCCCC)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3485,66734-13-2,O=C1C=CC3(C(=C1)CC(C2C4CC(C)C(OC(=O)CC)(C(=O)COC(=O)CC)C4(C)(CC(O)C23))Cl)(C),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3492,2039-87-4,C=Cc1ccccc1Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3500,82389-36-4,O=C(Nc1ccc(cc1)C3OC3(C(=O)c2ccccc2))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3504,99-73-0,O=C(c1ccc(cc1)Br)CBr,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3505,27032-78-6,O=C1NC(=O)NCN1,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3511,951-01-9,Nc2c1ccccc1[n+](c3ccccc23)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3513,91540-29-3,c1ccc3c(c1)c2ccccc2C4N(CCCCC)C34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3515,18031-40-8,O=CC1=CCC(C(=C)C)CC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3518,22349-59-3,c1ccc2c(c1)ccc3c2c(ccc3C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3527,548-39-0,O=C1C=Cc3cccc2cccc1c23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3536,622-79-7,[N-]=[N+]=NCc1ccccc1,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3540,1124-33-0,O=[N+]([O-])c1cc[n+]([O-])cc1,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3541,93-72-1,O=C(O)C(Oc1cc(c(cc1Cl)Cl)Cl)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3542,10567-95-0,n2c1ccccc1c(c3cc(c4ccccc4(c23))C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3544,107-22-2,O=CC=O,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3556,71-23-8,OCCC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3557,1929-82-4,n1c(cccc1Cl)C(Cl)(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3558,110-02-1,c1ccsc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3571,141511-30-0,O=[N+]([O-])c2ccc3c1cc5c(cc1CCc3(c2))c4ccccc4CC5,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3572,130-15-4,O=C1C=CC(=O)c2ccccc12,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3597,78-95-5,O=C(C)CCl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3605,2208-41-5,O=C(NCCc2c[nH]c1cc(O)c(OC)cc12)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3607,3322-93-8,C1CC(C(CC1C(CBr)Br)Br)Br,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3618,33389-36-5,O=[N+]([O-])c3ccc(c2nc1ccccc1c(n2)NCCO)s3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3626,79-09-4,O=C(O)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3630,108-93-0,OC1CCCCC1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3640,64371-62-6,O1CC1(c2ccc(cc2)c3ccccc3)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3647,4394-00-7,O=C(O)c2cccnc2(Nc1cccc(c1)C(F)(F)F),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3649,96-37-7,CC1CCCC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3651,122-69-0,O=C(OCC=Cc1ccccc1)C=Cc2ccccc2,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3655,62826-28-2,O(c1ccccc1CC2OC2)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3675,108043-88-5,O=C1C=Cc2c3nc(N)n(c3(ccc2(N1)))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3664,396-30-5,Fc1ccc2ncccc2(c1),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3665,86674-49-9,O=[N+]([O-])c1cc(O)c2ccc3cccc4ccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3670,113698-22-9,O=C1C=C(OC)C(=O)c2nc(c3c4ccccc4([nH]c3(c12)))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3671,85-86-9,Oc3ccc4ccccc4(c3(N=Nc2ccc(N=Nc1ccccc1)cc2)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3682,394-70-7,Fc1ccnc2ccccc12,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3683,87-82-1,c1(c(c(c(c(c1Br)Br)Br)Br)Br)Br,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3691,26741-53-7,O(c1ccc(cc1C(C)(C)C)C(C)(C)C)P2OCC4(CO2)(COP(Oc3ccc(cc3C(C)(C)C)C(C)(C)C)OC4),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3699,330-54-1,O=C(Nc1ccc(c(c1)Cl)Cl)N(C)C,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3703,79-81-2,O=C(OCC=C(C=CC=C(C=CC1=C(C)CCCC1(C)C)C)C)CCCCCCCCCCCCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3712,51230-49-0,o2c1ccccc1c3cc(ccc23)Cl,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3735,30269-02-4,O=[N+]([O-])c1ccc2ccc3ccc(N)c4ccc1c2c34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3736,134-32-7,Nc1cccc2ccccc12,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3739,49852-85-9,c1ccc5c(c1)c2ccc3cccc4ccc(c2c34)c5CBr,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3723,24903-48-8,n4ccc5ccc3cc2c(ccc1ccccc12)cc3c5(c4),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3724,452-06-2,n1c[nH]c2cnc(nc12)N,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3732,5617-28-7,O=C1c4ccccc4(C(=O)c2c(cc(c(N)c12)S(=O)(=O)O)NC3CCCCC3),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3742,149996-82-7,O=NN(C=O)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3745,97-23-4,Oc1ccc(cc1Cc2cc(ccc2(O))Cl)Cl,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3750,144-48-9,O=C(N)CI,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3757,81-15-2,O=[N+]([O-])c1c(c(c(c(c1C)[N+](=O)[O-])C(C)(C)C)[N+](=O)[O-])C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3769,30517-66-9,O=C4c5c(O)cccc5(Oc2c4(c(O)cc1OC3OCCC3(c12))),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3772,2835-95-2,Oc1cc(N)ccc1C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3773,591-12-8,O=C1OC(=CC1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3779,20930-10-3,O=C(OC(C#CC)(c1ccccc1)c2ccccc2)NC3CCCCC3,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3782,114460-38-7,Oc3ccc4ccc2ccc1ccn(c1c2c4(c3))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3787,625-86-5,o1c(ccc1C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3792,1849-36-1,O=[N+]([O-])c1ccc(cc1)S,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3797,103395-25-1,c1ccc2c(c1)c4cccc3ccc(c2c34)CCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3798,61-57-4,O=C1NCCN1c2ncc([N+](=O)[O-])s2,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3802,53527-28-9,O=CC2C=CC3C4(C)(CCC1C(C)(C)CCCC1(C)C4(CC(OC(=O)C)C3(C)(C2(C=O)))),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3804,4406-41-1,O=C(Nc1ccccc1)C(C)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3805,1878-66-6,O=C(O)Cc1ccc(cc1)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3807,119-65-3,n1ccc2ccccc2(c1),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3832,19337-19-0,O=C(C=Cc1ccccc1)c2ccc(cc2)NC(=O)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3810,476-66-4,O=C1Oc3c(O)c(O)cc4C(=O)Oc2c(O)c(O)cc1c2c34,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3822,86-42-0,Oc1ccc(cc1CN(CC)CC)Nc3ccnc2cc(ccc23)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3840,922-63-4,O=CC(=C)CC,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3853,116374-64-2,O=C(OC)c3ccc(c2c3(nc1ccccc1c2(NCCCN(C)C)))[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3854,122551-89-7,O=C1OCC(=C1Cl)C(Cl)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3857,619-15-8,O=[N+]([O-])c1ccc(c(c1)C)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3867,75776-00-0,n3c1ccccc1c(Nc2ccc(cc2)NC)c4ccccc34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3871,146795-36-0,O=C(Nc1cccc(F)c1)c2cc([N+](=O)[O-])sc2,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3884,484-47-9,n2c([nH]c(c1ccccc1)c2c3ccccc3)c4ccccc4,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3891,98601-00-4,OC2C=Cc1cc3c4ccccc4(cc(c3(cc1C2(O)))C),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3893,67730-10-3,n2c(N)ccc3nc1ccccn1c23,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3907,118-91-2,O=C(O)c1ccccc1Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3919,97-18-7,Oc1c(cc(cc1Sc2cc(cc(c2(O))Cl)Cl)Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3923,93673-37-1,OC2C=Cc1c3cc5cccc4C=Cc(c3(ccc1C2(O)))c45,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3928,24096-53-5,O=C2N(c1cc(cc(c1)Cl)Cl)C(=O)CC2,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3932,139953-76-7,O=C2c3[nH]c4ccccc4(c3(N=NN2(N=Cc1ccc(O)cc1))),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3937,109-08-0,n1ccnc(c1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+3945,79-46-9,O=[N+]([O-])C(C)C,Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3948,112022-05-6,O=C(NCCN(C)C)c2cccc1cc3ccccc3(cc12),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+3957,115767-74-3,O=P(O)(O)Oc1ccc(cc1)C(c2ccc(OCCN(C)C)cc2)=C(c3ccc(cc3)C(C)C)CC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3972,14800-24-9,c1ccc(cc1)C[N+](C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+3988,95-86-3,Oc1ccc(N)cc1(N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4006,25317-10-6,O=S(=O)(O)c1ccc2c(c1)cc(c(O)c2C(c3ccc(cc3)N(C)C)=C4C=CC(C=C4)=[N+](C)C)S(=O)(=O)O,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4009,3567-66-6,O=S(=O)(O)c2cc(N)c3c(O)c(N=Nc1ccccc1)c(cc3(c2))S(=O)(=O)O,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4047,137-66-6,O=C1OC(C(O)=C1(O))C(O)COC(=O)CCCCCCCCCCCCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4013,64046-79-3,n2c1ccc(OC)cc1c(NC(C)CCCN(CCCl)CCCl)c3ccc(cc23)Cl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4014,4335-09-5,O=[N+]([O-])c6ccc(N=Nc4c(N)c5c(O)c(N=Nc1ccc(cc1)c3ccc(N=Nc2ccc(O)cc2)cc3)c(cc5(cc4S(=O)(=O)O))S(=O)(=O)O)cc6,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4018,573-58-0,O=S(=O)(O)c6cc(N=Nc1ccc(cc1)c4ccc(N=Nc2cc(c3ccccc3(c2(N)))S(=O)(=O)O)cc4)c(N)c5ccccc56,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4019,60-87-7,c1ccc3c(c1)N(c2ccccc2S3)CC(N(C)C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4024,59-96-1,O(c1ccccc1)CC(N(Cc2ccccc2)CCCl)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4027,494-38-2,n1c3cc(ccc3(cc2ccc(cc12)N(C)C))N(C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4031,3099-31-8,n1cccc(c1)CCl,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4033,81-88-9,O=C(O)c1ccccc1c3c4ccc(cc4([o+]c2cc(ccc23)N(CC)CC))N(CC)CC,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4034,837-73-0,Nc2ccc3cc1ccc(N)cc1[n+](c3(c2))C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4038,115-02-6,[N-]=[N+]=CC(=O)OCC(N)C(=O)O,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4048,137-89-3,O=C(OC(CC)CCCCC)c1cccc(c1)C(=O)OC(CC)CCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4049,1397-89-3,O=C(O)C3C(O)CC2(O)(OC3(CC(OC1OC(C)C(O)C(N)C1(O))C=CC=CC=CC=CC=CC=CC=CC(C)C(O)C(C)C(OC(=O)CC(O)CC(O)CCC(O)C(O)CC(O)C2)C)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4050,1445-69-8,O=C1NNC(=O)c2ccccc12,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4062,23282-20-4,O=C3C(=CC4OC2C(O)C(O)C(C)(C12(OC1))C4(CO)(C3(O)))C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4067,3048-64-4,C=CC2CC1C=CC2(C1),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4069,309-00-2,C1=CC2CC1C3C2C4(C(=C(C3(C4(Cl)Cl)Cl)Cl)Cl)Cl,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4071,320-67-2,O=C1N=C(N=CN1C2OC(CO)C(O)C2(O))N,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4073,32795-84-9,c1ccc4c(c1)ccc3cc2c(cccc2Br)cc34,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4075,33419-42-0,O=C5OCC6C(OC1OC2COC(OC2(C(O)C1(O)))C)c3cc7OCOc7(cc3C(c4cc(OC)c(O)c(OC)c4)C56),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4076,34807-41-5,O=C(OC6C(C)C24(OC5(OC(C4(C3OC3(CO)(C(O)C1(O)(C(=O)C(=CC12)C))))C6(O5)(C(=C)C))c7ccccc7))C=CC=Cc8ccccc8,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4077,3682-19-7,O=C1NNC(=O)c2cc(ccc12)[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4079,38966-21-1,OCC4(O)(CCC23(CC4(CC3(CCC1C(C)(CO)C(O)CCC12(C))))),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4081,4245-77-6,O=NN(C(=N)N[N+](=O)[O-])CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4087,471-80-7,O=C(O)C4(C)(CCCC2(C)(C4(CCC13(CC(=C)C(O)(CCC12)C3)))),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4093,50-27-1,Oc1ccc2c(c1)CCC3C2CCC4(C)(C(O)C(O)CC34),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4095,50-44-2,n1cnc(c2[nH]cnc12)S,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4096,50-55-5,O=C(OC3CC4CN2CCc1c5ccc(OC)cc5([nH]c1C2CC4(C(C(=O)OC)C3(OC))))c6cc(OC)c(OC)c(OC)c6,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4099,51-21-8,O=C1NC=C(F)C(=O)N1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4104,518-28-5,O=C3OCC4C(O)c1cc5OCOc5(cc1C(c2cc(OC)c(OC)c(OC)c2)C34),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4107,520-26-3,O=C4c5c(O)cc(OC2OC(COC1OC(C)C(O)C(O)C1(O))C(O)C(O)C2(O))cc5(OC(c3ccc(OC)c(O)c3)C4),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4109,53-43-0,O=C2CCC3C4CC=C1CC(O)CCC1(C)C4(CCC23(C)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4111,54-42-2,O=C1NC(=O)N(C=C1I)C2OC(CO)C(O)C2,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4112,546-80-5,O=C1CC2(CC2(C1C))(C(C)C),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4117,57-83-0,O=C4C=C3CCC1C(CCC2(C)(C(C(=O)C)CCC12))C3(C)CC4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4122,583-39-1,n1c2ccccc2([nH]c1S),Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4127,616-91-1,O=C(O)C(NC(=O)C)CS,Test,Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4129,6285-57-0,O=[N+]([O-])c1ccc2nc(N)sc2(c1),Test,Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4131,6379-69-7,O=C(OC2CC4OC1C=C(C(=O)CC1(C)C2(C)C34(OC3))C)C=CC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4134,68-22-4,O=C4C=C3CCC2C(CCC1(C)(C2(CCC1(O)(C#C))))C3CC4,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4138,700-02-7,[O-][N+]2=CNC1=NC=NC1=C2(N),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4144,80-56-8,C1=C(C)C2CC(C1)C2(C)(C),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4145,80-78-4,OC6CC5=CCC4C(CCC3(C)(C4(CC2N1CC(C)CCC1C(C)C23)))C5(C)CC6,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4147,87-33-2,O=[N+]([O-])OC1COC2C(O[N+](=O)[O-])COC12,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4150,932-53-6,O=C1NN=C(C(=O)N1)C,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4171,155-97-5,O=C(Oc1ccc[n+](c1)C)N(C)C,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4174,74-55-5,OCC(NCCNC(CO)CC)CC,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4175,1146-04-9,O=C3C1=CC(C)(C)C(O)C1=C(C)C2(CC2)C3(O)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4189,62-53-3,Nc1ccccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4195,322-35-0,O=C(NNCc1ccc(O)c(O)c1(O))C(N)CO,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4203,1934-21-0,O=C(O)C2=NN(C(=O)C2(N=Nc1ccc(cc1)S(=O)(=O)O))c3ccc(cc3)S(=O)(=O)O,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4213,21794-55-8,O=C1c4cccc(OC)c4(C(=O)c2c(O)c3c(c(O)c12)CC(O)(C(=O)C)CC3(O)),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4218,23165-19-7,O1CC[N+](C)(C)CC1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4221,23815-63-6,O=C(O)C(N)CSc1ccc(cc1[N+](=O)[O-])[N+](=O)[O-],Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4222,24169-02-6,n1ccn(c1)CC(OCc2ccc(cc2)Cl)c3ccc(cc3Cl)Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4229,2958-05-6,O=C(O)CCC(C)C2CCC3C4CCC1CC(=O)CCC1(C)C4(CC(=O)C23(C)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4232,299-75-2,O=S(=O)(OCC(O)C(O)COS(=O)(=O)C)C,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4239,320-51-4,FC(F)(F)c1cc(N)ccc1Cl,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4252,372-47-4,Fc1cnccc1,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4255,3836-23-5,O=C(OC3(C#C)(CCC2C4CCC1=CC(=O)CCC1C4(CCC23(C))))CCCCCC,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4260,43000-65-3,O=C(OC4CCC2(C)(C(CCC1C3CCC(=O)NC3(C)(CCC12))C4))Cc5ccc(cc5)N(CCCl)CCCl,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4262,131-99-7,O=C3NC=Nc1c3(ncn1C2OC(COP(=O)(O)O)C(O)C2(O)),Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4268,514-10-3,O=C(O)C2(C)(CCCC3(C)(C1C(C=C(CC1)C(C)C)=CCC23)),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4270,13270-61-6,Oc1cc(O)c2cc(O)c([o+]c2(c1))c3cc(O)c(O)c(O)c3,Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4275,69-72-7,O=C(O)c1ccccc1(O),Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4277,60569-19-9,O=C(OC1CCN(C)CC1)C(OCCC)(c2ccccc2)c3ccccc3,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4283,57-47-6,O=C(Oc1ccc2c(c1)C3(C)(CCN(C)C3(N2C)))NC,Test,NON-Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4302,621-44-3,O=C(O)C(N)Cc1ccc(O)c(c1)[N+](=O)[O-],Test,NON-Mutagenic,Possible NON-Mutagenic,NON-Mutagenic,
+4291,30187-90-7,OC(COc1cccc(c1C)C)CNC(C)(C)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4295,525-57-5,Oc1ccc2c(c1)[nH]c3C(=NCCc23)C,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic
+4308,18198-35-1,c1ccc(cc1)C(c2ccc(cc2)N(CC)CC)=C3C=CC(C=C3)=[N+](CC)CC,Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4317,67199-66-0,O=C2c4ccccc4(C3=Nc1ccc(N)cc1CN23),Test,Mutagenic,Mutagenic,Mutagenic,Mutagenic
+4322,71-33-0,Oc1ncnc(O)n1,Test,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic,NON-Mutagenic

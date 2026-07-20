@@ -11,6 +11,24 @@ muta = {
     # 'split_map': {'train': 'Training', 'test': 'Test'}
 }
 
+muta_train = {
+    'task': 'binary_classification',
+    'path': 'DATASETS/MUTA_train.csv',
+    'id_header': 'Id',
+    'smiles_header': 'SMILES',
+    'target_header': 'Experimental_value',
+    'tox_map': {'Mutagenic': 1, 'NON-Mutagenic': 0},
+}
+
+muta_test = {
+    'task': 'binary_classification',
+    'path': 'DATASETS/MUTA_test.csv',
+    'id_header': 'Id',
+    'smiles_header': 'SMILES',
+    'target_header': 'Experimental_value',
+    'tox_map': {'Mutagenic': 1, 'NON-Mutagenic': 0},
+}
+
 logp = {
     'task': 'regression',
     'path': 'DATASETS/LogP.csv',

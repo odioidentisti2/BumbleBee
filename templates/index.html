@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BumbleBee</title>
+    <style>
+        :root {
+            --bg: #05090d;
+            --panel: #081018;
+            --panel-soft: #0b141d;
+            --console: #000000;
+            --line: #17323f;
+            --accent: #35d6c5;
+            --accent-soft: #86f1e7;
+            --text: #d7ffd9;
+            --muted: #9ad39f;
+            --danger: #ff7d8a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Courier New", monospace;
+            display: flex;
+            flex-direction: column;
+        }
+
+        button,
+        select,
+        input {
+            font: inherit;
+        }
+
+        .topbar,
+        .statusbar {
+            background: var(--panel);
+            color: var(--muted);
+        }
+
+        .topbar {
+            min-height: 56px;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand {
+            color: var(--accent-soft);
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .breadcrumb {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .view {
+            display: none;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        .landing {
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .landing-shell {
+            width: min(760px, 100%);
+        }
+
+        .landing-title {
+            margin-bottom: 12px;
+            font-size: clamp(28px, 5vw, 42px);
+            color: var(--accent-soft);
+        }
+
+        .landing-copy {
+            margin-bottom: 28px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .workflow-card {
+            padding: 24px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            text-align: left;
+            color: var(--text);
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .workflow-card:hover:not(:disabled) {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .workflow-card:disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+        }
+
+        .workflow-card-title {
+            margin-bottom: 8px;
+            color: var(--accent-soft);
+            font-size: 18px;
+        }
+
+        .workflow-card-copy {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .workspace {
+            flex-direction: column;
+        }
+
+        .workspace-main {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(320px, 40%) 1fr;
+        }
+
+        .controls,
+        .console {
+            min-height: 0;
+            padding: 20px;
+        }
+
+        .controls {
+            background: var(--panel);
+            border-right: 1px solid var(--line);
+            overflow-y: auto;
+        }
+
+        .console {
+            background: #04080b;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-title {
+            color: var(--accent-soft);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .section {
+            margin-bottom: 18px;
+            padding: 16px;
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+        }
+
+        .section h2 {
+            margin-bottom: 14px;
+            color: var(--accent-soft);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .field {
+            margin-bottom: 12px;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        select,
+        .action,
+        .action-secondary {
+            width: 100%;
+            min-height: 40px;
+            border: 1px solid var(--line);
+            background: #0a131c;
+            color: var(--text);
+        }
+
+        select {
+            padding: 0 10px;
+        }
+
+        .action,
+        .action-secondary {
+            padding: 0 14px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .action:hover,
+        .action-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        .action {
+            background: #0c1720;
+            color: var(--accent-soft);
+        }
+
+        .action-secondary {
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .action:disabled,
+        .action-secondary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .log-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 14px;
+            background: var(--console);
+            border: 1px solid var(--line);
+            color: var(--accent-soft);
+            font-size: 11px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .statusbar {
+            min-height: 40px;
+            padding: 0 20px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: 11px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            width: min(460px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            padding: 20px;
+        }
+
+        .modal h2 {
+            margin-bottom: 10px;
+            color: var(--accent-soft);
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .modal p {
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .task-badge {
+            display: inline-block;
+            margin-bottom: 14px;
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            color: var(--accent-soft);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .radio-group {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .error-text {
+            color: var(--danger);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .workflow-grid,
+            .workspace-main,
+            .modal-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .statusbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">BUMBLEBEE</div>
+        <div class="breadcrumb" id="breadcrumb"></div>
+    </header>
+
+    <main id="landingView" class="view landing active">
+        <div class="landing-shell">
+            <h1 class="landing-title">Select Workflow</h1>
+            <p class="landing-copy">Choose one workflow to begin.</p>
+            <div class="workflow-grid">
+                <button type="button" class="workflow-card" id="openTrainingButton">
+                    <div class="workflow-card-title">Load a training set</div>
+                    <div class="workflow-card-copy">Open a CSV file and configure a training run.</div>
+                </button>
+                <button type="button" class="workflow-card" disabled>
+                    <div class="workflow-card-title">Testing</div>
+                    <div class="workflow-card-copy">Not available yet.</div>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <main id="trainingView" class="view workspace">
+        <div class="workspace-main">
+            <section class="controls">
+                <div class="section">
+                    <h2>Set training headers</h2>
+                    <div class="field">
+                        <select id="casHeader"></select>
+                    </div>
+                    <div class="field">
+                        <select id="smilesHeader"></select>
+                    </div>
+                    <div class="field">
+                        <select id="targetHeader"></select>
+                    </div>
+                    <button type="button" class="action" id="loadConfigButton" disabled>Load</button>
+                </div>
+
+                <div class="section" id="runSection">
+                    <h2>Run</h2>
+                    <button type="button" class="action" id="startTrainingButton" disabled>Start training</button>
+                </div>
+
+                <div class="section hidden" id="errorSection">
+                    <div class="error-text" id="errorText"></div>
+                </div>
+            </section>
+
+            <section class="console">
+                <div class="panel-title">System Output</div>
+                <div id="logArea" class="log-area"></div>
+            </section>
+        </div>
+
+        <footer class="statusbar">
+            <div id="statusDataset">Dataset: -</div>
+            <div id="statusDevice">Device: {{ device }}</div>
+        </footer>
+    </main>
+
+    <div id="taskModalBackdrop" class="modal-backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+            <h2 id="taskModalTitle">Task Config</h2>
+            <p>Review the detected task for the selected headers.</p>
+            <div id="taskBadge" class="task-badge"></div>
+            <div id="positiveClassBlock" class="hidden">
+                <label>Positive Class</label>
+                <div id="toxOptions" class="radio-group"></div>
+            </div>
+            <div id="modalError" class="error-text hidden"></div>
+            <div class="modal-actions">
+                <button type="button" class="action-secondary" id="closeModalButton">Close</button>
+                <button type="button" class="action" id="applyTaskButton">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            csvPath: "",
+            csvFilename: "",
+            casHeader: "",
+            smilesHeader: "",
+            targetHeader: "",
+            task: "",
+            uniqueLabels: [],
+            positiveLabel: "",
+            configReady: false,
+            lastLoadedSignature: "",
+        };
+
+        const els = {
+            landingView: document.getElementById("landingView"),
+            trainingView: document.getElementById("trainingView"),
+            breadcrumb: document.getElementById("breadcrumb"),
+            statusDataset: document.getElementById("statusDataset"),
+            casHeader: document.getElementById("casHeader"),
+            smilesHeader: document.getElementById("smilesHeader"),
+            targetHeader: document.getElementById("targetHeader"),
+            loadConfigButton: document.getElementById("loadConfigButton"),
+            startTrainingButton: document.getElementById("startTrainingButton"),
+            logArea: document.getElementById("logArea"),
+            errorSection: document.getElementById("errorSection"),
+            errorText: document.getElementById("errorText"),
+            taskModalBackdrop: document.getElementById("taskModalBackdrop"),
+            taskBadge: document.getElementById("taskBadge"),
+            positiveClassBlock: document.getElementById("positiveClassBlock"),
+            toxOptions: document.getElementById("toxOptions"),
+            modalError: document.getElementById("modalError"),
+        };
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".csv";
+        fileInput.className = "hidden";
+        fileInput.setAttribute("aria-label", "Load a training set");
+        document.body.appendChild(fileInput);
+
+        document.getElementById("openTrainingButton").addEventListener("click", () => fileInput.click());
+        document.getElementById("closeModalButton").addEventListener("click", closeModal);
+        document.getElementById("loadConfigButton").addEventListener("click", openTaskConfig);
+        document.getElementById("startTrainingButton").addEventListener("click", startTraining);
+        document.getElementById("applyTaskButton").addEventListener("click", applyTaskConfig);
+
+        fileInput.addEventListener("change", handleFileSelection);
+        els.casHeader.addEventListener("change", () => {
+            state.casHeader = els.casHeader.value;
+        });
+        els.smilesHeader.addEventListener("change", resetConfigState);
+        els.targetHeader.addEventListener("change", resetConfigState);
+        els.taskModalBackdrop.addEventListener("click", (event) => {
+            if (event.target === els.taskModalBackdrop) {
+                closeModal();
+            }
+        });
+
+        function switchToTrainingView() {
+            els.landingView.classList.remove("active");
+            els.trainingView.classList.add("active");
+            els.breadcrumb.textContent = "Training";
+        }
+
+        function showError(message) {
+            els.errorText.textContent = message;
+            els.errorSection.classList.remove("hidden");
+        }
+
+        function clearError() {
+            els.errorText.textContent = "";
+            els.errorSection.classList.add("hidden");
+        }
+
+        function resetConfigState() {
+            state.casHeader = els.casHeader.value;
+            state.smilesHeader = els.smilesHeader.value;
+            state.targetHeader = els.targetHeader.value;
+            state.task = "";
+            state.uniqueLabels = [];
+            state.positiveLabel = "";
+            state.configReady = false;
+            clearError();
+            refreshLoadButtonState();
+            refreshTrainButtonState();
+        }
+
+        function getHeaderSignature() {
+            return `${state.smilesHeader}|${state.targetHeader}`;
+        }
+
+        function refreshLoadButtonState() {
+            const validHeaders = Boolean(state.csvPath && state.smilesHeader && state.targetHeader);
+            els.loadConfigButton.disabled = !validHeaders;
+        }
+
+        function refreshTrainButtonState() {
+            const binaryReady = state.task !== "binary_classification" || Boolean(state.positiveLabel);
+            const headersMatchLoaded = getHeaderSignature() === state.lastLoadedSignature;
+            const canTrain = Boolean(
+                state.configReady &&
+                state.csvPath &&
+                state.smilesHeader &&
+                state.targetHeader &&
+                state.task &&
+                binaryReady &&
+                headersMatchLoaded
+            );
+            els.startTrainingButton.disabled = !canTrain;
+        }
+
+        function populateSelect(select, headers, placeholder) {
+            const placeholderOption = `<option value="" selected>${placeholder}</option>`;
+            const dataOptions = headers.map((header) => `<option value="${header}">${header}</option>`).join("");
+            select.innerHTML = placeholderOption + dataOptions;
+        }
+
+        async function handleFileSelection(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            clearError();
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("/api/load-csv", { method: "POST", body: formData });
+                const data = await response.json();
+                if (!data.success) {
+                    showError(data.error || "Unable to load dataset.");
+                    return;
+                }
+
+                state.csvPath = data.path;
+                state.csvFilename = data.filename;
+                els.statusDataset.textContent = `Dataset: ${data.filename}`;
+                populateSelect(els.casHeader, data.headers, "Select the CAS header (or any ID)...");
+                populateSelect(els.smilesHeader, data.headers, "Select the SMILES header...");
+                populateSelect(els.targetHeader, data.headers, "Select the endpoint header...");
+                switchToTrainingView();
+                resetConfigState();
+                state.lastLoadedSignature = "";
+                refreshLoadButtonState();
+                refreshTrainButtonState();
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                fileInput.value = "";
+            }
+        }
+
+        async function openTaskConfig() {
+            clearError();
+            resetModal();
+            state.smilesHeader = els.smilesHeader.value;
+            state.targetHeader = els.targetHeader.value;
+
+            if (!state.csvPath || !state.smilesHeader || !state.targetHeader) {
+                showError("Select a dataset and both headers first.");
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("csv_path", state.csvPath);
+                formData.append("target_header", state.targetHeader);
+
+                const response = await fetch("/api/detect-task", { method: "POST", body: formData });
+                const data = await response.json();
+                if (!data.success) {
+                    showError(data.error || "Unable to detect task.");
+                    return;
+                }
+
+                state.task = data.task;
+                state.uniqueLabels = data.unique_labels || [];
+                els.taskBadge.textContent = formatTaskLabel(state.task, state.uniqueLabels.length);
+
+                if (state.task === "binary_classification") {
+                    buildPositiveClassOptions(state.uniqueLabels);
+                    els.positiveClassBlock.classList.remove("hidden");
+                } else if (state.task === "multiclass" || state.task === "error") {
+                    els.modalError.textContent = "Only regression and binary classification are supported here.";
+                    els.modalError.classList.remove("hidden");
+                }
+
+                els.taskModalBackdrop.classList.add("open");
+                els.taskModalBackdrop.setAttribute("aria-hidden", "false");
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function resetModal() {
+            els.taskBadge.textContent = "";
+            els.toxOptions.innerHTML = "";
+            els.positiveClassBlock.classList.add("hidden");
+            els.modalError.textContent = "";
+            els.modalError.classList.add("hidden");
+        }
+
+        function closeModal() {
+            els.taskModalBackdrop.classList.remove("open");
+            els.taskModalBackdrop.setAttribute("aria-hidden", "true");
+        }
+
+        function buildPositiveClassOptions(labels) {
+            const selected = state.positiveLabel || "";
+            els.toxOptions.innerHTML = labels.map((label) => {
+                const checked = selected && label === selected ? "checked" : "";
+                return `
+                    <label class="radio-option">
+                        <input type="radio" name="positiveLabel" value="${label}" ${checked}>
+                        <span>${label}</span>
+                    </label>
+                `;
+            }).join("");
+
+            els.toxOptions.querySelectorAll('input[name="positiveLabel"]').forEach((input) => {
+                input.addEventListener("change", (event) => {
+                    state.positiveLabel = event.target.value;
+                });
+            });
+        }
+
+        function applyTaskConfig() {
+            if (state.task === "binary_classification" && !state.positiveLabel) {
+                els.modalError.textContent = "Select the positive class.";
+                els.modalError.classList.remove("hidden");
+                return;
+            }
+
+            if (state.task !== "regression" && state.task !== "binary_classification") {
+                els.modalError.textContent = "This task cannot be loaded.";
+                els.modalError.classList.remove("hidden");
+                return;
+            }
+
+            state.configReady = true;
+            state.lastLoadedSignature = getHeaderSignature();
+            refreshLoadButtonState();
+            refreshTrainButtonState();
+            closeModal();
+        }
+
+        function formatTaskLabel(task, labelCount) {
+            if (task === "regression") {
+                return "Regression";
+            }
+            if (task === "binary_classification") {
+                return "Binary classification";
+            }
+            if (task === "multiclass") {
+                return `Multiclass (${labelCount} labels)`;
+            }
+            return "Unknown task";
+        }
+
+        async function startTraining() {
+            clearError();
+
+            const formData = new FormData();
+            formData.append("csv_path", state.csvPath);
+            formData.append("csv_name", state.csvFilename);
+            formData.append("smiles_header", state.smilesHeader);
+            formData.append("target_header", state.targetHeader);
+            formData.append("task", state.task);
+            formData.append("positive_label", state.positiveLabel);
+
+            try {
+                const response = await fetch("/api/train", { method: "POST", body: formData });
+                const data = await response.json();
+                if (!data.success) {
+                    showError(data.error || "Unable to start training.");
+                    return;
+                }
+                els.logArea.textContent = "";
+                streamLogs();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function streamLogs() {
+            const source = new EventSource("/api/logs/stream");
+            source.onmessage = (event) => {
+                if (event.data === "__DONE__") {
+                    source.close();
+                    return;
+                }
+
+                try {
+                    els.logArea.textContent += JSON.parse(event.data);
+                    els.logArea.scrollTop = els.logArea.scrollHeight;
+                } catch (_error) {
+                }
+            };
+
+            source.onerror = () => {
+                source.close();
+            };
+        }
+
+        resetConfigState();
+    </script>
+</body>
+</html>

@@ -1,3 +1,4 @@
 torch>=2.8
 torch-geometric>=2.5
 rdkit
+nicegui>=1.4

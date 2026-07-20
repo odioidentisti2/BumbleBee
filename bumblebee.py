@@ -32,9 +32,11 @@ def load(model_path, device):
     print(f"\nLoaded model from {model_path} with task: {model.task}")
     return model
 
+# def load_dataset(dataset_info, train=False):
+
 
 def crossvalidation(dataset_info, device, folds=5):
-    print(f"\nCross-Validation on: {dataset_info['path']}")
+    print(f"\nCross-Validation on: {utils.get_name(dataset_info['path'])}")
     graphs = load_from_csv(dataset_info)
     cv_tracker = statistics.CVTracker()
     
@@ -55,23 +57,23 @@ def crossvalidation(dataset_info, device, folds=5):
     cv_tracker.summary()  # Print summary
 
 
-def main_loop(dataset_info, device, model_name=None):
+def main_loop(trainingset_info, testset_info, device, model_name=None):
     print_parameters()
     reproducibility.set_torch_seed()
     
-    trainer = Trainer(dataset_info['task'], device)
+    trainer = Trainer(trainingset_info['task'], device)
 
     if not model_name:  # Train model
 
         ### Training set
-        print(f"\nTraining set: {dataset_info['path']}")
-        train_molecules = load_from_csv(dataset_info, split=dataset_info['train_split'])
+        print(f"\nTraining set: {utils.get_name(trainingset_info['path'])}")
+        train_molecules = load_from_csv(trainingset_info)
         trainingset = InjectedDataset(train_molecules)
-        validation_set = None
 
-        ### Load validation set
-        print(f"\nValidation set: {dataset_info['path']}")
-        val_molecules = load_from_csv(dataset_info, split=dataset_info['test_split'])
+        ### Load validation set (optional)
+        validation_set = None
+        print(f"\nValidation set: {utils.get_name(testset_info['path'])}")
+        val_molecules = load_from_csv(testset_info)
         validation_set = Dataset(val_molecules)
 
         ### Train model
@@ -95,9 +97,9 @@ def main_loop(dataset_info, device, model_name=None):
     else:  # Load saved model
         model = load(f"MODELS/{model_name}", device)
 
-    ### Test
-    print(f"\nTest set: {dataset_info['path']}")
-    test_molecules = load_from_csv(dataset_info, split=dataset_info['test_split'])
+    ### Test 
+    print(f"\nTest set: {utils.get_name(testset_info['path'])}")
+    test_molecules = load_from_csv(testset_info)
     testset = Dataset(test_molecules)
     print("\nTesting...")
     trainer.eval(model, testset, flag="Test")
@@ -121,19 +123,19 @@ if __name__ == "__main__":
     model_name = None
     _datasets = []
     # _datasets.append(datasets.logp_split)
-    _datasets.append(datasets.muta)
+    _datasets.append((datasets.muta_train, datasets.muta_test))
 
-    for dataset_info in _datasets:
+    for trainingset_info, testset_info in _datasets:
         # model_name = 'L4_LOGP_10e.pt'
         # model_name = 'L4_MUTA_new_inj.pt'
 
         ### Reproducibility  (MSELoss => regression is deterministic enough ?)
-        if dataset_info['task'] == 'binary_classification':
+        if trainingset_info['task'] == 'binary_classification':
             reproducibility.use_deterministic_algorithms(device)
 
         start_time = time.time()
         # crossvalidation(dataset_info, device)   
-        main_loop(dataset_info, device, model_name)
+        main_loop(trainingset_info, testset_info, device, model_name)
         print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
