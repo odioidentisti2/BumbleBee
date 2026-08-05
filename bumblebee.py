@@ -57,15 +57,20 @@ def crossvalidation(dataset_info, device, folds=5):
 def load_dataset(dataset_info, train=False, flag='Dataset'):
     print(f"\n{flag}: {utils.get_name(dataset_info['path'])}")
     graphs = load_from_csv(dataset_info)
+    print(f"Loaded: {len(graphs)} structures")
     if train:
         return InjectedDataset(graphs)
     else:
         return Dataset(graphs)
     
 def train(trainer, trainingset, validation_set=None):
+    print_parameters()
+    reproducibility.set_torch_seed()
+
     model = MAG(trainer.device)
     print("\nTraining...")
     trainer.train(model, trainingset, val_set=validation_set)
+
     ### Calibration (for Explainer)
     print("\nCalibrating...")
     trainer.calibrate(model, trainingset)

@@ -439,7 +439,7 @@
             <div id="modalError" class="error-text hidden"></div>
             <div class="modal-actions">
                 <button type="button" class="action-secondary" id="closeModalButton">Close</button>
-                <button type="button" class="action" id="applyTaskButton">Apply</button>
+                <button type="button" class="action" id="applyTaskButton">Set tox_map</button>
             </div>
         </div>
     </div>
@@ -455,7 +455,6 @@
             uniqueLabels: [],
             positiveLabel: "",
             configReady: false,
-            lastLoadedSignature: "",
         };
 
         const els = {
@@ -478,6 +477,8 @@
             modalError: document.getElementById("modalError"),
         };
 
+        let logSource = null;
+
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.accept = ".csv";
@@ -487,7 +488,7 @@
 
         document.getElementById("openTrainingButton").addEventListener("click", () => fileInput.click());
         document.getElementById("closeModalButton").addEventListener("click", closeModal);
-        document.getElementById("loadConfigButton").addEventListener("click", openTaskConfig);
+        document.getElementById("loadConfigButton").addEventListener("click", handleLoadClick);
         document.getElementById("startTrainingButton").addEventListener("click", startTraining);
         document.getElementById("applyTaskButton").addEventListener("click", applyTaskConfig);
 
@@ -495,8 +496,11 @@
         els.casHeader.addEventListener("change", () => {
             state.casHeader = els.casHeader.value;
         });
-        els.smilesHeader.addEventListener("change", resetConfigState);
-        els.targetHeader.addEventListener("change", resetConfigState);
+        els.smilesHeader.addEventListener("change", () => {
+            resetConfigState();
+            closeModal();
+        });
+        els.targetHeader.addEventListener("change", handleTargetHeaderChange);
         els.taskModalBackdrop.addEventListener("click", (event) => {
             if (event.target === els.taskModalBackdrop) {
                 closeModal();
@@ -507,6 +511,7 @@
             els.landingView.classList.remove("active");
             els.trainingView.classList.add("active");
             els.breadcrumb.textContent = "Training";
+            ensureLogStream();
         }
 
         function showError(message) {
@@ -532,26 +537,20 @@
             refreshTrainButtonState();
         }
 
-        function getHeaderSignature() {
-            return `${state.smilesHeader}|${state.targetHeader}`;
-        }
-
         function refreshLoadButtonState() {
-            const validHeaders = Boolean(state.csvPath && state.smilesHeader && state.targetHeader);
-            els.loadConfigButton.disabled = !validHeaders;
+            const canLoad = Boolean(state.csvPath && state.smilesHeader && state.targetHeader);
+            els.loadConfigButton.disabled = !canLoad;
         }
 
         function refreshTrainButtonState() {
             const binaryReady = state.task !== "binary_classification" || Boolean(state.positiveLabel);
-            const headersMatchLoaded = getHeaderSignature() === state.lastLoadedSignature;
             const canTrain = Boolean(
                 state.configReady &&
                 state.csvPath &&
                 state.smilesHeader &&
                 state.targetHeader &&
                 state.task &&
-                binaryReady &&
-                headersMatchLoaded
+                binaryReady
             );
             els.startTrainingButton.disabled = !canTrain;
         }
@@ -589,7 +588,6 @@
                 populateSelect(els.targetHeader, data.headers, "Select the endpoint header...");
                 switchToTrainingView();
                 resetConfigState();
-                state.lastLoadedSignature = "";
                 refreshLoadButtonState();
                 refreshTrainButtonState();
             } catch (error) {
@@ -599,43 +597,50 @@
             }
         }
 
-        async function openTaskConfig() {
+        async function detectTask() {
             clearError();
-            resetModal();
             state.smilesHeader = els.smilesHeader.value;
             state.targetHeader = els.targetHeader.value;
 
             if (!state.csvPath || !state.smilesHeader || !state.targetHeader) {
-                showError("Select a dataset and both headers first.");
+                throw new Error("Select a dataset and both headers first.");
+            }
+
+            const formData = new FormData();
+            formData.append("csv_path", state.csvPath);
+            formData.append("target_header", state.targetHeader);
+
+            const response = await fetch("/api/detect-task", { method: "POST", body: formData });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || "Unable to detect task.");
+            }
+
+            state.task = data.task;
+            state.uniqueLabels = data.unique_labels || [];
+            return data;
+        }
+
+        async function handleTargetHeaderChange() {
+            resetConfigState();
+            resetModal();
+            closeModal();
+
+            state.targetHeader = els.targetHeader.value;
+            refreshLoadButtonState();
+            refreshTrainButtonState();
+
+            if (!state.targetHeader) {
                 return;
             }
 
             try {
-                const formData = new FormData();
-                formData.append("csv_path", state.csvPath);
-                formData.append("target_header", state.targetHeader);
-
-                const response = await fetch("/api/detect-task", { method: "POST", body: formData });
-                const data = await response.json();
-                if (!data.success) {
-                    showError(data.error || "Unable to detect task.");
-                    return;
+                const data = await detectTask();
+                if (data.task === "binary_classification") {
+                    openToxMapModal(data.unique_labels || []);
+                } else if (data.task === "multiclass" || data.task === "error") {
+                    showError("Only regression and binary classification are supported here.");
                 }
-
-                state.task = data.task;
-                state.uniqueLabels = data.unique_labels || [];
-                els.taskBadge.textContent = formatTaskLabel(state.task, state.uniqueLabels.length);
-
-                if (state.task === "binary_classification") {
-                    buildPositiveClassOptions(state.uniqueLabels);
-                    els.positiveClassBlock.classList.remove("hidden");
-                } else if (state.task === "multiclass" || state.task === "error") {
-                    els.modalError.textContent = "Only regression and binary classification are supported here.";
-                    els.modalError.classList.remove("hidden");
-                }
-
-                els.taskModalBackdrop.classList.add("open");
-                els.taskModalBackdrop.setAttribute("aria-hidden", "false");
             } catch (error) {
                 showError(error.message);
             }
@@ -654,6 +659,46 @@
             els.taskModalBackdrop.setAttribute("aria-hidden", "true");
         }
 
+        function openToxMapModal(labels) {
+            resetModal();
+            state.task = "binary_classification";
+            state.uniqueLabels = labels;
+            els.taskBadge.textContent = formatTaskLabel(state.task, labels.length);
+            buildPositiveClassOptions(labels);
+            els.positiveClassBlock.classList.remove("hidden");
+            els.taskModalBackdrop.classList.add("open");
+            els.taskModalBackdrop.setAttribute("aria-hidden", "false");
+        }
+
+        async function handleLoadClick() {
+            clearError();
+
+            try {
+                if (!state.csvPath || !state.smilesHeader || !state.targetHeader) {
+                    showError("Select a dataset and both headers first.");
+                    return;
+                }
+
+                if (!state.task) {
+                    await handleTargetHeaderChange();
+                }
+
+                if (state.task === "multiclass" || state.task === "error") {
+                    showError("Only regression and binary classification are supported here.");
+                    return;
+                }
+
+                if (state.task === "binary_classification" && !state.positiveLabel) {
+                    openToxMapModal(state.uniqueLabels);
+                    return;
+                }
+
+                await loadDatasetForTraining();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
         function buildPositiveClassOptions(labels) {
             const selected = state.positiveLabel || "";
             els.toxOptions.innerHTML = labels.map((label) => {
@@ -669,28 +714,51 @@
             els.toxOptions.querySelectorAll('input[name="positiveLabel"]').forEach((input) => {
                 input.addEventListener("change", (event) => {
                     state.positiveLabel = event.target.value;
+                    state.configReady = false;
+                    refreshTrainButtonState();
                 });
             });
         }
 
-        function applyTaskConfig() {
+        async function applyTaskConfig() {
             if (state.task === "binary_classification" && !state.positiveLabel) {
                 els.modalError.textContent = "Select the positive class.";
                 els.modalError.classList.remove("hidden");
                 return;
             }
 
-            if (state.task !== "regression" && state.task !== "binary_classification") {
-                els.modalError.textContent = "This task cannot be loaded.";
-                els.modalError.classList.remove("hidden");
+            closeModal();
+        }
+
+        async function loadDatasetForTraining() {
+            ensureLogStream();
+            els.logArea.textContent = "";
+
+            const formData = new FormData();
+            formData.append("csv_path", state.csvPath);
+            formData.append("smiles_header", state.smilesHeader);
+            formData.append("target_header", state.targetHeader);
+            formData.append("task", state.task);
+            formData.append("positive_label", state.positiveLabel);
+
+            try {
+                const response = await fetch("/api/load-dataset", { method: "POST", body: formData });
+                const data = await response.json();
+                if (!data.success) {
+                    state.configReady = false;
+                    refreshTrainButtonState();
+                    showError(data.error || "Unable to load dataset for training.");
+                    return;
+                }
+            } catch (error) {
+                state.configReady = false;
+                refreshTrainButtonState();
+                showError(error.message);
                 return;
             }
 
             state.configReady = true;
-            state.lastLoadedSignature = getHeaderSignature();
-            refreshLoadButtonState();
             refreshTrainButtonState();
-            closeModal();
         }
 
         function formatTaskLabel(task, labelCount) {
@@ -708,10 +776,10 @@
 
         async function startTraining() {
             clearError();
+            ensureLogStream();
 
             const formData = new FormData();
             formData.append("csv_path", state.csvPath);
-            formData.append("csv_name", state.csvFilename);
             formData.append("smiles_header", state.smilesHeader);
             formData.append("target_header", state.targetHeader);
             formData.append("task", state.task);
@@ -724,18 +792,20 @@
                     showError(data.error || "Unable to start training.");
                     return;
                 }
-                els.logArea.textContent = "";
-                streamLogs();
             } catch (error) {
                 showError(error.message);
             }
         }
 
-        function streamLogs() {
-            const source = new EventSource("/api/logs/stream");
-            source.onmessage = (event) => {
+        function ensureLogStream() {
+            if (logSource && logSource.readyState !== EventSource.CLOSED) {
+                return;
+            }
+
+            logSource = new EventSource("/api/logs/stream");
+            logSource.onmessage = (event) => {
                 if (event.data === "__DONE__") {
-                    source.close();
+                    logSource.close();
                     return;
                 }
 
@@ -746,8 +816,8 @@
                 }
             };
 
-            source.onerror = () => {
-                source.close();
+            logSource.onerror = () => {
+                logSource.close();
             };
         }
 

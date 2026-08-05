@@ -5,23 +5,22 @@ Run with:  python app.py
 Then open: http://localhost:8080
 """
 
-import asyncio
 import csv
 import io
 import threading
 import traceback
-from pathlib import Path
 from typing import Generator
 from queue import Queue, Empty
 
 import torch
 from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 
 # Import ML training code
-from bumblebee import main_loop
+from bumblebee import load_dataset, train as train_model
+from trainer import Trainer
 import reproducibility
 
 # ---------------------------------------------------------------------------
@@ -42,6 +41,9 @@ log_queue: Queue = Queue()
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Prepared training context populated by /api/load-dataset
+prepared_context: dict = {}
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +98,33 @@ def build_dataset_info(
         except Exception:
             pass
     return info
+
+
+def dataset_signature(dataset_info: dict) -> tuple:
+    """Build a stable signature for validating prepared context."""
+    return (
+        dataset_info.get("path", ""),
+        dataset_info.get("smiles_header", ""),
+        dataset_info.get("target_header", ""),
+        dataset_info.get("task", ""),
+        dataset_info.get("tox_map", {}).__repr__(),
+    )
+
+
+def _run_with_queue_output(func, *args, **kwargs):
+    """Run a callable while routing stdout and stderr into the shared log queue."""
+    import sys
+
+    old_stdout, old_stderr = sys.stdout, sys.stderr
+    writer = _QueueWriter(log_queue)
+    sys.stdout = writer
+    sys.stderr = writer
+    try:
+        return func(*args, **kwargs)
+    finally:
+        writer.flush()
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +190,6 @@ async def detect_task_endpoint(csv_path: str = Form(...), target_header: str = F
 @app.post("/api/train")
 async def start_training(
     csv_path: str = Form(...),
-    csv_name: str = Form(default=""),
     smiles_header: str = Form(...),
     target_header: str = Form(...),
     task: str = Form(...),
@@ -183,6 +211,14 @@ async def start_training(
         
         if task == "binary_classification" and not positive_label:
             return {"success": False, "error": "Please select positive class"}
+
+        expected_signature = dataset_signature(dataset_info)
+        if not prepared_context:
+            return {"success": False, "error": "Please click Load first."}
+        if prepared_context.get("signature") != expected_signature:
+            return {"success": False, "error": "Headers or task changed. Click Load again."}
+        if prepared_context.get("trainingset") is None:
+            return {"success": False, "error": "Training context is not ready. Click Load again."}
         
         # Clear queue and start thread
         while not log_queue.empty():
@@ -196,6 +232,50 @@ async def start_training(
         thread.start()
         
         return {"success": True, "message": "Training started"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/load-dataset")
+async def load_dataset_for_training(
+    csv_path: str = Form(...),
+    smiles_header: str = Form(...),
+    target_header: str = Form(...),
+    task: str = Form(...),
+    positive_label: str = Form(default=""),
+):
+    """Prepare training dataset from selected headers/task."""
+    try:
+        dataset_info = build_dataset_info(
+            csv_path,
+            smiles_header,
+            target_header,
+            task,
+            positive_label,
+        )
+
+        if task == "binary_classification" and not positive_label:
+            return {"success": False, "error": "Please select positive class"}
+
+        prepared_context.clear()
+        while not log_queue.empty():
+            log_queue.get_nowait()
+
+        trainingset = _run_with_queue_output(
+            load_dataset,
+            dataset_info,
+            train=True,
+            flag="Training set",
+        )
+
+        prepared_context.clear()
+        prepared_context.update({
+            "signature": dataset_signature(dataset_info),
+            "dataset_info": dataset_info,
+            "trainingset": trainingset,
+        })
+
+        return {"success": True, "size": len(trainingset)}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -256,6 +336,10 @@ def _run_training(dataset_info: dict):
     sys.stderr = writer
     
     try:
+        trainingset = prepared_context.get("trainingset")
+        if trainingset is None:
+            raise RuntimeError("Training context missing. Please click Load again.")
+
         print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"DEVICE: {device}")
         print()
@@ -263,9 +347,9 @@ def _run_training(dataset_info: dict):
         if dataset_info["task"] == "binary_classification":
             reproducibility.use_deterministic_algorithms(device)
         
-        reproducibility.set_torch_seed()
+        trainer = Trainer(dataset_info["task"], device)
         start = time.time()
-        main_loop(dataset_info, device)
+        train_model(trainer, trainingset)
         print()
         print(f"TOTAL TIME: {time.time() - start:.0f}s")
         print()
