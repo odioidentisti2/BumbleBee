@@ -22,7 +22,7 @@ class Explainer:
         # ig_feat_list = []
         # ig_atom_bond_list = []
         # ig_edge_list = []
-        c = 0
+        c = b = 0
         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
         for batch in loader:
             batch = batch.to(device)
@@ -47,6 +47,11 @@ class Explainer:
                     else:
                         repeat = False  # Move to next molecule
                 c += 1
+                if b >= 1:
+                    break  # DEBUG
+            if b >= 1:
+                break  # DEBUG
+            b += 1
 
             # # Unpack and extend the three lists
             # feat_batch, atom_bond_batch, edge_batch = batch_ig
