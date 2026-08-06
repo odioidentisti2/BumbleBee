@@ -133,8 +133,8 @@ if __name__ == "__main__":
 
     model_name = None
     _datasets = []
-    # _datasets.append((datasets.logp_train, datasets.logp_test))
-    _datasets.append((datasets.muta_train, datasets.muta_test))
+    _datasets.append((datasets.logp_train, datasets.logp_test))
+    # _datasets.append((datasets.muta_train, datasets.muta_test))
 
     for trainingset_info, testset_info in _datasets:
         # model_name = 'L4_LOGP_10e.pt'
