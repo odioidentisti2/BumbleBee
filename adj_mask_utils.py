@@ -48,6 +48,16 @@ def edge_adjacency(source, target):
     adj_mask = src_adj | dst_adj  # [num_edges, num_edges]
     return adj_mask.fill_diagonal_(False)  # # Mask out self-adjacency
 
+# def edge_adjacency(source, target):
+#     """
+#     Directed edge-transition mask.
+
+#     Edge-token i can attend edge-token j when j starts
+#     from the atom where i terminates.
+#     """
+#     adj_mask = target[:, None] == source[None, :]
+#     return adj_mask.fill_diagonal_(False)
+
 def edge_mask(b_edge_index, b_map, batch_size, num_edges):
     """
     Generates a boolean adjacency mask for edges across a batch of graph instances.
