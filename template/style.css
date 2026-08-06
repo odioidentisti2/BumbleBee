@@ -21,7 +21,7 @@ body {
   grid-template-rows: 62px 1fr 30px;
   background: var(--blue-night);
   color: var(--whitish);
-  font-family: sans-serif;
+  font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
 }
 
 .menu-bar {
@@ -130,7 +130,7 @@ body {
 
 .load-set-text {
   position: absolute;
-  top: 150px;
+  top: 160px;
   left: 50px;
   color: var(--charcoal);
   font-size: 18px;
