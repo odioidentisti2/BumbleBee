@@ -132,22 +132,27 @@ if __name__ == "__main__":
     print(f"DEVICE: {device}")
 
     model_name = None
-    _datasets = []
-    _datasets.append((datasets.logp_train, datasets.logp_test))
+    # _datasets = []
+    # _datasets.append((datasets.logp_train, datasets.logp_test))
     # _datasets.append((datasets.muta_train, datasets.muta_test))
 
-    for trainingset_info, testset_info in _datasets:
-        # model_name = 'L4_LOGP_10e.pt'
-        # model_name = 'L4_MUTA_new_inj.pt'
+    # trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
+    # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
+    trainingset_info = datasets.logp_split
 
-        ### Reproducibility  (MSELoss => regression is deterministic enough ?)
-        if trainingset_info['task'] == 'binary_classification':
-            reproducibility.use_deterministic_algorithms(device)
+    # model_name = 'L4_LOGP_10e.pt'
+    # model_name = 'L4_MUTA_new_inj.pt'
 
-        start_time = time.time()
-        # crossvalidation(dataset_info, device)   
-        main_loop(trainingset_info, testset_info, device, model_name)
-        print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
+    ### Reproducibility  (MSELoss => regression is deterministic enough ?)
+    if trainingset_info['task'] == 'binary_classification':
+        reproducibility.use_deterministic_algorithms(device)
+
+    # print("CV, MUTA, early stop")
+
+    start_time = time.time()
+    crossvalidation(trainingset_info, device)
+    # main_loop(trainingset_info, testset_info, device, model_name)
+    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
 

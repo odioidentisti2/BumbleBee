@@ -55,7 +55,7 @@ class Trainer:
         if PARAMS['early_stop']:
             max_epochs = max(1, PARAMS['max_steps'] * PARAMS['train_batch_size'] // len(trainingset))  # DEBUG (does not reach max_steps)
         else:
-            max_epochs = 100
+            max_epochs = 10
 
         # Configuration of validation + early stop
         val_interval = stopper = None
