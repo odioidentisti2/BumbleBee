@@ -118,3 +118,14 @@ body {
   height: 45px;
   fill: currentColor;
 }
+
+.load-set-text {
+  position: absolute;
+  top: 150px;
+  left: 50px;
+  color: var(--charcoal);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  max-width: 500px;
+  overflow-wrap: anywhere;
+}
