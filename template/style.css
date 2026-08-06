@@ -60,6 +60,15 @@ body {
   background: var(--whitish);
 }
 
+.train-page .main-split {
+  grid-template-columns: 1fr 1fr;
+  transition: grid-template-columns 700ms ease;
+}
+
+.train-page.split-ready .main-split {
+  grid-template-columns: 1fr 2fr;
+}
+
 .panel {
   display: flex;
   align-items: center;
