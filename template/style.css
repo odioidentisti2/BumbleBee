@@ -56,6 +56,10 @@ body {
   border-right: 1px solid var(--split-line);
 }
 
+.panel.right {
+  position: relative;
+}
+
 .train-page .panel.left {
   background: var(--whitish);
 }
@@ -130,11 +134,23 @@ body {
 
 .load-set-text {
   position: absolute;
-  top: 160px;
+  top: 50px;
   left: 50px;
-  color: var(--charcoal);
+  color: #7fe6c4;
   font-size: 18px;
   letter-spacing: 0.06em;
   max-width: 500px;
   overflow-wrap: anywhere;
+  text-shadow: 0 0 6px rgba(127, 230, 196, 0.35);
+}
+
+.blink {
+  color: #5fe0ff;
+  animation: blink 1.8s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
 }

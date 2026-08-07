@@ -8,6 +8,10 @@ requestAnimationFrame(() => {
 if (trainingSetInput && trainingSetText) {
   trainingSetInput.addEventListener("change", () => {
     const selectedFile = trainingSetInput.files && trainingSetInput.files[0] ? trainingSetInput.files[0].name : "";
-    trainingSetText.textContent = selectedFile || "Browse a TRAINING SET...";
+    if (selectedFile) {
+      trainingSetText.innerHTML = selectedFile;
+    } else {
+      trainingSetText.innerHTML = 'Upload a <span class="blink">TRAINING SET</span>...';
+    }
   });
 }
