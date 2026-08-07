@@ -5,7 +5,7 @@ function buildFolderIcon() {
 
 // Initialize one controls panel from data attributes.
 function initControlsPanel(panel) {
-  const outputTarget = panel.dataset.outputTarget || "";
+  const pageLabel = (document.body.dataset.pageLabel || "RUN").trim().toUpperCase();
 
   panel.innerHTML = `
     <input class="control-file-input" type="file" accept=".csv">
@@ -13,11 +13,13 @@ function initControlsPanel(panel) {
       <label class="control-file-button">${buildFolderIcon()}</label>
       <span class="control-file-caption">Browse...</span>
     </div>
+    <button type="button" class="control-action-button" disabled>${pageLabel}</button>
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
   const fileButton = panel.querySelector(".control-file-button");
-  if (!fileInput || !fileButton) {
+  const actionButton = panel.querySelector(".control-action-button");
+  if (!fileInput || !fileButton || !actionButton) {
     return;
   }
 
@@ -26,19 +28,28 @@ function initControlsPanel(panel) {
   fileInput.id = inputId;
   fileButton.setAttribute("for", inputId);
 
-  // Notify target console when a dataset is selected (or cleared).
+  // Send selected file to the preview modal flow.
   fileInput.addEventListener("change", () => {
-    const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : "";
+    const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (!selectedFile) {
+      return;
+    }
 
-    if (outputTarget) {
-      const outputPanel = document.querySelector(outputTarget);
-      if (outputPanel) {
-        outputPanel.dispatchEvent(new CustomEvent("console:set-text", {
-          detail: {
-            selected: Boolean(selectedFile),
-          },
-        }));
-      }
+    actionButton.disabled = true;
+
+    document.dispatchEvent(new CustomEvent("csv:file-selected", {
+      detail: {
+        file: selectedFile,
+      },
+    }));
+  });
+
+  document.addEventListener("csv:config-ready", () => {
+    actionButton.disabled = false;
+
+    const consoleText = document.querySelector(".console-text");
+    if (consoleText) {
+      consoleText.innerHTML = "";
     }
   });
 }
