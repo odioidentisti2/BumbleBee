@@ -13,3 +13,8 @@ if (footer) {
   footer.className = "status-bar";
   footer.innerHTML = `<span>Device: ${device}</span>`;
 }
+
+// Shared split animation trigger for pages using the split-ready class.
+requestAnimationFrame(() => {
+  document.body.classList.add("split-ready");
+});

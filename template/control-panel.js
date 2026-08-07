@@ -3,20 +3,16 @@ function buildFolderIcon() {
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>';
 }
 
-// Create the default prompt shown in the paired console before file selection.
-function getDefaultPrompt(browseLabel, targetLabel) {
-  return `${browseLabel} <span class="blink">${targetLabel}</span>...`;
-}
-
 // Initialize one controls panel from data attributes.
 function initControlsPanel(panel) {
-  const browseLabel = panel.dataset.browseLabel || "Upload a";
-  const targetLabel = panel.dataset.targetLabel || "DATASET";
   const outputTarget = panel.dataset.outputTarget || "";
 
   panel.innerHTML = `
     <input class="control-file-input" type="file" accept=".csv">
-    <label class="control-file-button">${buildFolderIcon()}</label>
+    <div class="control-file-row">
+      <label class="control-file-button">${buildFolderIcon()}</label>
+      <span class="control-file-caption">Browse...</span>
+    </div>
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
@@ -30,18 +26,16 @@ function initControlsPanel(panel) {
   fileInput.id = inputId;
   fileButton.setAttribute("for", inputId);
 
-  // Push selected filename (or default prompt) to the target console panel.
+  // Notify target console when a dataset is selected (or cleared).
   fileInput.addEventListener("change", () => {
     const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : "";
-    const text = selectedFile || getDefaultPrompt(browseLabel, targetLabel);
 
     if (outputTarget) {
       const outputPanel = document.querySelector(outputTarget);
       if (outputPanel) {
         outputPanel.dispatchEvent(new CustomEvent("console:set-text", {
           detail: {
-            html: text,
-            isDefault: !selectedFile,
+            selected: Boolean(selectedFile),
           },
         }));
       }

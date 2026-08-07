@@ -2,11 +2,19 @@
   --whitish: #f5f6f4;
   --charcoal: #17232d;
   --yellow: #ffb20a;
-  --yellow-dark: #dc9400;
+  --yellow-dark: #dc9400;  /* keep this even if unused */
   --blue-night: #101e2a;
-  --neon-cyan: #2fbec9;
+  --console-ink: #78C28A;
   --line-gray: #8a939b;
   --split-line: #1d2b38;
+}
+
+@font-face {
+  font-family: "TerminalPixel";
+  src: url("assets/departure-mono-regular.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+  font-style: normal;
 }
 
 /* =========================
@@ -25,7 +33,7 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-rows: 62px 1fr 30px;
-  background: var(--blue-night);
+  background: var(--whitish);
   color: var(--whitish);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
 }
@@ -87,15 +95,15 @@ body {
 
 .panel-action {
   background: transparent;
-  border: 1px solid var(--neon-cyan);
-  color: var(--neon-cyan);
+  border: 1px solid var(--console-ink);
+  color: var(--console-ink);
   padding: 14px 26px;
   letter-spacing: 0.08em;
   text-decoration: none;
 }
 
 .panel-action:visited {
-  color: var(--neon-cyan);
+  color: var(--console-ink);
   text-decoration: none;
 }
 
@@ -110,10 +118,17 @@ body {
   display: none;
 }
 
-.control-file-button {
+.control-file-row {
   position: absolute;
   top: 50px;
   left: 50px;
+  height: 75px;
+  display: flex;
+  align-items: flex-end;
+  gap: 30px;
+}
+
+.control-file-button {
   width: 75px;
   height: 75px;
   border: 1px solid var(--line-gray);
@@ -122,6 +137,7 @@ body {
   display: grid;
   place-items: center;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .control-file-button svg {
@@ -130,28 +146,46 @@ body {
   fill: currentColor;
 }
 
+.control-file-caption {
+  color: var(--charcoal);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  padding-bottom: 0;
+}
+
 /* =========================
    Console (output-console.js)
    ========================= */
 .console {
   background: var(--blue-night);
+  font-family: "TerminalPixel", monospace;
+}
+
+.console * {
+  font-family: "TerminalPixel", "Courier New", "Liberation Mono", monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: geometricPrecision;
 }
 
 .console-text {
   position: absolute;
   top: 50px;
   left: 50px;
-  color: #7fe6c4;
-  font-size: 18px;
-  letter-spacing: 0.06em;
+  color: var(--console-ink);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 400;
+  text-shadow: none;
   max-width: 500px;
   overflow-wrap: anywhere;
-  text-shadow: 0 0 6px rgba(127, 230, 196, 0.35);
 }
 
 .blink {
-  color: #5fe0ff;
-  animation: blink 1.8s steps(2, start) infinite;
+  color: var(--console-ink);
+  animation: blink 1.5s steps(2, start) infinite;
 }
 
 @keyframes blink {
@@ -176,5 +210,10 @@ body {
    Test Page Customization
    ========================= */
 .test-page .main-split {
+  grid-template-columns: 1fr 1fr;
+  transition: grid-template-columns 700ms ease;
+}
+
+.test-page.split-ready .main-split {
   grid-template-columns: 2fr 1fr;
 }
