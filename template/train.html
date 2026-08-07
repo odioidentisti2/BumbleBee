@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,27 +9,20 @@
 </head>
 
 <body class="train-page" data-device="{{ device }}" data-page-label="TRAIN">
+
   <header id="shared-header"></header>
 
   <main class="main-split">
-
-    <section class="panel left">
-      <input id="trainingSetInput" class="hidden-file-input" type="file" accept=".csv" aria-label="Load a training set">
-      <label for="trainingSetInput" class="load-set-button" aria-label="Load a training set">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path>
-        </svg>
-      </label>
-    </section>
-
-    <section class="panel right">
-      <div id="trainingSetText" class="load-set-text">Upload a <span class="blink">TRAINING SET</span>...</div>
-    </section>
-
+    <section class="panel controls" data-browse-label="Upload a" data-target-label="TRAINING SET" data-output-target="#trainOutputConsole"></section>
+    <section id="trainOutputConsole" class="panel console" data-blink-target="TRAINING SET"></section>
   </main>
 
   <footer id="shared-footer"></footer>
+
   <script src="shared.js"></script>
+  <script src="control-panel.js"></script>
+  <script src="output-console.js"></script>
   <script src="train.js"></script>
+
 </body>
 </html>

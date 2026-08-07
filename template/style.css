@@ -9,12 +9,18 @@
   --split-line: #1d2b38;
 }
 
+/* =========================
+   Base Reset
+   ========================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* =========================
+   Page Shell
+   ========================= */
 body {
   min-height: 100vh;
   display: grid;
@@ -24,6 +30,9 @@ body {
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
 }
 
+/* =========================
+   Shared Header / Footer
+   ========================= */
 .menu-bar {
   background: var(--whitish);
   border-bottom: 1px solid var(--line-gray);
@@ -46,38 +55,34 @@ body {
   display: block;
 }
 
+.status-bar {
+  background: var(--whitish);
+  color: var(--charcoal);
+  border-top: 1px solid var(--line-gray);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+/* =========================
+   Split Layout
+   ========================= */
 .main-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
 
-.panel.left {
-  position: relative;
-  border-right: 1px solid var(--split-line);
-}
-
-.panel.right {
-  position: relative;
-}
-
-.train-page .panel.left {
-  background: var(--whitish);
-}
-
-.train-page .main-split {
-  grid-template-columns: 1fr 1fr;
-  transition: grid-template-columns 700ms ease;
-}
-
-.train-page.split-ready .main-split {
-  grid-template-columns: 1fr 2fr;
-}
-
 .panel {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--blue-night);
+}
+
+.panel:first-child {
+  border-right: 1px solid var(--split-line);
 }
 
 .panel-action {
@@ -94,45 +99,45 @@ body {
   text-decoration: none;
 }
 
-.status-bar {
+/* =========================
+   Controls (control-panel.js)
+   ========================= */
+.controls {
   background: var(--whitish);
-  color: var(--charcoal);
-  border-top: 1px solid var(--line-gray);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 12px;
-  font-size: 12px;
 }
 
-
-/* TRAIN PAGE */
-
-.hidden-file-input {
+.control-file-input {
   display: none;
 }
 
-.load-set-button {
+.control-file-button {
   position: absolute;
   top: 50px;
   left: 50px;
   width: 75px;
   height: 75px;
   border: 1px solid var(--line-gray);
-  border-radius: 10px;  
+  border-radius: 10px;
   color: var(--yellow);
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 
-.load-set-button svg {
+.control-file-button svg {
   width: 45px;
   height: 45px;
   fill: currentColor;
 }
 
-.load-set-text {
+/* =========================
+   Console (output-console.js)
+   ========================= */
+.console {
+  background: var(--blue-night);
+}
+
+.console-text {
   position: absolute;
   top: 50px;
   left: 50px;
@@ -153,4 +158,23 @@ body {
   50% {
     opacity: 0.25;
   }
+}
+
+/* =========================
+   Train Page Customization
+   ========================= */
+.train-page .main-split {
+  grid-template-columns: 1fr 1fr;
+  transition: grid-template-columns 700ms ease;
+}
+
+.train-page.split-ready .main-split {
+  grid-template-columns: 1fr 2fr;
+}
+
+/* =========================
+   Test Page Customization
+   ========================= */
+.test-page .main-split {
+  grid-template-columns: 2fr 1fr;
 }

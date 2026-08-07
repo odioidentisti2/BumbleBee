@@ -1,3 +1,4 @@
+// Shared page chrome: top menu bar and bottom status bar.
 const header = document.getElementById("shared-header");
 const footer = document.getElementById("shared-footer");
 const label = document.body.dataset.pageLabel;
