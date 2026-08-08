@@ -136,9 +136,9 @@ if __name__ == "__main__":
     # _datasets.append((datasets.logp_train, datasets.logp_test))
     # _datasets.append((datasets.muta_train, datasets.muta_test))
 
-    # trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
+    trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
     # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
-    trainingset_info = datasets.logp_split
+    # trainingset_info = datasets.logp_split
 
     # model_name = 'L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
@@ -150,8 +150,8 @@ if __name__ == "__main__":
     # print("CV, MUTA, early stop")
 
     start_time = time.time()
-    crossvalidation(trainingset_info, device)
-    # main_loop(trainingset_info, testset_info, device, model_name)
+    # crossvalidation(trainingset_info, device)
+    main_loop(trainingset_info, testset_info, device, model_name)
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
