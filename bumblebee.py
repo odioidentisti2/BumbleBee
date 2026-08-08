@@ -4,14 +4,20 @@ from molecular_data import Dataset, InjectedDataset, load_from_csv
 from trainer import Trainer
 from model import MAG
 from explainer import Explainer
-from preprocessing import cv_subsets
 import reproducibility
-import statistics
 import utils
+
+# CV
+from preprocessing import cv_subsets
+import statistics
 
 from pprint import pprint
 import datasets
 from parameters import print_parameters
+
+
+def get_device():
+    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def save(path, model):
@@ -23,7 +29,9 @@ def save(path, model):
     torch.save(ckpt, path)
     print(f"\nModel saved to: {path}")
 
-def load(model_path, device):
+
+def load(model_path):
+    device = get_device()
     ckpt = torch.load(model_path, map_location=device)
     model = MAG(device)
     model.load_state_dict(ckpt['state_dict'])
@@ -32,26 +40,27 @@ def load(model_path, device):
     print(f"\nLoaded model from {model_path} with task: {model.task}")
     return model
 
-def crossvalidation(dataset_info, device, folds=5):
-    print(f"\nCross-Validation on: {utils.get_name(dataset_info['path'])}")
-    graphs = load_from_csv(dataset_info)
-    cv_tracker = statistics.CVTracker()
-    
-    for fold, (train_indices, test_indices) in enumerate(cv_subsets(len(graphs), folds), start=1):
-        print_parameters()
-        reproducibility.set_torch_seed()
-        utils.print_header(f"Fold {fold}/{folds}")
 
-        trainingset  = InjectedDataset([graphs[i] for i in train_indices])
-        testset      = Dataset([graphs[i] for i in test_indices])
-        print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
-
-        trainer = Trainer(dataset_info['task'], device)
-        trainer.tracker.accumulate = True  # keep all runs
-        trainer.train(MAG(device), trainingset, val_set=testset)
-        cv_tracker.add_fold(trainer.tracker.metrics())    
+# def crossvalidation(dataset_info, device, folds=5):
+#     print(f"\nCross-Validation on: {utils.get_name(dataset_info['path'])}")
+#     graphs = load_from_csv(dataset_info)
+#     cv_tracker = statistics.CVTracker()
     
-    cv_tracker.summary()  # Print summary
+#     for fold, (train_indices, test_indices) in enumerate(cv_subsets(len(graphs), folds), start=1):
+#         print_parameters()
+#         reproducibility.set_torch_seed()
+#         utils.print_header(f"Fold {fold}/{folds}")
+
+#         trainingset  = InjectedDataset([graphs[i] for i in train_indices])
+#         testset      = Dataset([graphs[i] for i in test_indices])
+#         print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
+
+#         trainer = Trainer(dataset_info['task'], device)
+#         trainer.tracker.accumulate = True  # keep all runs
+#         trainer.train(MAG(device), trainingset, val_set=testset)
+#         cv_tracker.add_fold(trainer.tracker.metrics())    
+    
+#     cv_tracker.summary()  # Print summary
 
 
 def load_dataset(dataset_info, train=False, flag='Dataset'):
@@ -64,15 +73,26 @@ def load_dataset(dataset_info, train=False, flag='Dataset'):
         dataset = Dataset(graphs)
     dataset.task = dataset_info['task']
     return dataset
+
     
-def train(device, trainingset, validation_set=None):
-    print_parameters()
+def train(trainingset, validation_set=None):
+    ### CPU or GPU
+    device = get_device()
+    
+    ### Reproducibility
     reproducibility.set_torch_seed()
+    if trainingset.task == 'binary_classification':
+        # (MSELoss => regression is deterministic enough ?)
+        reproducibility.use_deterministic_algorithms(device)
 
-    trainer = Trainer(trainingset.task, device)
+    ### DEBUG
+    print(f"DEVICE: {device}")
+    print_parameters()
 
-    model = MAG(trainer.device)
+    ### Train
     print("\nTraining...")
+    trainer = Trainer(trainingset.task, device)
+    model = MAG(device)
     trainer.train(model, trainingset, val_set=validation_set)
 
     ### Calibration (for Explainer)
@@ -80,15 +100,14 @@ def train(device, trainingset, validation_set=None):
     trainer.calibrate(model, trainingset)
     return model
 
+
 def test(testset, model):
     print("\nTesting...")
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
 
-def main_loop(trainingset_info, testset_info, device, model_name=None):
-    # print_parameters()
-    # reproducibility.set_torch_seed()
+def main_loop(trainingset_info, testset_info, model_name=None):
     
     if not model_name:  # Train model
 
@@ -100,7 +119,7 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
         validation_set = load_dataset(testset_info, flag='Validation set')
 
         ### Train model
-        model = train(device, trainingset, validation_set)
+        model = train(trainingset, validation_set)
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
@@ -109,10 +128,10 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
         ### Save model
         # model_name = "L4_LOGP_early_stop.pt"
         # save(f"MODELS/{model_name}", model)
-        # model = load(f"MODELS/{model_name}", device)
+        # model = load(f"MODELS/{model_name}", model.device)
 
     else:  # Load saved model
-        model = load(f"MODELS/{model_name}", device)
+        model = load(f"MODELS/{model_name}")
 
     ### Test 
     testset = load_dataset(testset_info, flag='Test set')
@@ -130,31 +149,19 @@ if __name__ == "__main__":
     import time
     print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    ### CPU or GPU
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"DEVICE: {device}")
-
-    model_name = None
-    # _datasets = []
-    # _datasets.append((datasets.logp_train, datasets.logp_test))
-    # _datasets.append((datasets.muta_train, datasets.muta_test))
-
     trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
     # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
     # trainingset_info = datasets.logp_split
 
+    model_name = None
     # model_name = 'L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
-
-    ### Reproducibility  (MSELoss => regression is deterministic enough ?)
-    if trainingset_info['task'] == 'binary_classification':
-        reproducibility.use_deterministic_algorithms(device)
 
     # print("CV, MUTA, early stop")
 
     start_time = time.time()
     # crossvalidation(trainingset_info, device)
-    main_loop(trainingset_info, testset_info, device, model_name)
+    main_loop(trainingset_info, testset_info, model_name)
     print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
