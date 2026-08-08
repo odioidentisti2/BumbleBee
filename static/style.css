@@ -12,7 +12,6 @@
   --cyan1: #bddcf4;
   --cyan2: #8dc3ec;
   --line-gray: #8a939b;
-  --split-line: #1d2b38;
 }
 
 @font-face {
@@ -98,7 +97,7 @@ body {
 }
 
 .panel:first-child {
-  border-right: 1px solid var(--split-line);
+  border-right: 1px solid var(--console-ink);
 }
 
 .panel-action {

@@ -6,7 +6,7 @@ const device = document.body.dataset.device;
 
 if (header) {
   header.className = "menu-bar";
-  header.innerHTML = `<img src="assets/Tox-Bumblebee.svg" alt="BumbleBee logo" class="logo">${label ? `<span class="page-label">${label}</span>` : ""}`;
+  header.innerHTML = `<img src="static/assets/Tox-Bumblebee.svg" alt="BumbleBee logo" class="logo">${label ? `<span class="page-label">${label}</span>` : ""}`;
 }
 
 if (footer) {
