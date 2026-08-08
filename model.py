@@ -29,6 +29,7 @@ class MAG(torch.nn.Module):
         self._attention_store = []
 
         self.to(device)
+        self.device = device
         
     def track_attention(self, enable=True):
         """Enable or disable attention tracking."""

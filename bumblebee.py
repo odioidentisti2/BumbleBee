@@ -59,13 +59,17 @@ def load_dataset(dataset_info, train=False, flag='Dataset'):
     graphs = load_from_csv(dataset_info)
     print(f"Loaded: {len(graphs)} structures")
     if train:
-        return InjectedDataset(graphs)
+        dataset = InjectedDataset(graphs)
     else:
-        return Dataset(graphs)
+        dataset = Dataset(graphs)
+    dataset.task = dataset_info['task']
+    return dataset
     
-def train(trainer, trainingset, validation_set=None):
+def train(device, trainingset, validation_set=None):
     print_parameters()
     reproducibility.set_torch_seed()
+
+    trainer = Trainer(trainingset.task, device)
 
     model = MAG(trainer.device)
     print("\nTraining...")
@@ -76,17 +80,16 @@ def train(trainer, trainingset, validation_set=None):
     trainer.calibrate(model, trainingset)
     return model
 
-def test(trainer, model, testset):
+def test(testset, model):
     print("\nTesting...")
+    trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
 
 def main_loop(trainingset_info, testset_info, device, model_name=None):
-    print_parameters()
-    reproducibility.set_torch_seed()
+    # print_parameters()
+    # reproducibility.set_torch_seed()
     
-    trainer = Trainer(trainingset_info['task'], device)
-
     if not model_name:  # Train model
 
         ### Training set
@@ -97,7 +100,7 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
         validation_set = load_dataset(testset_info, flag='Validation set')
 
         ### Train model
-        model = train(trainer, trainingset, validation_set)
+        model = train(device, trainingset, validation_set)
 
         ## Statistics on Training set
         # print("\nEvaluating on training set...")
@@ -113,7 +116,7 @@ def main_loop(trainingset_info, testset_info, device, model_name=None):
 
     ### Test 
     testset = load_dataset(testset_info, flag='Test set')
-    test(trainer, model, testset)
+    test(testset, model)
 
     ### Explain
     if hasattr(model, "calibration_data") and model.calibration_data is not None:

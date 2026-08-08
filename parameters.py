@@ -11,7 +11,7 @@ train_params = {
     'max_steps': 10**5,
     # 'weight_decay': 1e-5,
     # 'inject': True,  # Enabled by default, otherwise models with/without are inconsistent
-    'early_stop': True,
+    'early_stop': False,
 }
 
 
