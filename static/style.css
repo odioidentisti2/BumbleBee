@@ -204,7 +204,7 @@ body {
 }
 
 .blink {
-  animation: blink 1.2s steps(2, start) infinite;
+  animation: crt-glow 1s ease-in-out infinite;
 }
 
 @keyframes blink {
@@ -212,6 +212,17 @@ body {
     opacity: 0.25;
   }
 }
+
+@keyframes crt-glow {
+  0%, 100% {
+    text-shadow: 0 0 0px currentColor;
+  }
+
+  50% {
+    text-shadow: 0 0 3px currentColor;
+  }
+}
+
 
 .console-action {
   align-items: center;
