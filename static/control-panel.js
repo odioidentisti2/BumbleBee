@@ -10,10 +10,10 @@ function initControlsPanel(panel) {
   panel.innerHTML = `
     <input class="control-file-input" type="file" accept=".csv">
     <div class="control-file-row">
-      <label class="control-file-button">${buildFolderIcon()}</label>
+      <label class="control-file-button control-button">${buildFolderIcon()}</label>
       <span class="control-file-caption">Browse...</span>
     </div>
-    <button type="button" class="control-action-button" disabled>${pageLabel}</button>
+    <button type="button" class="control-action-button control-button" disabled>${pageLabel}</button>
   `;
 
   const fileInput = panel.querySelector(".control-file-input");

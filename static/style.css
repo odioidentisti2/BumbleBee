@@ -4,7 +4,7 @@
   --yellow: #ffb20a;
   --yellow-dark: #dc9400;  /* keep this even if unused */
   --blue-night: #101e2a;
-  --console-ink: #78C28A;
+  --console-ink: #61c279;
   --gray1: #f7f9fb;
   --gray2: #e8ecef;
   --gray3: #c3c8ce;
@@ -14,15 +14,6 @@
   --line-gray: #8a939b;
 }
 
-@font-face {
-  font-family: "TerminalPixel";
-  src: url("assets/NimbusMonoPS-Regular.otf") format("opentype");
-  font-display: swap;
-  font-weight: 400;
-  font-style: normal;
-  ascent-override: 80%;
-  descent-override: 20%;
-}
 
 /* =========================
    Base Reset
@@ -39,17 +30,17 @@
 body {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: 62px 1fr 30px;
+  grid-template-rows: 70px 1fr 35px;  /* header, main, footer */
   background: var(--whitish);
-  color: var(--whitish);
+  color: var(--charcoal);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
+  letter-spacing: 0.02em;
 }
 
 /* =========================
    Shared Header / Footer
    ========================= */
 .menu-bar {
-  background: var(--whitish);
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -58,25 +49,20 @@ body {
 .page-label {
   margin-left: auto;
   margin-right: 12px;
-  color: var(--charcoal);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .logo {
   height: 50px;
-  max-height: 50px;
-  width: auto;
   display: block;
 }
 
 .status-bar {
-  background: var(--whitish);
-  color: var(--charcoal);
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: small;
 }
 
 /* =========================
@@ -91,7 +77,7 @@ body {
 .train-page .main-split,
 .test-page .main-split {
     column-gap: 0;
-    transition: grid-template-columns 700ms ease;
+    transition: grid-template-columns 1s ease;
 }
 
 .train-page.split-ready .main-split {
@@ -107,20 +93,26 @@ body {
   display: flex;
   border-top: 1px solid var(--line-gray);
   border-bottom: 1px solid var(--line-gray);
+  padding: 50px;
 }
 
 /* =========================
    Controls (control-panel.js)
    ========================= */
 
+.control-button {
+  background: transparent;
+  border: 1px solid var(--line-gray);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .control-file-input {
-  display: none;
+  display: none;  /*hidden file input*/
 }
 
 .control-file-row {
   position: absolute;
-  top: 50px;
-  left: 50px;
   height: 75px;
   display: flex;
   align-items: flex-end;
@@ -130,27 +122,15 @@ body {
 .control-file-button {
   width: 75px;
   height: 75px;
-  border: 1px solid var(--line-gray);
-  border-radius: 10px;
-  color: var(--yellow);
   display: grid;
   place-items: center;
-  cursor: pointer;
   flex: 0 0 auto;
 }
 
 .control-file-button svg {
-  width: 45px;
-  height: 45px;
-  fill: currentColor;
-}
-
-.control-file-caption {
-  color: var(--charcoal);
-  font-size: 16px;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  padding-bottom: 0;
+  width: 70%;
+  height: 70%;
+  fill: var(--yellow);
 }
 
 .control-action-button {
@@ -160,27 +140,45 @@ body {
   transform: translate(-50%, -50%);
   min-width: 250px;
   height: 100px;
-  background: transparent;
-  border: 1px solid var(--line-gray);
-  border-radius: 12px;
-  color: var(--charcoal);
-  font-size: 20px;
-  letter-spacing: 0.08em;
-  cursor: pointer;
+  font-size: larger;
+  letter-spacing: 0.1em;
 }
 
 .control-action-button:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* =========================
    Console (output-console.js)
    ========================= */
+
+@font-face {
+  font-family: Terminal;
+  src: url("assets/NimbusMonoPS-Regular.otf") format("opentype");
+  font-weight: 400;
+  ascent-override: 80%;
+  descent-override: 20%;
+}
+
+.blink {
+  animation: crt-glow 1s ease-in-out infinite;
+}
+
+@keyframes crt-glow {
+  0%, 100% {
+    text-shadow: 0 0 0px currentColor;
+  }
+
+  50% {
+    text-shadow: 0 0 3px currentColor;
+  }
+}
+
 .console {
   background: var(--blue-night);
-  font-family: "TerminalPixel", monospace;
-  color: var(--console-ink);
+  font-family: Terminal, monospace;
+  color: var(--console-ink);  /*lime;*/
   text-decoration: none;
 }
 
@@ -192,9 +190,6 @@ body {
 
 .console-text {
   position: absolute;
-  top: 50px;
-  left: 50px;
-  font-size: 16px;
   line-height: 1;
   letter-spacing: 0;
   font-weight: 400;
@@ -203,34 +198,13 @@ body {
   overflow-wrap: anywhere;
 }
 
-.blink {
-  animation: crt-glow 1s ease-in-out infinite;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0.25;
-  }
-}
-
-@keyframes crt-glow {
-  0%, 100% {
-    text-shadow: 0 0 0px currentColor;
-  }
-
-  50% {
-    text-shadow: 0 0 2px currentColor;
-  }
-}
-
-
 .console-action {
   align-items: center;
   justify-content: center;
   letter-spacing: 0.1em;
 }
 .console-action:hover {
-  text-shadow: 0 0 1px currentColor;
+  text-shadow: 0 0 3px currentColor;
 }
 
 /* =========================
