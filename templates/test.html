@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bumblebee Testing</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body class="test-page" data-device="{{ device }}" data-page-label="TEST">
+
   <header id="shared-header"></header>
 
   <main class="main-split">
     <section class="panel controls"></section>
-    <section id="testOutputConsole" class="panel console" data-browse-label="> Upload a" data-blink-target="TEST SET"></section>
+    <section class="panel console" data-prompt="> Upload a" data-blink-target="TEST SET"></section>
   </main>
 
   <footer id="shared-footer"></footer>
+
   <script src="/static/shared.js"></script>
-  <script src="/static/csv-preview.js"></script>
   <script src="/static/control-panel.js"></script>
   <script src="/static/output-console.js"></script>
+  <script src="/static/csv-preview.js"></script>
 </body>
+
 </html>

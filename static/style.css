@@ -103,13 +103,14 @@ body {
 .controls {
   display: grid;
   grid-template-rows: 1fr 1fr;
+  gap: 25px;
 }
 
 .control-file-input {
   display: none;  /*hidden file input*/
 }
 
-.control-button {
+.control-buttons {
   background: transparent;
   border: 1px solid var(--line-gray);
   border-radius: 10px;
@@ -138,10 +139,11 @@ body {
 
 .control-action-button {
   width: 250px;
-  height: 100px;
+  height: 100px;  
   align-self: center;
   justify-self: center;
   font-size: larger;
+  letter-spacing: 0.1em;  /*why does not inherit it from body?*/
 }
 
 .control-action-button:disabled {

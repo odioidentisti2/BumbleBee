@@ -1,12 +1,10 @@
 // Initialize one console panel from data attributes.
 function initConsolePanel(panel) {
-  const browseLabel = panel.dataset.browseLabel || "Upload a";
-  const blinkTarget = panel.dataset.blinkTarget || "";
-
-  const defaultPrompt = blinkTarget ? `${browseLabel} <span class="blink">${blinkTarget}</span>` : "";
+  const prompt = panel.dataset.prompt || "> Upload a";
+  const blinkTarget = panel.dataset.blinkTarget || "DATASET";
 
   panel.innerHTML = `
-    <div class="console-text">${defaultPrompt}</div>
+    <div class="console-text">${prompt} <span class="blink">${blinkTarget}</span></div>
   `;
 }
 

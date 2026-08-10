@@ -1,19 +1,16 @@
-// Build the folder icon used by the file picker trigger.
-function buildFolderIcon() {
-  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>';
-}
-
 // Initialize one controls panel from data attributes.
 function initControlsPanel(panel) {
-  const pageLabel = (document.body.dataset.pageLabel || "RUN").trim().toUpperCase();
+  const pageLabel = (document.body.dataset.pageLabel || "RUN");
 
   panel.innerHTML = `
     <input class="control-file-input" type="file" accept=".csv">
     <div class="control-file-row">
-      <label class="control-file-button control-button">${buildFolderIcon()}</label>
+      <label class="control-file-button control-buttons">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>
+      </label>
       <span class="control-file-caption">Browse...</span>
     </div>
-    <button type="button" class="control-action-button control-button" disabled>${pageLabel}</button>
+    <button type="button" class="control-action-button control-buttons" disabled>${pageLabel}</button>
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
@@ -44,6 +41,7 @@ function initControlsPanel(panel) {
     }));
   });
 
+  // Clear the console text and enable the action button when the config is ready.
   document.addEventListener("csv:config-ready", () => {
     actionButton.disabled = false;
 
