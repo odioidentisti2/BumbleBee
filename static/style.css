@@ -29,12 +29,13 @@
    ========================= */
 body {
   min-height: 100vh;
+  min-width: 800px;
   display: grid;
   grid-template-rows: 70px 1fr 35px;  /* header, main, footer */
   background: var(--whitish);
   color: var(--charcoal);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.1em;
 }
 
 /* =========================
@@ -49,7 +50,6 @@ body {
 .page-label {
   margin-left: auto;
   margin-right: 12px;
-  letter-spacing: 0.1em;
 }
 
 .logo {
@@ -100,6 +100,15 @@ body {
    Controls (control-panel.js)
    ========================= */
 
+.controls {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
+
+.control-file-input {
+  display: none;  /*hidden file input*/
+}
+
 .control-button {
   background: transparent;
   border: 1px solid var(--line-gray);
@@ -107,12 +116,7 @@ body {
   cursor: pointer;
 }
 
-.control-file-input {
-  display: none;  /*hidden file input*/
-}
-
 .control-file-row {
-  position: absolute;
   height: 75px;
   display: flex;
   align-items: flex-end;
@@ -121,11 +125,10 @@ body {
 
 .control-file-button {
   width: 75px;
-  height: 75px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-}
+  height: 75px;  
+  display: flex;
+  align-items: center;
+  justify-content: center;}
 
 .control-file-button svg {
   width: 70%;
@@ -134,14 +137,11 @@ body {
 }
 
 .control-action-button {
-  position: absolute;
-  left: 50%;
-  top: 72%;
-  transform: translate(-50%, -50%);
-  min-width: 250px;
+  width: 250px;
   height: 100px;
+  align-self: center;
+  justify-self: center;
   font-size: larger;
-  letter-spacing: 0.1em;
 }
 
 .control-action-button:disabled {
@@ -156,9 +156,29 @@ body {
 @font-face {
   font-family: Terminal;
   src: url("assets/NimbusMonoPS-Regular.otf") format("opentype");
-  font-weight: 400;
-  ascent-override: 80%;
-  descent-override: 20%;
+  /* ascent-override: 80%;
+  descent-override: 20%; */
+}
+
+.console {
+  background: var(--blue-night);
+  font-family: Terminal, monospace;
+  color: var(--console-ink);
+  text-decoration: none;
+}
+
+.console-text {
+  position: absolute;
+  letter-spacing: 0em;
+}
+
+.console-action {
+  align-items: center;
+  justify-content: center;
+}
+
+.console-action:hover {
+  text-shadow: 0 0 3px currentColor;
 }
 
 .blink {
@@ -173,38 +193,6 @@ body {
   50% {
     text-shadow: 0 0 3px currentColor;
   }
-}
-
-.console {
-  background: var(--blue-night);
-  font-family: Terminal, monospace;
-  color: var(--console-ink);  /*lime;*/
-  text-decoration: none;
-}
-
-.console * {
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: geometricPrecision;
-}
-
-.console-text {
-  position: absolute;
-  line-height: 1;
-  letter-spacing: 0;
-  font-weight: 400;
-  text-shadow: none;
-  max-width: 500px;
-  overflow-wrap: anywhere;
-}
-
-.console-action {
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.1em;
-}
-.console-action:hover {
-  text-shadow: 0 0 3px currentColor;
 }
 
 /* =========================
