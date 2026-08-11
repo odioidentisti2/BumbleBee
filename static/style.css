@@ -137,16 +137,17 @@ body {
   fill: var(--yellow);
 }
 
-.control-action-button {
+.control-run-button {
   width: 250px;
   height: 100px;  
   align-self: center;
   justify-self: center;
   font-size: larger;
-  letter-spacing: 0.1em;  /*why does not inherit it from body?*/
+  letter-spacing: inherit;  /*why does not inherit it from body?*/
+  font-family: inherit;
 }
 
-.control-action-button:disabled {
+.control-run-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -167,13 +168,10 @@ body {
   font-family: Terminal, monospace;
   color: var(--console-ink);
   text-decoration: none;
-}
-
-.console-text {
   letter-spacing: 0em;
 }
 
-.console-text:empty {
+.console-prompt:empty {
   display: none;
 }
 
@@ -181,8 +179,7 @@ body {
   font-family: inherit;
   overflow: auto;
   white-space: pre-wrap;
-  word-break: break-word;
-  letter-spacing: 0em;
+  word-break: break-word; 
 }
 
 .console-action {

@@ -58,10 +58,10 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function makeDatasetKey() {
-  const page = (document.body.dataset.pageLabel || "dataset").toLowerCase();
-  return `bumblebee_dataset_config_${page}`;
-}
+// function makeDatasetKey() {
+//   const page = (document.body.dataset.pageLabel || "dataset").toLowerCase();
+//   return `bumblebee_dataset_config_${page}`;
+// }
 
 function buildModal() {
   const overlay = document.createElement("div");
@@ -231,30 +231,6 @@ function initCsvPreviewModal() {
     updateButtons();
   }
 
-  // function saveConfig() {
-  //   const config = {
-  //     task: state.task,
-  //     path: `DATASETS/${state.file.name}`,
-  //     smiles_header: state.headers[state.selections.smiles] || "",
-  //     target_header: state.headers[state.selections.target] || "",
-  //     cas_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
-  //   };
-
-  //   localStorage.setItem(makeDatasetKey(), JSON.stringify(config));
-  //   window.bumblebeeDatasetConfig = config;
-  //   return config;
-  // }
-
-  function getDatasetConfig() {
-    return {
-      task: state.task,
-      path: `DATASETS/${state.file.name}`,
-      smiles_header: state.headers[state.selections.smiles] || "",
-      target_header: state.headers[state.selections.target] || "",
-      id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
-    };
-}
-
   function resetState() {
     state.file = null;
     state.headers = [];
@@ -328,15 +304,17 @@ function initCsvPreviewModal() {
   });
 
   confirmBtn.addEventListener("click", () => {
-  //  if (state.activeStep !== 2) {
-  //    return;
-  //  }
-    const config = getDatasetConfig();
     closeModal();
 
-    document.dispatchEvent(new CustomEvent("csv:config-ready", {
+    document.dispatchEvent(new CustomEvent("csv:dataset-info-ready", {
       detail: {
-        config,
+        csvInfo: {
+          task: state.task,
+          path: `DATASETS/${state.file.name}`,
+          smiles_header: state.headers[state.selections.smiles] || "",
+          target_header: state.headers[state.selections.target] || "",
+          id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
+        }
       },
     }));
   });

@@ -1,40 +1,29 @@
-window.bumblebeeDatasetConfig = null;
+const page = (document.body.dataset.pageLabel);
 
-// Initialize one controls panel from data attributes.
+// Initialize control panel
 function initControlsPanel(panel) {
-  const pageLabel = (document.body.dataset.pageLabel || "RUN");
 
   panel.innerHTML = `
-    <input class="control-file-input" type="file" accept=".csv">
+    <input id="control-input" class="control-file-input" type="file" accept=".csv">
+    <!-- input linked to label -->
     <div class="control-file-row">
-      <label class="control-file-button control-buttons">
+      <label for="control-input" class="control-file-button control-buttons">
         <svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>
       </label>
       <span class="control-file-caption">Browse...</span>
     </div>
-    <button type="button" id="controlButton" class="control-action-button control-buttons" disabled>${pageLabel}</button>
+    <button type="button" id="controlButton" class="control-run-button control-buttons" disabled>${page}</button>
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
   const fileButton = panel.querySelector(".control-file-button");
-  const actionButton = panel.querySelector(".control-action-button");
-  if (!fileInput || !fileButton || !actionButton) {
-    return;
-  }
+  const runButton = panel.querySelector(".control-run-button");
 
-  // Link label and input so the label opens the system file picker.
-  const inputId = panel.id ? `${panel.id}-input` : `control-input-${Math.random().toString(36).slice(2)}`;
-  fileInput.id = inputId;
-  fileButton.setAttribute("for", inputId);
-
-  // Send selected file to the preview modal flow.
+  // Send selected file to the preview modal flow
   fileInput.addEventListener("change", () => {
     const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-    if (!selectedFile) {
-      return;
-    }
 
-    actionButton.disabled = true;
+    runButton.disabled = true;
 
     document.dispatchEvent(new CustomEvent("csv:file-selected", {
       detail: {
@@ -43,17 +32,7 @@ function initControlsPanel(panel) {
     }));
   });
 
-  // Clear the console text and enable the action button when the config is ready.
-  document.addEventListener("csv:config-ready", (event) => {
-    console.log("config-ready received");  // DEBUG
-    actionButton.disabled = false;
-    window.bumblebeeDatasetConfig = event.detail?.config || null;
-
-   const consolePrompt = document.querySelector(".console-prompt");
-   if (consolePrompt) {
-     consolePrompt.innerHTML = "";
-   }
-  });
+  
 }
 
 // Initialize all reusable controls panels on the current page.
@@ -63,19 +42,25 @@ function initControlsPanels() {
 
 initControlsPanels();
 
-// Run
+
+window.csvInfo = null;
+
+// Listen for dataset-info ready.
+document.addEventListener("csv:dataset-info-ready", async (event) => {
+  window.csvInfo = event.detail.csvInfo
+  document.querySelector(".console-prompt").innerHTML = `Dataset: ${window.csvInfo.path}`;  // Update the console prompt
+  document.querySelector(".control-run-button").disabled = false;  // Enable the RUN button
+});
+
+
+// Run TRAIN
 document
     .getElementById("controlButton")
     .addEventListener("click", runAction);
 
 async function runAction() {
     console.log("runAction called");  // DEBUG
-    const page = document.body.dataset.pageLabel; // "train" or "test"
-    const config = window.bumblebeeDatasetConfig;
-
-    if (!config) {
-        throw new Error("Dataset configuration is not ready");  // DEBUG
-    }
+    document.querySelector(".console-prompt").innerHTML = "";
 
     const endpoint = page === "TRAIN"
         ? "/api/train"
@@ -86,7 +71,7 @@ async function runAction() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify(window.csvInfo)
     });
 
     const result = await response.json();
