@@ -16,6 +16,9 @@ import datasets
 from parameters import print_parameters
 
 
+VERBOSE = False
+
+
 def get_device():
     return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -64,9 +67,10 @@ def load(model_path):
 
 
 def load_dataset(dataset_info, train=False, flag='Dataset'):
-    print(f"\n{flag}: {utils.get_name(dataset_info['path'])}")
+    print(f"{flag}: {utils.get_name(dataset_info['path'])}")
+    print("\nLoading...")
     graphs = load_from_csv(dataset_info)
-    print(f"Loaded: {len(graphs)} structures")
+    print(f"Loaded {len(graphs)} structures")
     if train:
         dataset = InjectedDataset(graphs)
     else:
@@ -86,8 +90,9 @@ def train(trainingset, validation_set=None):
         reproducibility.use_deterministic_algorithms(device)
 
     ### DEBUG
-    print(f"DEVICE: {device}")
-    print_parameters()
+    if VERBOSE:
+        print(f"DEVICE: {device}")
+        print_parameters()
 
     ### Train
     print("\nTraining...")
@@ -159,6 +164,7 @@ if __name__ == "__main__":
 
     # print("CV, MUTA, early stop")
 
+    VERBOSE = True
     start_time = time.time()
     # crossvalidation(trainingset_info, device)
     main_loop(trainingset_info, testset_info, model_name)

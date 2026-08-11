@@ -67,7 +67,7 @@ function buildModal() {
   const overlay = document.createElement("div");
   overlay.className = "csv-modal-overlay";
   overlay.innerHTML = `
-    <div class="csv-modal" role="dialog" aria-modal="true" aria-label="CSV Preview">
+    <div class="csv-modal" role="dialog">
       <div class="csv-modal-header">
         <div class="csv-modal-title">CSV Preview</div>
       </div>
@@ -97,8 +97,8 @@ function buildModal() {
             <span class="csv-selection-label">Prediction task:</span>
           </div>
           <label class="task-option">
-            <input type="radio" name="prediction-task" value="classification">
-            <span>Binary Classification</span>
+            <input type="radio" name="prediction-task" value="binary_classification">
+            <span>Binary Binary classification</span>
           </label>
           <label class="task-option">
             <input type="radio" name="prediction-task" value="regression">
@@ -147,7 +147,7 @@ function initCsvPreviewModal() {
       target: -1,
       cas: -1,
     },
-    task: "classification",
+    task: "binary_classification",
   };
 
   function openModal() {
@@ -231,19 +231,29 @@ function initCsvPreviewModal() {
     updateButtons();
   }
 
-  function saveConfig() {
-    const config = {
+  // function saveConfig() {
+  //   const config = {
+  //     task: state.task,
+  //     path: `DATASETS/${state.file.name}`,
+  //     smiles_header: state.headers[state.selections.smiles] || "",
+  //     target_header: state.headers[state.selections.target] || "",
+  //     cas_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
+  //   };
+
+  //   localStorage.setItem(makeDatasetKey(), JSON.stringify(config));
+  //   window.bumblebeeDatasetConfig = config;
+  //   return config;
+  // }
+
+  function getDatasetConfig() {
+    return {
       task: state.task,
       path: `DATASETS/${state.file.name}`,
       smiles_header: state.headers[state.selections.smiles] || "",
       target_header: state.headers[state.selections.target] || "",
-      cas_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
+      id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
     };
-
-    localStorage.setItem(makeDatasetKey(), JSON.stringify(config));
-    window.bumblebeeDatasetConfig = config;
-    return config;
-  }
+}
 
   function resetState() {
     state.file = null;
@@ -253,7 +263,7 @@ function initCsvPreviewModal() {
     state.selections.smiles = -1;
     state.selections.target = -1;
     state.selections.cas = -1;
-    state.task = "classification";
+    state.task = "binary_classification";
   }
 
   function clearStep(stepIndex) {
@@ -261,20 +271,20 @@ function initCsvPreviewModal() {
       state.selections.smiles = -1;
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = "classification";
+      state.task = "binary_classification";
       return;
     }
 
     if (stepIndex === 1) {
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = "classification";
+      state.task = "binary_classification";
       return;
     }
 
     if (stepIndex === 2) {
       state.selections.cas = -1;
-      state.task = "classification";
+      state.task = "binary_classification";
     }
   }
 
@@ -318,10 +328,10 @@ function initCsvPreviewModal() {
   });
 
   confirmBtn.addEventListener("click", () => {
-    if (state.activeStep !== 2) {
-      return;
-    }
-    const config = saveConfig();
+  //  if (state.activeStep !== 2) {
+  //    return;
+  //  }
+    const config = getDatasetConfig();
     closeModal();
 
     document.dispatchEvent(new CustomEvent("csv:config-ready", {
@@ -361,15 +371,15 @@ function initCsvPreviewModal() {
   function detectTaskFromFirstTarget() {
     const targetIndex = state.selections.target;
     if (targetIndex < 0 || state.rows.length === 0) {
-      return "classification";
+      return "binary_classification";
     }
 
     const firstTargetCell = String(state.rows[0][targetIndex] ?? "").trim();
     if (!firstTargetCell) {
-      return "classification";
+      return "binary_classification";
     }
 
-    return Number.isFinite(Number(firstTargetCell)) ? "regression" : "classification";
+    return Number.isFinite(Number(firstTargetCell)) ? "regression" : "binary_classification";
   }
 
   document.addEventListener("csv:file-selected", (event) => {

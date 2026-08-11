@@ -170,7 +170,18 @@ body {
 }
 
 .console-text {
-  position: absolute;
+  letter-spacing: 0em;
+}
+
+.console-text:empty {
+  display: none;
+}
+
+.console-log {
+  font-family: inherit;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
   letter-spacing: 0em;
 }
 

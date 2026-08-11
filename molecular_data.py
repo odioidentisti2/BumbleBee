@@ -137,7 +137,7 @@ class InjectedDataset(Dataset):
             self.baseline = sum(unique_y) / len(unique_y)
         else:
             raise ValueError(f"Unexpected target type: {type(sample)}")
-        print(f"DEBUG: baseline = {self.baseline:.2f}")
+        # print(f" DEBUG: baseline = {self.baseline:.2f}")
         
     def get(self, idx):
         data = super().get(idx)
