@@ -1,4 +1,4 @@
-from pprint import pprint
+from pprint import pformat
 
 
 print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
@@ -33,10 +33,11 @@ attention_params = {
 
 parameters = (train_params, model_params, attention_params)
 
-def print_parameters():
-    print('\nPARAMETERS:')
+def parameter_summary():
+    lines = ["PARAMETERS:"]
     for dict in parameters:
-        pprint(dict)
+        lines.append(pformat(dict))
+    return '\n' + '\n'.join(lines)
 
 
 

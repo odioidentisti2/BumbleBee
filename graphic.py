@@ -1,7 +1,10 @@
 from rdkit.Chem.Draw import rdMolDraw2D
-import utils
+
+from logging_config import getLogger
+logger = getLogger(__name__)
 
 
+# DEBUG
 # Check if running in Google Colab
 # I think if I use matplotlib I won't need this
 IN_COLAB = False
@@ -18,8 +21,6 @@ else:
     import io
 
 
-verbose = True
-
 
 class Att_Depicter():
 
@@ -27,14 +28,15 @@ class Att_Depicter():
         self.intensity = 1
         self.shift = -1  # shift so that average attention is at 0
         self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
-        print(f"ATT top: {top:.2f}")
-        print(f"ATT factor: {self.factor:.2f}")
+
+        logger.debug(f"ATT top: {top:.2f}")
+        logger.debug(f"ATT factor: {self.factor:.2f}")
 
     def depict(self, graph, weights):
-        if verbose:
-            utils.print_header("ATTENTION-BASED EXPLANATION")
-            print(f"{graph.y.item():.2f}", graph.smiles)
-            print_weights(weights, average=True, title="ATTENTION WEIGHTS:")
+        logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
+        logger.debug(f"{graph.y.item():.2f}", graph.smiles)
+        logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
+
         depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
@@ -53,37 +55,38 @@ class IG_Depicter():
         self.intensity = 1
         self.shift = 0 
         self.factor =  1 / (top + self.shift)
-        if verbose:
-            print(f"IG top: {top:.2f}")
-            print(f"IG factor: {self.factor:.2f}")
         self.baseline_pred = None  # DEBUG
         self.predictions = []  # DEBUG
 
-    def depict(self, graph, weights, count=None):
-        if verbose:
-            utils.print_header("INTEGRATED GRADIENTS EXPLANATION")
-            print(f"{graph.y.item():.2f}", graph.smiles)
+        logger.debug(f"IG top: {top:.2f}")
+        logger.debug(f"IG factor: {self.factor:.2f}")
 
+    def depict(self, graph, weights, count=None):
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = weights.sum().item()
         baseline_pred = self.baseline_pred
         final_pred = self.predictions[count]
-        if verbose:
-            print(f"\nBaseline prediction: {baseline_pred:.2f}")
-            print(f"Attribution sum: {attribution_sum:.2f}")
-            print(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-            print(f"PREDICTION: {final_pred:.2f}")
-            print_weights(weights, title="EDGE IMPORTANCE (averaged components):")
+
+        logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
+        logger.debug(f"{graph.y.item():.2f}", graph.smiles)
+        logger.debug(f"\nBaseline prediction: {baseline_pred:.2f}")
+        logger.debug(f"Attribution sum: {attribution_sum:.2f}")
+        logger.debug(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
+        logger.debug(f"PREDICTION: {final_pred:.2f}")
+        logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
+
         depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
 
-
-def print_weights(weights, average=False, title="WEIGHTS:"):
-    print(f"\n{title}")
-    print(weights)
-    print(f"Weights range: {weights.min():.4f} - {weights.max():.4f}")
-    if average: print("Weights Average: ", f"{weights.mean().item():.4f}")
-    print(f"Weight sum: {weights.sum():.2f}")
-    print()
+def weight_summary(weights, average=False, title="WEIGHTS:"):
+    lines = [
+        f"{title}",
+        str(weights),
+        f"Weights range: {weights.min():.4f} - {weights.max():.4f}",
+    ]
+    if average:
+        lines.append(f"Weights Average: {weights.mean().item():.4f}")
+    lines.extend([f"Weight sum: {weights.sum():.2f}"])
+    return '\n' + '\n'.join(lines) + '\n'
 
 def red_or_green(weight):
     if weight > 0:
@@ -115,11 +118,11 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
     #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
-    # print(f"\nThreshold: {threshold:.2f}")
+    # logger.debug(f"\nThreshold: {threshold:.2f}")
 
-    if (mol := graph.mol) is None:
-        print("Invalid molecule object")
-        return
+    # if (mol := graph.mol) is None:
+    #     logger.error("Invalid molecule object")
+    #     return
     
     bond_weights = {}
     atom_weights = {}
@@ -130,22 +133,21 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     edge_index = graph.edge_index.T
     assert weights.shape[0] == edge_index.shape[0]  # DEBUG
     for directional_weight, (src, dst) in zip(weights, edge_index):
-        bond = mol.GetBondBetweenAtoms(int(src), int(dst))
+        bond = graph.mol.GetBondBetweenAtoms(int(src), int(dst))
         bond_idx = bond.GetIdx()
         if bond_idx not in bond_weights:
             bond_weights[bond_idx] = directional_weight
             continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
         weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
-        if verbose and factor is None and shift is None:
-            print(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+        if factor is None and shift is None:
+            logger.debug(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
         else:
             original_weight = weight
             if shift is not None:
                 weight = weight + shift * 2  # sum of 2 weights (clipping in yellow() for attention)
             if factor is not None:
                 weight = weight * factor
-            if verbose:
-                print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
+            logger.debug(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
         bond_weights[bond_idx] = weight
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
@@ -163,79 +165,9 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
                     continue
                 atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
     
-    if verbose:
-        print(f"Sum: {sum(bond_weights.values()):.2f}")
-        draw(graph, atom_colors, bond_colors)
-
-
-def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
-    graph = graph.detach()
-
-    threshold = 0  # not needed anymore? (normalization in explainer)
-    mol = graph.mol
-
-    bond_colors = {}
-    atom_colors = {}
-
-    # --- Aggregate edge attributions to bond instances ---
-    import numpy as np
-    # Expect atom_importance: 1D array length == num_atoms
-    #        bond_importance: 1D array length == num_bonds
-    bond_arr = np.asarray(bond_importance, dtype=float)
-    atom_arr = np.asarray(atom_importance, dtype=float)
-    num_bonds = mol.GetNumBonds()
-    num_atoms = mol.GetNumAtoms()
-    if bond_arr.ndim != 1 or bond_arr.size != num_bonds:
-        raise ValueError(f"bond_importance must be 1D of length {num_bonds}, got {bond_arr.shape}")
-    if atom_arr.ndim != 1 or atom_arr.size != num_atoms:
-        raise ValueError(f"atom_importance must be 1D of length {num_atoms}, got {atom_arr.shape}")
-    bond_instance_importance = bond_arr.tolist()
-    atom_instance_importance = atom_arr.tolist()
-    if verbose:
-        print(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
-        print(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
-
-    # Color bonds
-    if verbose:
-        print("\nBonds:")
-    for bond in mol.GetBonds():
-        bond_idx = bond.GetIdx()
-        weight = bond_instance_importance[bond_idx]
-        original_weight = weight
-        if factor is not None:
-            weight = weight * factor
-        if shift is not None:
-            weight = weight + shift
-        if abs(weight) > abs(threshold):
-            bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
-        bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
-        # Print bond details like in depict()
-        if verbose and factor is None and shift is None:
-            print(f"Bond {bond_idx}: {weight:.2f}")
-        elif verbose:
-            print(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
-
-    # Color atoms
-    if verbose:
-        print("\nAtoms:")
-    for atom in mol.GetAtoms():
-        atom_idx = atom.GetIdx()
-        weight = atom_instance_importance[atom_idx]
-        original_weight = weight
-        if factor is not None:
-            weight = weight * factor
-        if shift is not None:
-            weight = weight + shift
-        if abs(weight) > abs(threshold):
-            atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
-        if verbose and factor is None and shift is None:
-            print(f"Atom {atom_idx}: {weight:.2f}")
-        elif verbose:
-            print(f"Atom {atom_idx}: {weight:.2f} <- {original_weight:.2f}")
-
-    if verbose:
-        draw(graph, atom_colors, bond_colors, atom_indices=True)
-
+    
+    logger.debug(f"Sum: {sum(bond_weights.values()):.2f}")
+    draw(graph, atom_colors, bond_colors)
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
     drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
@@ -260,10 +192,78 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
                         legend=legend)
     drawer.FinishDrawing()
 
-    # Check if running in Google Colab
+    # DEBUG: Check if running in Google Colab
     if IN_COLAB:
         image_bytes = drawer.GetDrawingText()
         display(Image(data=image_bytes))
     else:
         Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
+
+
+# def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
+#     graph = graph.detach()
+
+#     threshold = 0  # not needed anymore? (normalization in explainer)
+#     mol = graph.mol
+
+#     bond_colors = {}
+#     atom_colors = {}
+
+#     # --- Aggregate edge attributions to bond instances ---
+#     import numpy as np
+#     # Expect atom_importance: 1D array length == num_atoms
+#     #        bond_importance: 1D array length == num_bonds
+#     bond_arr = np.asarray(bond_importance, dtype=float)
+#     atom_arr = np.asarray(atom_importance, dtype=float)
+#     num_bonds = mol.GetNumBonds()
+#     num_atoms = mol.GetNumAtoms()
+#     if bond_arr.ndim != 1 or bond_arr.size != num_bonds:
+#         raise ValueError(f"bond_importance must be 1D of length {num_bonds}, got {bond_arr.shape}")
+#     if atom_arr.ndim != 1 or atom_arr.size != num_atoms:
+#         raise ValueError(f"atom_importance must be 1D of length {num_atoms}, got {atom_arr.shape}")
+#     bond_instance_importance = bond_arr.tolist()
+#     atom_instance_importance = atom_arr.tolist()
+
+#     logger.debug(f"Sum atom_instance_importance: {sum(atom_instance_importance):.2f}")
+#     logger.debug(f"Sum bond_instance_importance: {sum(bond_instance_importance):.2f}")
+
+#     # Color bonds
+#     logger.debug("\nBonds:")
+#     for bond in mol.GetBonds():
+#         bond_idx = bond.GetIdx()
+#         weight = bond_instance_importance[bond_idx]
+#         original_weight = weight
+#         if factor is not None:
+#             weight = weight * factor
+#         if shift is not None:
+#             weight = weight + shift
+#         if abs(weight) > abs(threshold):
+#             bond_colors[bond_idx] = yellow(weight) if positive_only else red_or_green(weight)
+#         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
+
+#         # Log bond details like in depict()
+#         if factor is None and shift is None:
+#             logger.debug(f"Bond {bond_idx}: {weight:.2f}")
+#         else:
+#             logger.debug(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
+
+#     # Color atoms
+#     logger.debug("\nAtoms:")
+#     for atom in mol.GetAtoms():
+#         atom_idx = atom.GetIdx()
+#         weight = atom_instance_importance[atom_idx]
+#         original_weight = weight
+#         if factor is not None:
+#             weight = weight * factor
+#         if shift is not None:
+#             weight = weight + shift
+#         if abs(weight) > abs(threshold):
+#             atom_colors[atom_idx] = yellow(weight) if positive_only else red_or_green(weight)
+
+#         if factor is None and shift is None:
+#             logger.debug(f"Atom {atom_idx}: {weight:.2f}")
+#         else:
+#             logger.debug(f"Atom {atom_idx}: {weight:.2f} <- {original_weight:.2f}")
+
+#     draw(graph, atom_colors, bond_colors, atom_indices=True)

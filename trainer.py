@@ -4,6 +4,9 @@ from statistics import AccuracyTracker, R2Tracker
 from parameters import OPTIMAL_BATCH_SIZE, train_params as PARAMS
 from copy import deepcopy  # early stop
 
+from logging_config import getLogger
+logger = getLogger(__name__)  # INFO
+
 
 class Trainer:
 
@@ -70,21 +73,21 @@ class Trainer:
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):
             loss = self._train(model, loader)
-            print(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
+            logger.info(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Validation + early stop
             if val_interval and epoch % val_interval == 0:
                 metric = self.eval(model, val_set, flag='Validation')
                 if stopper and stopper.check(metric, model, epoch):
                     stopper.restore(model)
-                    print(f"EARLY STOP: best model epoch {stopper.best_epoch}")
+                    logger.info(f"EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
 
     def eval(self, model, testset, flag):
         loader = testset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         metric = self.tracker.metric()
-        print(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
+        logger.info(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
         return metric
     
     def calibrate(self, model, trainingset):
@@ -104,7 +107,7 @@ class Trainer:
         }
 
         metric = self.tracker.metric()
-        print(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
+        logger.info(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
         return model.calibration_data
 
 

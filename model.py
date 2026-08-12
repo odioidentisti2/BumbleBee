@@ -6,6 +6,7 @@ from adj_mask_utils import edge_adjacency, edge_mask
 from molecular_data import ATOM_DIM, BOND_DIM
 from parameters import model_params as PARAMS
 
+
 # # to be detached
 # enc_repr = []
 # dec_repr = []   

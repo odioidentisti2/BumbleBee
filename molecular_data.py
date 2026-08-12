@@ -11,6 +11,9 @@ import csv
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')  # Disable warnings
 
+from logging_config import getLogger
+logger = getLogger(__name__)
+
 
 # Atoms explicitly encoded (+ fallback category)
 ELEMENTS = ['H', 'Li', 'B', 'C', 'N', 'O', 'F', 'Na', 'Mg', 'Si', 'P', 'S', \
@@ -25,7 +28,7 @@ def encoding(value, allowed_values):
     Add an extra category for "other" if value is not in allowed_values
     """
     if value not in allowed_values:
-        # print(f"WARNING: {value} not in {allowed_values}")  # DEBUG
+        # logger.debug(f"WARNING: {value} not in {allowed_values}")  # DEBUG
         # HybridizationType = UNSPECIFIED is the only "other", I should probably encode it
         return [0] * len(allowed_values) + [1]  # last category is "other"
     else:
@@ -36,7 +39,6 @@ def encoding(value, allowed_values):
     # the same way as 0 charge.... ASK the developers!
 
 def atom_features(atom):
-    # print(atom.GetHybridization())  # DEBUG
     return (
         # encoding(atom.GetAtomicNum(), list(range(1, 54))) +  # 53 + 1
         encoding(atom.GetAtomicNum(), ATOMIC_NUMBERS) +  # 25 + 1
@@ -92,7 +94,7 @@ def smiles2graph(smiles):
         if len(Chem.GetMolFrags(mol)) > 1:  # Disconnected
             return None
         else:
-            print(f"Removed salts from: {smiles}")  # DEBUG
+            logger.debug(f"Removed salts from: {smiles}")
 
     mol = Chem.AddHs(mol)
 
@@ -104,6 +106,7 @@ def smiles2graph(smiles):
         for src, dst in edge_index.T
     ], dtype=torch.float)
     return Data(x=node_attr, edge_index=edge_index, edge_attr=edge_attr, mol=mol, smiles=smiles)
+    ## DO I NEED TO KEEP mol? IT IS USED IN THE EXPLAINER ONLY
 
 
 class Dataset(PyGDataset):
@@ -137,7 +140,7 @@ class InjectedDataset(Dataset):
             self.baseline = sum(unique_y) / len(unique_y)
         else:
             raise ValueError(f"Unexpected target type: {type(sample)}")
-        # print(f" DEBUG: baseline = {self.baseline:.2f}")
+        logger.debug(f"Baseline = {self.baseline:.2f}")
         
     def get(self, idx):
         data = super().get(idx)
@@ -169,7 +172,7 @@ def load_from_csv(dataset_info, split=None):
             if not (data
                     and len(data.x.shape) == 2 and data.x.shape[1] == ATOM_DIM
                     and len(data.edge_attr.shape) == 2 and data.edge_attr.shape[1] == BOND_DIM):
-                print(f"Invalid SMILES: {smiles}")
+                logger.warning(f"Invalid SMILES: {smiles}")
                 continue
             label = row[dataset_info['target_header']]
             if task == 'binary_classification':

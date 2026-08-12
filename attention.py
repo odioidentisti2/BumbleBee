@@ -6,14 +6,16 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from parameters import attention_params as PARAMS
 
+from logging_config import getLogger
+logger = getLogger(__name__)
+
 
 # DEBUG
 try:
     with sdpa_kernel(SDPBackend.EFFICIENT_ATTENTION):
         pass
-    print("Using efficient attention kernel")
 except RuntimeError:
-    print("Efficient attention kernel not available, using standard SDPA")
+    logger.warning("Efficient attention kernel not available (using standard SDPA)")
 
 
 class MultiHeadAttention(nn.Module):

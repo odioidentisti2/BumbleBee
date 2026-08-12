@@ -5,18 +5,18 @@ from trainer import Trainer
 from model import MAG
 from explainer import Explainer
 import reproducibility
-import utils
 
 # CV
 from preprocessing import cv_subsets
 import statistics
 
-from pprint import pprint
+from pprint import pformat
 import datasets
-from parameters import print_parameters
+from parameters import parameter_summary
 
-
-VERBOSE = False
+from logging_config import getLogger, setLevel
+setLevel('DEBUG')
+logger = getLogger(__name__)
 
 
 def get_device():
@@ -30,7 +30,7 @@ def save(path, model):
         'calibration': getattr(model, 'calibration_data', None),
     }
     torch.save(ckpt, path)
-    print(f"\nModel saved to: {path}")
+    logger.info(f"\nModel saved to: {path}")
 
 
 def load(model_path):
@@ -40,37 +40,37 @@ def load(model_path):
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
     model.calibration_data = ckpt['calibration']
-    print(f"\nLoaded model from {model_path} with task: {model.task}")
+    logger.info(f"\nLoaded model from {model_path} with task: {model.task}")
     return model
 
 
 # def crossvalidation(dataset_info, device, folds=5):
-#     print(f"\nCross-Validation on: {utils.get_name(dataset_info['path'])}")
+#     logger.info(f"\nCross-Validation on: {dataset_info['path']}")
 #     graphs = load_from_csv(dataset_info)
 #     cv_tracker = statistics.CVTracker()
     
 #     for fold, (train_indices, test_indices) in enumerate(cv_subsets(len(graphs), folds), start=1):
-#         print_parameters()
+#         logger.debug(parameter_summary())
 #         reproducibility.set_torch_seed()
-#         utils.print_header(f"Fold {fold}/{folds}")
+#         logger.info(f"Fold {fold}/{folds}", highlight=True)
 
 #         trainingset  = InjectedDataset([graphs[i] for i in train_indices])
 #         testset      = Dataset([graphs[i] for i in test_indices])
-#         print(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
+#         logger.info(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
 
 #         trainer = Trainer(dataset_info['task'], device)
 #         trainer.tracker.accumulate = True  # keep all runs
 #         trainer.train(MAG(device), trainingset, val_set=testset)
 #         cv_tracker.add_fold(trainer.tracker.metrics())    
     
-#     cv_tracker.summary()  # Print summary
+#     logger.info(cv_tracker.summary())  # Print summary
 
 
 def load_dataset(dataset_info, train=False, flag='Dataset'):
-    print(f"{flag}: {utils.get_name(dataset_info['path'])}")
-    print("\nLoading...")
+    logger.info(f"\n{flag}: {dataset_info['path']}")
+    logger.info("Loading...")
     graphs = load_from_csv(dataset_info)
-    print(f"Loaded {len(graphs)} structures")
+    logger.info(f"Loaded {len(graphs)} structures")
     if train:
         dataset = InjectedDataset(graphs)
     else:
@@ -88,26 +88,26 @@ def train(trainingset, validation_set=None):
     if trainingset.task == 'binary_classification':
         # (MSELoss => regression is deterministic enough ?)
         reproducibility.use_deterministic_algorithms(device)
+        logger.debug("\n(DETERMINISTIC algorithms)")
 
     ### DEBUG
-    if VERBOSE:
-        print(f"DEVICE: {device}")
-        print_parameters()
+    logger.debug(f"DEVICE: {device}")
+    logger.debug(parameter_summary())
 
     ### Train
-    print("\nTraining...")
+    logger.info("\nTraining...")
     trainer = Trainer(trainingset.task, device)
     model = MAG(device)
     trainer.train(model, trainingset, val_set=validation_set)
 
     ### Calibration (for Explainer)
-    print("\nCalibrating...")
+    logger.info("\nCalibrating...")
     trainer.calibrate(model, trainingset)
     return model
 
 
 def test(testset, model):
-    print("\nTesting...")
+    logger.info("\nTesting...")
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
@@ -127,7 +127,7 @@ def main_loop(trainingset_info, testset_info, model_name=None):
         model = train(trainingset, validation_set)
 
         ## Statistics on Training set
-        # print("\nEvaluating on training set...")
+        # logger.info("\nEvaluating on training set...")
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
@@ -144,15 +144,15 @@ def main_loop(trainingset_info, testset_info, model_name=None):
 
     ### Explain
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
-        utils.print_header("CALIBRATION")
-        pprint(model.calibration_data)
+        logger.debug("CALIBRATION", highlight=True)
+        logger.debug(pformat(model.calibration_data))
         explainer = Explainer(model.calibration_data)
         return explainer.explain(model, testset)
 
 
 if __name__ == "__main__":
     import time
-    print(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
     # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
@@ -162,13 +162,13 @@ if __name__ == "__main__":
     # model_name = 'L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
 
-    # print("CV, MUTA, early stop")
+    # logger.debug("CV, MUTA, early stop")
 
     VERBOSE = True
     start_time = time.time()
     # crossvalidation(trainingset_info, device)
     main_loop(trainingset_info, testset_info, model_name)
-    print(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
+    logger.info(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 
 
 

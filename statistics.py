@@ -1,6 +1,5 @@
 import torch
 from copy import deepcopy
-from utils import print_header
 
 
 class MetricTracker:
@@ -122,18 +121,39 @@ class CVTracker:
             'epoch_means': epoch_means
         }
     
+    # def summary(self):
+    #     stats = self.compute_statistics()
+        
+    #     make_header(f"CV RESULTS (Epoch {stats['best_epoch']})")
+    #     print(f"Test metric:   {stats['mean']:.3f} ± {stats['std']:.3f}")
+    #     print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in stats['fold_metrics']]}")
+        
+    #     make_header("MEAN METRICS ACROSS ALL EPOCHS")
+    #     for epoch_idx, mean_val in enumerate(stats['epoch_means']):
+    #         epoch_num = (epoch_idx + 1) * 5
+    #         marker = " ← BEST" if epoch_idx == stats['best_epoch_index'] else ""
+    #         print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")
+
     def summary(self):
         stats = self.compute_statistics()
-        
-        print_header(f"CV RESULTS (Epoch {stats['best_epoch']})")
-        print(f"Test metric:   {stats['mean']:.3f} ± {stats['std']:.3f}")
-        print(f"\nIndividual fold metrics: {[f'{m:.3f}' for m in stats['fold_metrics']]}")
-        
-        print_header("MEAN METRICS ACROSS ALL EPOCHS")
-        for epoch_idx, mean_val in enumerate(stats['epoch_means']):
+        lines = [
+            f"{'=' * 50}",
+            f"CV RESULTS (Epoch {stats['best_epoch']})",
+            f"{'=' * 50}",
+            f"Test metric:   {stats['mean']:.3f} ± {stats['std']:.3f}",
+            "\nIndividual fold metrics: "
+            f"{[f'{m:.3f}' for m in stats['fold_metrics']]}",
+            f"\n\n{'=' * 50}",
+            "MEAN METRICS ACROSS ALL EPOCHS",
+            f"{'=' * 50}",
+        ]
+
+        for epoch_idx, mean_val in enumerate(stats["epoch_means"]):
             epoch_num = (epoch_idx + 1) * 5
-            marker = " ← BEST" if epoch_idx == stats['best_epoch_index'] else ""
-            print(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")
+            marker = " ← BEST" if epoch_idx == stats["best_epoch_index"] else ""
+            lines.append(f"Epoch {epoch_num:3d}: {mean_val:.3f}{marker}")
+
+        return '\n\n' + '\n'.join(lines)
 
 
 # def cv_output(fold_results):
