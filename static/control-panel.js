@@ -5,7 +5,6 @@ function initControlsPanel(panel) {
 
   panel.innerHTML = `
     <input id="control-input" class="control-file-input" type="file" accept=".csv">
-    <!-- input linked to label -->
     <div class="control-file-row">
       <label for="control-input" class="control-file-button control-buttons">
         <svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>
@@ -21,17 +20,15 @@ function initControlsPanel(panel) {
 
   // Send selected file to the preview modal flow
   fileInput.addEventListener("change", () => {
-    const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    const file = fileInput.files?.[0];
+    if (!file) return;
 
-    runButton.disabled = true;
+    // runButton.disabled = true;
 
     document.dispatchEvent(new CustomEvent("csv:file-selected", {
-      detail: {
-        file: selectedFile,
-      },
+      detail: { file },
     }));
   });
-
   
 }
 
@@ -46,7 +43,7 @@ initControlsPanels();
 window.csvInfo = null;
 
 // Listen for dataset-info ready.
-document.addEventListener("csv:dataset-info-ready", async (event) => {
+document.addEventListener("csv:info-ready", async (event) => {
   window.csvInfo = event.detail.csvInfo
   document.querySelector(".console-prompt").innerHTML = `Dataset: ${window.csvInfo.path}`;  // Update the console prompt
   document.querySelector(".control-run-button").disabled = false;  // Enable the RUN button

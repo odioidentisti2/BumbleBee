@@ -306,11 +306,11 @@ function initCsvPreviewModal() {
   confirmBtn.addEventListener("click", () => {
     closeModal();
 
-    document.dispatchEvent(new CustomEvent("csv:dataset-info-ready", {
+    document.dispatchEvent(new CustomEvent("csv:info-ready", {
       detail: {
         csvInfo: {
           task: state.task,
-          path: `DATASETS/${state.file.name}`,
+          path: state.file.name,
           smiles_header: state.headers[state.selections.smiles] || "",
           target_header: state.headers[state.selections.target] || "",
           id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
