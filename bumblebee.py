@@ -104,6 +104,8 @@ def train(trainingset: InjectedDataset, validation_set: Dataset | None = None) -
     ### Calibration (for Explainer)
     logger.info("\nCalibrating...")
     trainer.calibrate(model, trainingset)
+
+    logger.info("\n Training completed.")
     return model
 
 
