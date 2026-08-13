@@ -195,10 +195,14 @@ body {
 .console-action {
   align-items: center;
   justify-content: center;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
 }
 
 .console-action:hover {
-  text-shadow: 0 0 3px currentColor;
+  text-shadow: 0 0 2px currentColor;
+  text-decoration-color: currentColor;
 }
 
 .blink {
