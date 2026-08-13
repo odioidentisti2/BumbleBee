@@ -2,6 +2,9 @@ import logging
 import sys
 
 
+level = logging.DEBUG
+
+
 class AppLogger(logging.Logger):
     def _log(self, level, msg, args, **kwargs):
         if kwargs.pop("highlight", False):
@@ -31,7 +34,7 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(ColorFormatter("%(message)s"))
 
 root_logger = logging.getLogger()
-root_logger.setLevel(logging.DEBUG)
+root_logger.setLevel(level)
 root_logger.handlers.clear()
 root_logger.addHandler(handler)
 

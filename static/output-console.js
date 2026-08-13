@@ -20,7 +20,7 @@ function initConsolePanels() {
 initConsolePanels();
 
 
-// Console log
+// Display messages received from the backend logger.
 function appendConsoleLine(line) {
   const consolePanel = document.querySelector(".console");
   if (!consolePanel) {

@@ -14,8 +14,7 @@ from pprint import pformat
 import datasets
 from parameters import parameter_summary
 
-from logging_config import getLogger, setLevel
-setLevel('DEBUG')
+from logging_config import getLogger
 logger = getLogger(__name__)
 
 
@@ -68,9 +67,9 @@ def load(model_path):
 
 def load_dataset(dataset_info, train=False, flag='Dataset'):
     logger.info(f"\n{flag}: {dataset_info['path']}")
-    logger.info("Loading...")
+    logger.info("\n Loading...")
     graphs = load_from_csv(dataset_info)
-    logger.info(f"Loaded {len(graphs)} structures")
+    logger.info(f" Loaded {len(graphs)} structures")
     if train:
         dataset = InjectedDataset(graphs)
     else:

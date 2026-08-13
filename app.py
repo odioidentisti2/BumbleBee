@@ -1,7 +1,7 @@
 from pathlib import Path
 import asyncio
+import logging
 import queue
-import sys
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -54,7 +54,7 @@ def test(request: Request):
 
 @app.post("/api/train")
 def run_training(dataset_info: dict):
-    dataset_info['path'] = 'DATASETS/' + dataset_info['file_name'] 
+    dataset_info['path'] = 'DATASETS/' + dataset_info['file_name']  # TEMP FIX!
     result = load_and_train(dataset_info)
     return {"success": True, "result": result}
 
@@ -63,8 +63,10 @@ def run_training(dataset_info: dict):
 async def stream_logs():
     async def event_stream():
         while True:
-            line = await asyncio.to_thread(stdout_queue.get)
-            yield f"data: {line}\n\n"
+            message = await asyncio.to_thread(stdout_queue.get)
+            for line in message.splitlines() or [""]:
+                yield f"data: {line}\n"
+            yield "\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -76,8 +78,6 @@ async def stream_logs():
 
 
 def load_and_train(trainingset_info):
-    # print(trainingset_info)  # DEBUG
-    sys.stdout = StdoutTee(sys.stdout, stdout_queue)
     trainingset = bumblebee.load_dataset(trainingset_info, train=True, flag='Training set')
     model = bumblebee.train(trainingset)
     return model
@@ -87,41 +87,23 @@ def load_and_train(trainingset_info):
 #     bumblebee.test(testset)
 
 
-class StdoutTee:
-    def __init__(self, original_stream, log_queue):
-        self.original_stream = original_stream
+class QueueHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            self.log_queue.put(self.format(record))
+        except Exception:
+            self.handleError(record)
+
+    def __init__(self, log_queue):
+        super().__init__()
         self.log_queue = log_queue
-        self._buffer = ""
-
-    def write(self, text):
-        self.original_stream.write(text)
-        self.original_stream.flush()
-        self._buffer += text
-
-        while "\n" in self._buffer:
-            line, self._buffer = self._buffer.split("\n", 1)
-            self.log_queue.put(line)
-
-        return len(text)
-
-    def flush(self):
-        if self._buffer:
-            self.log_queue.put(self._buffer)
-            self._buffer = ""
-        self.original_stream.flush()
-
-    def isatty(self):
-        return self.original_stream.isatty()
-
-    @property
-    def encoding(self):
-        return self.original_stream.encoding
-
-    def fileno(self):
-        return self.original_stream.fileno()
 
 
 stdout_queue = queue.Queue()
+queue_handler = QueueHandler(stdout_queue)
+queue_handler.setLevel(logging.INFO)
+queue_handler.setFormatter(logging.Formatter("%(message)s"))
+logging.getLogger().addHandler(queue_handler)
 
 
 if __name__ == "__main__":
