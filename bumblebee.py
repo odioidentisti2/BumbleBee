@@ -18,8 +18,13 @@ from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-def get_device():
-    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Global DEVICE
+DEVICE = None  # To be initalized by main or GUI
+
+def init_device():
+    global DEVICE
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return str(DEVICE)
 
 
 def save(path, model):
@@ -33,9 +38,8 @@ def save(path, model):
 
 
 def load(model_path):
-    device = get_device()
-    ckpt = torch.load(model_path, map_location=device)
-    model = MAG(device)
+    ckpt = torch.load(model_path, map_location=DEVICE)
+    model = MAG(DEVICE)
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
     model.calibration_data = ckpt['calibration']
@@ -43,7 +47,7 @@ def load(model_path):
     return model
 
 
-# def crossvalidation(dataset_info, device, folds=5):
+# def crossvalidation(dataset_info, folds=5):
 #     logger.info(f"\nCross-Validation on: {dataset_info['path']}")
 #     graphs = load_from_csv(dataset_info)
 #     cv_tracker = statistics.CVTracker()
@@ -57,9 +61,9 @@ def load(model_path):
 #         testset      = Dataset([graphs[i] for i in test_indices])
 #         logger.info(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
 
-#         trainer = Trainer(dataset_info['task'], device)
+#         trainer = Trainer(dataset_info['task'], DEVICE)
 #         trainer.tracker.accumulate = True  # keep all runs
-#         trainer.train(MAG(device), trainingset, val_set=testset)
+#         trainer.train(MAG(DEVICE), trainingset, val_set=testset)
 #         cv_tracker.add_fold(trainer.tracker.metrics())    
     
 #     logger.info(cv_tracker.summary())  # Print summary
@@ -78,25 +82,21 @@ def load_dataset(dataset_info, train=False, flag='Dataset'):
     return dataset
 
     
-def train(trainingset, validation_set=None):
-    ### CPU or GPU
-    device = get_device()
-    
+def train(trainingset, validation_set=None):    
     ### Reproducibility
     reproducibility.set_torch_seed()
     if trainingset.task == 'binary_classification':
         # (MSELoss => regression is deterministic enough ?)
-        reproducibility.use_deterministic_algorithms(device)
+        reproducibility.use_deterministic_algorithms(DEVICE)
         logger.debug("\n(DETERMINISTIC algorithms)")
 
     ### DEBUG
-    logger.debug(f"DEVICE: {device}")
     logger.debug(parameter_summary())
 
     ### Train
     logger.info("\nTraining...")
-    trainer = Trainer(trainingset.task, device)
-    model = MAG(device)
+    trainer = Trainer(trainingset.task, DEVICE)
+    model = MAG(DEVICE)
     trainer.train(model, trainingset, val_set=validation_set)
 
     ### Calibration (for Explainer)
@@ -153,6 +153,9 @@ if __name__ == "__main__":
     import time
     logger.info(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')}")
 
+    device = init_device()
+    logger.info(f"DEVICE: {device}")
+
     trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
     # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
     # trainingset_info = datasets.logp_split
@@ -163,9 +166,8 @@ if __name__ == "__main__":
 
     # logger.debug("CV, MUTA, early stop")
 
-    VERBOSE = True
     start_time = time.time()
-    # crossvalidation(trainingset_info, device)
+    # crossvalidation(trainingset_info, DEVICE)
     main_loop(trainingset_info, testset_info, model_name)
     logger.info(f"\nTOTAL TIME: {time.time() - start_time:.0f}s")
 

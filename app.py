@@ -25,14 +25,14 @@ app.mount(
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
-DEVICE = bumblebee.get_device()
+DEVICE_NAME = bumblebee.init_device()
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {"request": request,
-         "device": DEVICE},
+         "device": DEVICE_NAME},
     )
 
 @app.get("/train", response_class=HTMLResponse)
@@ -40,7 +40,7 @@ def train(request: Request):
     return templates.TemplateResponse(
         "train.html",
         {"request": request,
-         "device": DEVICE},
+         "device": DEVICE_NAME},
     )
 
 @app.get("/test", response_class=HTMLResponse)
@@ -48,7 +48,7 @@ def test(request: Request):
     return templates.TemplateResponse(
         "test.html",
         {"request": request,
-         "device": DEVICE},
+         "device": DEVICE_NAME},
     )
 
 
