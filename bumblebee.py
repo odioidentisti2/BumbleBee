@@ -1,3 +1,5 @@
+from typing import Any, Literal
+
 import torch
 
 from molecular_data import Dataset, InjectedDataset, load_from_csv
@@ -19,15 +21,15 @@ logger = getLogger(__name__)
 
 
 # Global DEVICE
-DEVICE = None  # To be initalized by main or GUI
+DEVICE: torch.device | None = None  # To be initalized by main or GUI
 
-def init_device():
+def init_device() -> str:
     global DEVICE
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return str(DEVICE)
 
 
-def save(path, model):
+def save(path: str, model: MAG) -> None:
     ckpt = {
         'task': model.task,
         'state_dict': model.state_dict(),
@@ -37,7 +39,7 @@ def save(path, model):
     logger.info(f"\nModel saved to: {path}")
 
 
-def load(model_path):
+def load(model_path: str) -> MAG:
     ckpt = torch.load(model_path, map_location=DEVICE)
     model = MAG(DEVICE)
     model.load_state_dict(ckpt['state_dict'])
@@ -69,12 +71,12 @@ def load(model_path):
 #     logger.info(cv_tracker.summary())  # Print summary
 
 
-def load_dataset(dataset_info, train=False, flag='Dataset'):
-    logger.info(f"\n{flag}: {dataset_info['path']}")
+def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validation"]):
+    logger.info(f"\n{kind} set: {dataset_info['path']}")
     logger.info("\n Loading...")
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
-    if train:
+    if kind == 'Training':
         dataset = InjectedDataset(graphs)
     else:
         dataset = Dataset(graphs)
@@ -82,7 +84,7 @@ def load_dataset(dataset_info, train=False, flag='Dataset'):
     return dataset
 
     
-def train(trainingset, validation_set=None):    
+def train(trainingset: InjectedDataset, validation_set: Dataset | None = None) -> MAG:    
     ### Reproducibility
     reproducibility.set_torch_seed()
     if trainingset.task == 'binary_classification':
@@ -105,22 +107,24 @@ def train(trainingset, validation_set=None):
     return model
 
 
-def test(testset, model):
+def test(testset: Dataset, model: MAG) -> None:
     logger.info("\nTesting...")
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
 
-def main_loop(trainingset_info, testset_info, model_name=None):
+def main_loop(
+    trainingset_info: dict, testset_info: dict, model_name: str | None = None,
+):
     
     if not model_name:  # Train model
 
         ### Training set
-        trainingset = load_dataset(trainingset_info, train=True, flag='Training set')
+        trainingset = load_dataset(trainingset_info, kind='Training')
 
         ### Load validation set (optional)
         validation_set = None
-        validation_set = load_dataset(testset_info, flag='Validation set')
+        validation_set = load_dataset(testset_info, kind='Validation')
 
         ### Train model
         model = train(trainingset, validation_set)
@@ -138,7 +142,7 @@ def main_loop(trainingset_info, testset_info, model_name=None):
         model = load(f"MODELS/{model_name}")
 
     ### Test 
-    testset = load_dataset(testset_info, flag='Test set')
+    testset = load_dataset(testset_info, kind='Test')
     test(testset, model)
 
     ### Explain
@@ -209,4 +213,3 @@ if __name__ == "__main__":
     #     print(enc_out[0].var(dim=0).mean().item())  # variance across feature dims
 
     #     return
-
