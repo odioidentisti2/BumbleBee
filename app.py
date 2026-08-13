@@ -1,7 +1,8 @@
-from pathlib import Path
 import asyncio
 import logging
 import queue
+from dataclasses import dataclass
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -25,7 +26,34 @@ app.mount(
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+@dataclass
+class AppSession:
+    model: object = None
+
+
+session = AppSession()
+
+class QueueHandler(logging.Handler):
+    def __init__(self, log_queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        try:
+            self.log_queue.put(self.format(record))
+        except Exception:
+            self.handleError(record)
+
+
+stdout_queue = queue.Queue()
+queue_handler = QueueHandler(stdout_queue)
+queue_handler.setLevel(logging.INFO)
+queue_handler.setFormatter(logging.Formatter("%(message)s"))
+logging.getLogger().addHandler(queue_handler)
+
+
 DEVICE_NAME = bumblebee.init_device()
+
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
@@ -54,9 +82,9 @@ def test(request: Request):
 
 @app.post("/api/train")
 def run_training(dataset_info: dict):
-    dataset_info['path'] = 'DATASETS/' + dataset_info['file_name']  # TEMP FIX!
-    result = load_and_train(dataset_info)
-    return {"success": True, "result": result}
+    dataset_info["path"] = "DATASETS/" + dataset_info["file_name"]  # TEMP FIX!
+    load_and_train(dataset_info)
+    return {"success": True, "message": "Training completed"}
 
 
 @app.get("/api/logs")
@@ -78,32 +106,16 @@ async def stream_logs():
 
 
 def load_and_train(trainingset_info):
-    trainingset = bumblebee.load_dataset(trainingset_info, train=True, flag='Training set')
-    model = bumblebee.train(trainingset)
-    return model
+    trainingset = bumblebee.load_dataset(
+        trainingset_info,
+        kind="Training",
+    )
+    session.model = bumblebee.train(trainingset)
+
 
 # def test_model(testset_info):
 #     testset = bumblebee.load_dataset(testset_info, train=False, flag='Test set')
 #     bumblebee.test(testset)
-
-
-class QueueHandler(logging.Handler):
-    def emit(self, record):
-        try:
-            self.log_queue.put(self.format(record))
-        except Exception:
-            self.handleError(record)
-
-    def __init__(self, log_queue):
-        super().__init__()
-        self.log_queue = log_queue
-
-
-stdout_queue = queue.Queue()
-queue_handler = QueueHandler(stdout_queue)
-queue_handler.setLevel(logging.INFO)
-queue_handler.setFormatter(logging.Formatter("%(message)s"))
-logging.getLogger().addHandler(queue_handler)
 
 
 if __name__ == "__main__":
