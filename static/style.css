@@ -9,8 +9,12 @@
   --gray2: #e8ecef;
   --gray3: #c3c8ce;
   --gray4: #a1a8af;
-  --cyan1: #bddcf4;
-  --cyan2: #8dc3ec;
+  /* --cyan1: #bddcf4;
+  --cyan2: #8dc3ec; 
+  --green1: #C9F2D8;
+  --green2: #3FAF69; */
+  --green1: #CFF7D2;
+  --green2: #2E9C5D;
   --line-gray: #8a939b;
 }
 
@@ -242,7 +246,7 @@ body {
 }
 
 .csv-modal-header {
-  background: var(--cyan1);
+  background: var(--green1);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -341,7 +345,7 @@ body {
 }
 
 .csv-modal-actions {
-  background: var(--cyan1);
+  background: var(--green1);
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -350,7 +354,7 @@ body {
 }
 
 .csv-modal-actions button {
-  background: var(--cyan2);
+  background: var(--green2);
   border: 1px solid var(--line-gray);
   color: var(--charcoal);
   width: 38px;
