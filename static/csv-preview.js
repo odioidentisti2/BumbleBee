@@ -310,7 +310,7 @@ function initCsvPreviewModal() {
       detail: {
         csvInfo: {
           task: state.task,
-          path: state.file.name,
+          file_name: state.file.name,
           smiles_header: state.headers[state.selections.smiles] || "",
           target_header: state.headers[state.selections.target] || "",
           id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",

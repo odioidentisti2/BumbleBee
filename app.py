@@ -54,6 +54,7 @@ def test(request: Request):
 
 @app.post("/api/train")
 def run_training(dataset_info: dict):
+    dataset_info['path'] = 'DATASETS/' + dataset_info['file_name'] 
     result = load_and_train(dataset_info)
     return {"success": True, "result": result}
 

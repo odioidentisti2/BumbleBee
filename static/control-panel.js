@@ -15,8 +15,8 @@ function initControlsPanel(panel) {
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
-  const fileButton = panel.querySelector(".control-file-button");
-  const runButton = panel.querySelector(".control-run-button");
+  // const fileButton = panel.querySelector(".control-file-button");
+  // const runButton = panel.querySelector(".control-run-button");
 
   // Send selected file to the preview modal flow
   fileInput.addEventListener("change", () => {
@@ -42,10 +42,10 @@ initControlsPanels();
 
 window.csvInfo = null;
 
-// Listen for dataset-info ready.
+// Listen for CSV info ready.
 document.addEventListener("csv:info-ready", async (event) => {
   window.csvInfo = event.detail.csvInfo
-  document.querySelector(".console-prompt").innerHTML = `Dataset: ${window.csvInfo.path}`;  // Update the console prompt
+  document.querySelector(".console-prompt").innerHTML = `Dataset: ${window.csvInfo.file_name}`;  // Update the console prompt
   document.querySelector(".control-run-button").disabled = false;  // Enable the RUN button
 });
 
