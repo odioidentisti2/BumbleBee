@@ -124,17 +124,23 @@ body {
   gap: 30px;
 }
 
-.control-file-button {
+.control-file-label {
   width: 75px;
   height: 75px;  
   display: flex;
   align-items: center;
   justify-content: center;}
 
-.control-file-button svg {
+.control-file-label svg {
   width: 70%;
   height: 70%;
   fill: var(--yellow);
+}
+
+.control-file-label.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .control-run-button {

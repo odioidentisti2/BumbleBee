@@ -6,7 +6,7 @@ function initControlsPanel(panel) {
   panel.innerHTML = `
     <input id="control-input" class="control-file-input" type="file" accept=".csv">
     <div class="control-file-row">
-      <label for="control-input" class="control-file-button control-buttons">
+      <label for="control-input" class="control-file-label control-buttons">
         <svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"></path></svg>
       </label>
       <span class="control-file-caption">Browse...</span>
@@ -15,8 +15,6 @@ function initControlsPanel(panel) {
   `;
 
   const fileInput = panel.querySelector(".control-file-input");
-  // const fileButton = panel.querySelector(".control-file-button");
-  // const runButton = panel.querySelector(".control-run-button");
 
   // Send selected file to the preview modal flow
   fileInput.addEventListener("change", () => {
@@ -32,6 +30,7 @@ function initControlsPanel(panel) {
   
 }
 
+//POSSO ELIMINARLA DATO CHE HO UN SOLO PANNELLO?
 // Initialize all reusable controls panels on the current page.
 function initControlsPanels() {
   document.querySelectorAll(".controls").forEach(initControlsPanel);
@@ -39,14 +38,16 @@ function initControlsPanels() {
 
 initControlsPanels();
 
-
+const consolePrompt = document.querySelector(".console-prompt")
+const fileLabel = document.querySelector(".control-file-label");
+const runButton = document.querySelector(".control-run-button");
 window.csvInfo = null;
 
 // Listen for CSV info ready.
 document.addEventListener("csv:info-ready", async (event) => {
   window.csvInfo = event.detail.csvInfo
-  document.querySelector(".console-prompt").innerHTML = `Dataset: ${window.csvInfo.file_name}`;  // Update the console prompt
-  document.querySelector(".control-run-button").disabled = false;  // Enable the RUN button
+  consolePrompt.innerHTML = `Dataset: ${window.csvInfo.file_name}`;  // Update the console prompt
+  runButton.disabled = false;  // Enable the RUN button
 });
 
 
@@ -57,7 +58,9 @@ document
 
 async function runAction() {
     console.log("runAction called");  // DEBUG
-    document.querySelector(".console-prompt").innerHTML = "";
+    consolePrompt.innerHTML = "";
+    fileLabel.classList.add("is-disabled");
+    runButton.disabled = true
 
     const endpoint = page === "TRAIN"
         ? "/api/train"
@@ -78,4 +81,7 @@ async function runAction() {
     }
 
     console.log(result);
+
+    fileLabel.classList.remove("is-disabled");
+    runButton.disabled = false
 }
