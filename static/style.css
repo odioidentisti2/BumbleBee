@@ -169,8 +169,8 @@ body {
 @font-face {
   font-family: Terminal;
   src: url("assets/NimbusMonoPS-Regular.otf") format("opentype");
-  ascent-override: 80%;
-  descent-override: 20%;
+  /* ascent-override: 80%;
+  descent-override: 20%; */
 }
 
 .console {
