@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import queue
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,7 +15,50 @@ import bumblebee
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Tox-BumbleBee")
+
+log_queue: asyncio.Queue[str] = asyncio.Queue()
+
+
+class QueueHandler(logging.Handler):
+    """Feed the SSE log stream without losing records.
+
+    Records are formatted on the emitting thread, then handed to the stream
+    through `loop.call_soon_threadsafe` (training logs arrive on a worker
+    thread). They are only removed from the queue once the streaming response
+    is ready to send them, so a client disconnecting mid-stream cannot swallow
+    them: they stay queued for the next connection.
+    """
+
+    def __init__(self, log_queue: asyncio.Queue[str]):
+        super().__init__()
+        self.setFormatter(logging.Formatter("%(message)s"))
+        self.log_queue = log_queue
+        self.loop: asyncio.AbstractEventLoop | None = None
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            message = self.format(record)
+        except Exception:
+            self.handleError(record)
+            return
+        if self.loop is None:  # Startup not reached yet: no consumer, no loop needed
+            self.log_queue.put_nowait(message)
+        else:
+            self.loop.call_soon_threadsafe(self.log_queue.put_nowait, message)
+
+
+queue_handler = QueueHandler(log_queue)
+queue_handler.setLevel(logging.INFO)  # DEBUG stays on the terminal only
+logging.getLogger().addHandler(queue_handler)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    queue_handler.loop = asyncio.get_running_loop()
+    yield
+
+
+app = FastAPI(title="Tox-BumbleBee", lifespan=lifespan)
 
 app.mount(
     "/static",
@@ -32,25 +75,6 @@ class AppSession:
 
 
 session = AppSession()
-
-class QueueHandler(logging.Handler):
-    def __init__(self, log_queue):
-        super().__init__()
-        self.log_queue = log_queue
-
-    def emit(self, record):
-        try:
-            self.log_queue.put(self.format(record))
-        except Exception:
-            self.handleError(record)
-
-
-stdout_queue = queue.Queue()
-queue_handler = QueueHandler(stdout_queue)
-queue_handler.setLevel(logging.INFO)
-queue_handler.setFormatter(logging.Formatter("%(message)s"))
-logging.getLogger().addHandler(queue_handler)
-
 
 DEVICE_NAME = bumblebee.init_device()
 
@@ -91,7 +115,7 @@ def run_training(dataset_info: dict):
 async def stream_logs():
     async def event_stream():
         while True:
-            message = await asyncio.to_thread(stdout_queue.get)
+            message = await log_queue.get()
             for line in message.splitlines() or [""]:
                 yield f"data: {line}\n"
             yield "\n"
