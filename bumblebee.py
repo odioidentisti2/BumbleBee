@@ -73,7 +73,7 @@ def load(model_path: str) -> MAG:
 
 def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validation"]):
     logger.info(f"\n{kind} set: {dataset_info['path']}")
-    logger.info("\n Loading...")
+    logger.info("\nLoading...")
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
     if kind == 'Training':
@@ -105,7 +105,7 @@ def train(trainingset: InjectedDataset, validation_set: Dataset | None = None) -
     logger.info("\nCalibrating...")
     trainer.calibrate(model, trainingset)
 
-    logger.info("\n Training completed.")
+    logger.info("\nTraining completed.")
     return model
 
 

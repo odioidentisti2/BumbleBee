@@ -51,7 +51,7 @@ document.addEventListener("csv:info-ready", async (event) => {
 });
 
 
-// Run TRAIN
+// Run
 document
     .getElementById("controlButton")
     .addEventListener("click", runAction);

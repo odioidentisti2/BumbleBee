@@ -73,14 +73,14 @@ class Trainer:
         start_time = time.time()
         for epoch in range(1, max_epochs + 1):
             loss = self._train(model, loader)
-            logger.info(f"Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
+            logger.info(f" Epoch {epoch}: Loss {loss:.3f}   ({time.time() - start_time:.0f}s)")
 
             # Validation + early stop
             if val_interval and epoch % val_interval == 0:
                 metric = self.eval(model, val_set, flag='Validation')
                 if stopper and stopper.check(metric, model, epoch):
                     stopper.restore(model)
-                    logger.info(f"EARLY STOP: best model epoch {stopper.best_epoch}")
+                    logger.info(f" EARLY STOP: best model epoch {stopper.best_epoch}")
                     break
 
     def eval(self, model, testset, flag):
@@ -107,7 +107,7 @@ class Trainer:
         }
 
         metric = self.tracker.metric()
-        logger.info(f"> Train: Loss {loss:.3f}  Metric {metric:.3f}")
+        logger.info(f" Train: Loss {loss:.3f}  Metric {metric:.3f}")
         return model.calibration_data
 
 

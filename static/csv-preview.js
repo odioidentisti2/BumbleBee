@@ -98,7 +98,7 @@ function buildModal() {
           </div>
           <label class="task-option">
             <input type="radio" name="prediction-task" value="binary_classification">
-            <span>Binary Binary classification</span>
+            <span>Binary classification</span>
           </label>
           <label class="task-option">
             <input type="radio" name="prediction-task" value="regression">
