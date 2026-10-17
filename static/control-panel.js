@@ -41,6 +41,7 @@ initControlsPanels();
 const consolePrompt = document.querySelector(".console-prompt")
 const fileLabel = document.querySelector(".control-file-label");
 const runButton = document.querySelector(".control-run-button");
+const nextButton = document.querySelector(".nav-next");
 window.csvInfo = null;
 
 // Listen for CSV info ready.
@@ -61,6 +62,7 @@ async function runAction() {
     consolePrompt.innerHTML = "";
     fileLabel.classList.add("is-disabled");
     runButton.disabled = true
+    if (nextButton) nextButton.disabled = true;
 
     const endpoint = page === "TRAIN"
         ? "/api/train"
@@ -84,4 +86,5 @@ async function runAction() {
 
     fileLabel.classList.remove("is-disabled");
     runButton.disabled = false
+    nextButton.disabled = false;
 }

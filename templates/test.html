@@ -9,6 +9,7 @@
 </head>
 
 <body class="test-page" data-device="{{ device }}" data-page-label="TEST">
+<!-- device can be removed -->
 
   <header id="shared-header"></header>
 
@@ -17,7 +18,17 @@
     <section class="panel console" data-prompt="> Upload a" data-blink-target="TEST SET"></section>
   </main>
 
-  <footer id="shared-footer"></footer>
+  <footer class="nav-bar">
+    <div class="nav-group">
+      <button type="button" class="nav-button" data-href="/train">&lt;</button>
+      <span class="nav-label">TRAIN</span>
+    </div>
+    <div class="nav-group">
+      <span class="nav-label">EXPLAIN</span>
+      <!-- TODO: add data-href once the EXPLAIN page exists -->
+      <button type="button" class="nav-button nav-next" disabled>&gt;</button>
+    </div>
+  </footer>
 
   <script src="/static/shared.js"></script>
   <script src="/static/output-console.js"></script>

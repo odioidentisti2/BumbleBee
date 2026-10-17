@@ -35,7 +35,7 @@ body {
   min-height: 100vh;
   min-width: 800px;
   display: grid;
-  grid-template-rows: 70px 1fr 35px;  /* header, main, footer */
+  grid-template-rows: 75px 1fr 50px;  /* header, main, nav bar */
   background: var(--whitish);
   color: var(--charcoal);
   font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace;
@@ -43,7 +43,7 @@ body {
 }
 
 /* =========================
-   Shared Header / Footer
+   Header
    ========================= */
 .menu-bar {
   display: flex;
@@ -59,14 +59,42 @@ body {
 .logo {
   height: 50px;
   display: block;
-}
+ }
 
-.status-bar {
+/* =========================
+   Footer
+   ========================= */
+.nav-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 12px;
   font-size: small;
+ }
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-button {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  border: 1px solid var(--line-gray);
+  display: grid;
+  place-items: center;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-button:disabled {
+  cursor: not-allowed;
+}
+
+.nav-group:has(.nav-button:disabled) {
+  opacity: 0.5;
 }
 
 /* =========================
