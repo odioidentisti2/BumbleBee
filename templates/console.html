@@ -1,0 +1,6 @@
+<div class="console-prompt">&gt; Upload a <span class="blink">{{ dataset }}</span></div>
+<pre class="console-log"
+     hx-ext="sse"
+     sse-connect="/api/logs"
+     sse-swap="message"
+     hx-swap="beforeend scroll:bottom"></pre>

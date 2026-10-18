@@ -306,18 +306,16 @@ function initCsvPreviewModal() {
   confirmBtn.addEventListener("click", () => {
     closeModal();
 
-    document.dispatchEvent(new CustomEvent("csv:info-ready", {
+    document.dispatchEvent(new CustomEvent("dataset:selected", {
       detail: {
-        csvInfo: {
-          task: state.task,
-          file_name: state.file.name,
-          smiles_header: state.headers[state.selections.smiles] || "",
-          target_header: state.headers[state.selections.target] || "",
-          id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
-        }
+        task: state.task,
+        file_name: state.file.name,
+        smiles_header: state.headers[state.selections.smiles] || "",
+        target_header: state.headers[state.selections.target] || "",
+        id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
       },
     }));
-  });
+   });
 
   taskInputs.forEach((input) => {
     input.addEventListener("change", () => {
@@ -360,10 +358,7 @@ function initCsvPreviewModal() {
     return Number.isFinite(Number(firstTargetCell)) ? "regression" : "binary_classification";
   }
 
-  document.addEventListener("csv:file-selected", (event) => {
-    const detail = event.detail || {};
-    const file = detail.file;
-
+  function openPreviewForFile(file) {
     if (!(file instanceof File)) {
       return;
     }
@@ -387,7 +382,17 @@ function initCsvPreviewModal() {
     };
 
     reader.readAsText(file);
-  });
-}
+  }
 
-initCsvPreviewModal();
+  const fileInput = document.getElementById("control-input");
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) {
+        openPreviewForFile(file);
+      }
+    });
+  }
+ }
+
+ initCsvPreviewModal();

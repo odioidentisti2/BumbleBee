@@ -5,7 +5,7 @@ document.querySelectorAll(".nav-bar .nav-button[data-href]").forEach((button) =>
   });
 });
 
-// Shared split animation trigger for pages using the split-ready class.
+// Split animation trigger for pages using the split-ready class.
 requestAnimationFrame(() => {
   document.body.classList.add("split-ready");
 });

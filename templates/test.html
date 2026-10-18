@@ -1,3 +1,4 @@
+{% set page_label = "TEST" %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,16 +7,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bumblebee - Test</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/sse.min.js" defer></script>
 </head>
 
-<body class="test-page" data-device="{{ device }}" data-page-label="TEST">
+<body class="test-page" data-page-label={{ page_label }}>
 <!-- device can be removed -->
 
   {% include "header.html" %}
 
   <main class="main-split">
-    <section class="panel controls"></section>
-    <section class="panel console" data-prompt="> Upload a" data-blink-target="TEST SET"></section>
+    <section class="panel controls">
+      {% include "controls.html" %}
+    </section>
+    <section class="panel console">
+      {% set dataset = "TEST SET" %}
+      {% include "console.html" %}
+    </section>
   </main>
 
   {# TODO: aggiungere "href": "/explain" quando la pagina esisterà #}
@@ -26,8 +34,7 @@
   {% include "footer.html" %}
 
   <script src="/static/shared.js"></script>
-  <script src="/static/output-console.js"></script>
-  <script src="/static/control-panel.js"></script>
+  <script src="/static/run-control.js"></script>
   <script src="/static/csv-preview.js"></script>
 </body>
 

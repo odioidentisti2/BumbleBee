@@ -1,4 +1,5 @@
 import asyncio
+import html
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -111,14 +112,14 @@ def run_training(dataset_info: dict):
     return {"success": True, "message": "Training completed"}
 
 
+# Output console
 @app.get("/api/logs")
 async def stream_logs():
     async def event_stream():
         while True:
             message = await log_queue.get()
             for line in message.splitlines() or [""]:
-                yield f"data: {line}\n"
-            yield "\n"
+                yield f"data: {html.escape(line)}\ndata: \n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

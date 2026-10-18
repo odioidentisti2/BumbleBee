@@ -32,7 +32,7 @@
    Page Shell
    ========================= */
 body {
-  min-height: 100vh;
+  height: 100vh;
   min-width: 800px;
   display: grid;
   grid-template-rows: 75px 1fr 50px;  /* header, main, nav bar */
@@ -51,9 +51,10 @@ body {
   padding: 0 12px;
 }
 
-.page-label {
+.device-label {
   margin-left: auto;
   margin-right: 12px;
+  font-size: small;
 }
 
 .logo {
@@ -103,7 +104,9 @@ body {
 .main-split {
   display: grid;
   grid-template-columns: 1fr 1fr;  
+  grid-template-rows: 1fr;
   column-gap: 6px;
+  min-height: 0;
 }
 
 .train-page .main-split,
@@ -125,17 +128,19 @@ body {
   display: flex;
   border-top: 1px solid var(--line-gray);
   border-bottom: 1px solid var(--line-gray);
-  padding: 50px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* =========================
-   Controls (control-panel.js)
+   Controls
    ========================= */
 
 .controls {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 25px;
+  padding: 50px;
 }
 
 .control-file-input {
@@ -190,8 +195,13 @@ body {
   cursor: not-allowed;
 }
 
+.controls[inert],
+.nav-bar[inert] {
+  opacity: 0.5;
+}
+
 /* =========================
-   Console (output-console.js)
+   Console
    ========================= */
 
 @font-face {
@@ -208,19 +218,28 @@ body {
   text-decoration: none;
   letter-spacing: 0em;
   border-radius: 4px;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px;
+}
+
+.console-prompt {
+  padding: 30px;
 }
 
 .console-prompt:empty {
   display: none;
 }
 
-
-
 .console-log {
   font-family: inherit;
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word; 
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 30px;
 }
 
 .console-action {
