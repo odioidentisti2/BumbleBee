@@ -5,11 +5,10 @@ const regions = document.querySelectorAll(".controls, .nav-bar");
 const setRunning = (running) => regions.forEach((el) => (el.inert = running));
 
 let dataset = null;
-let endpoint = "/api/train";
+const endpoint = `/api/${document.body.dataset.page}`;
 
 document.addEventListener("dataset:selected", (event) => {
   dataset = event.detail;
-  endpoint = document.body.dataset.pageLabel === "TRAIN" ? "/api/train" : "/api/test";
   nextButton.disabled = true;
   prompt.textContent = `Dataset: ${dataset.file_name}`;
   runButton.disabled = false;

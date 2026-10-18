@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -80,6 +81,15 @@ session = AppSession()
 DEVICE_NAME = bumblebee.init_device()
 
 
+def arrival_source(request: Request) -> str:
+    path = urlparse(request.headers.get("referer", "")).path.rstrip("/")
+    if path.endswith("/train"):
+        return "train"
+    if path.endswith("/test"):
+        return "test"
+    return "index"
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(
@@ -93,7 +103,8 @@ def train(request: Request):
     return templates.TemplateResponse(
         "train.html",
         {"request": request,
-         "device": DEVICE_NAME},
+         "device": DEVICE_NAME,
+         "source": arrival_source(request)},
     )
 
 @app.get("/test", response_class=HTMLResponse)
@@ -101,7 +112,8 @@ def test(request: Request):
     return templates.TemplateResponse(
         "test.html",
         {"request": request,
-         "device": DEVICE_NAME},
+         "device": DEVICE_NAME,
+         "source": arrival_source(request)},
     )
 
 

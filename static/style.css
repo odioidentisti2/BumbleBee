@@ -109,18 +109,14 @@ body {
   min-height: 0;
 }
 
-.train-page .main-split,
+.train-page .main-split {
+  grid-template-columns: 2fr 1fr;  
+  column-gap: 0;
+}
+
 .test-page .main-split {
-    column-gap: 0;
-    transition: grid-template-columns 1s ease;
-}
-
-.train-page.split-ready .main-split {
-  grid-template-columns: 2fr 1fr;
-}
-
-.test-page.split-ready .main-split {
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 2fr; 
+  column-gap: 0;
 }
 
 .panel {
@@ -220,11 +216,11 @@ body {
   border-radius: 4px;
   flex-direction: column;
   min-height: 0;
-  padding: 20px;
+  padding: 15px;
 }
 
 .console-prompt {
-  padding: 30px;
+  padding: 35px;
 }
 
 .console-prompt:empty {
@@ -239,7 +235,7 @@ body {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 30px;
+  padding: 35px;
 }
 
 .console-action {
@@ -267,182 +263,4 @@ body {
   50% {
     text-shadow: 0 0 3px currentColor;
   }
-}
-
-/* =========================
-   CSV Preview Modal
-   ========================= */
-.csv-modal-overlay {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(10, 18, 26, 0.7);
-  z-index: 1000;
-}
-
-.csv-modal-overlay.is-open {
-  display: flex;
-}
-
-.csv-modal {
-  font-weight: 300;
-  width: min(1000px, 92vw);
-  max-height: 84vh;
-  background: #ffffff;
-  color: var(--charcoal);
-  border: 1px solid var(--line-gray);
-  border-radius: 12px;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  overflow: hidden;
-}
-
-.csv-modal-header {
-  background: var(--green1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #d4d9dd;
-}
-
-.csv-modal-title {
-  font-size: 16px;
-}
-
-.csv-modal-body {
-  padding: 25px;
-  overflow: auto;
-}
-
-.csv-selection-list {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.csv-selection-step {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  font-size: 14px;
-}
-
-.csv-selection-step.is-active {
-  color: var(--charcoal);
-}
-
-.csv-selection-step.is-inactive,
-.csv-selection-step.is-complete {
-  color: var(--gray4);
-}
-
-.csv-selection-step[data-step-name="task"] {
-  margin-top: 8px;
-}
-
-.csv-selection-step[data-step-name="task"] .csv-selection-label {
-  font-weight: 700;
-}
-
-.csv-selection-value {
-  font-weight: 600;
-}
-
-.csv-table-wrap {
-  border: 1px solid #d4d9dd;
-  max-height: 52vh;
-  margin-bottom: 18px;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-.csv-preview-table {
-  width: 100%;
-  min-width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.csv-preview-table th,
-.csv-preview-table td {
-  border: 1px solid #e2e6ea;
-  min-width: 100px;
-  width: 100px;
-  padding: 6px 8px;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 13px;
-}
-
-.csv-preview-table th {
-  position: sticky;
-  top: 0;
-  background: #f7f9fb;
-  cursor: pointer;
-}
-
-.csv-preview-table th:hover {
-  background: var(--gray2);
-}
-
-.csv-preview-table th.is-selected {
-  background: var(--gray3);
-}
-
-.csv-preview-table th[data-locked="true"] {
-  cursor: default;
-}
-
-.csv-modal-actions {
-  background: var(--green1);
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-top: 1px solid #d4d9dd;
-}
-
-.csv-modal-actions button {
-  background: var(--green2);
-  border: 1px solid var(--line-gray);
-  color: var(--charcoal);
-  width: 38px;
-  height: 38px;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  cursor: pointer;
-}
-
-.csv-modal-actions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.task-panel {
-  display: grid;
-  gap: 10px;
-}
-
-.task-panel.is-inactive {
-  color: var(--gray4);
-}
-
-.task-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  margin-left: 10px;
-}
-
-.task-option input {
-  margin: 0;
 }

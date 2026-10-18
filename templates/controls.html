@@ -5,4 +5,6 @@
   </label>
   <span class="control-file-caption">Browse...</span>
 </div>
-<button type="button" id="controlButton" class="control-run-button control-buttons" disabled>{{ page_label }}</button>
+<button type="button" id="controlButton" class="control-run-button control-buttons" disabled>
+  {{ "TRAIN" if page == 'train' else "TEST" }}
+</button>

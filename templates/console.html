@@ -1,4 +1,7 @@
-<div class="console-prompt">&gt; Upload a <span class="blink">{{ dataset }}</span></div>
+<div class="console-prompt">&gt; Upload a 
+     <span class="blink">
+          {{ "TRAINING SET" if page=="train" else "TEST SET" }}
+     </span></div>
 <pre class="console-log"
      hx-ext="sse"
      sse-connect="/api/logs"

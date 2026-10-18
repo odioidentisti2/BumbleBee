@@ -1,4 +1,3 @@
-{% set page_label = "TRAIN" %}
 <!DOCTYPE html>
 <html lang="en">
   
@@ -7,17 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bumblebee - Train</title>
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/csv-preview.css">
+  <link rel="stylesheet" href="/static/split-transition.css">
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/vendor/sse.min.js" defer></script>
 </head>
 
-<body class="train-page" data-page-label="{{ page_label }}">
+{% set page = "train" %}
+
+<body class="train-page from-{{ source }}" data-page="{{ page }}">
   
   {% include "header.html" %}
 
   <main class="main-split">
     <section class="panel console">
-      {% set dataset = "TRAINING SET" %}
       {% include "console.html" %}
     </section>
     <section class="panel controls">
@@ -27,7 +29,7 @@
  
   {% set nav = {
     "prev": {"label": "START", "href": "/"},
-    "next": {"label": "TEST", "href": "/test", "disabled": true, "css_class": "nav-next"}
+    "next": {"label": "TEST", "href": "/test", "disabled": false, "css_class": "nav-next"}
   } %}
   {% include "footer.html" %}
  
