@@ -1,0 +1,21 @@
+<footer class="nav-bar">
+  {% if nav.get('prev') %}
+  <div class="nav-group">
+    <button type="button"
+            class="nav-button{% if nav.prev.css_class %} {{ nav.prev.css_class }}{% endif %}"
+            {% if nav.prev.href %}data-href="{{ nav.prev.href }}"{% endif %}
+            {% if nav.prev.disabled %}disabled{% endif %}>&lt;</button>
+    <span class="nav-label">{{ nav.prev.label }}</span>
+  </div>
+  {% endif %}
+
+  {% if nav.get('next') %}
+  <div class="nav-group">
+    <span class="nav-label">{{ nav.next.label }}</span>
+    <button type="button"
+            class="nav-button{% if nav.next.css_class %} {{ nav.next.css_class }}{% endif %}"
+            {% if nav.next.href %}data-href="{{ nav.next.href }}"{% endif %}
+            {% if nav.next.disabled %}disabled{% endif %}>&gt;</button>
+  </div>
+  {% endif %}
+</footer>

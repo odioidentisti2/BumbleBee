@@ -4,19 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bumblebee</title>
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/sse.min.js" defer></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body data-device="{{ device }}">
 <!-- device can be removed -->
-  <header id="shared-header"></header>
+ 
+  {% include "header.html" %}
 
   <main class="main-split">
       <a href="/train" class="panel console console-action">TRAIN A MODEL</a>
       <a href="/test" class="panel console console-action">TEST A MODEL</a>
   </main>
 
-  <footer class="nav-bar">
-  </footer>
-  <script src="/static/shared.js"></script>
+  {% set nav = {} %}
+  {% include "footer.html" %}
+  
 </body>
 </html>

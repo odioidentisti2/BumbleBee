@@ -11,24 +11,19 @@
 <body class="test-page" data-device="{{ device }}" data-page-label="TEST">
 <!-- device can be removed -->
 
-  <header id="shared-header"></header>
+  {% include "header.html" %}
 
   <main class="main-split">
     <section class="panel controls"></section>
     <section class="panel console" data-prompt="> Upload a" data-blink-target="TEST SET"></section>
   </main>
 
-  <footer class="nav-bar">
-    <div class="nav-group">
-      <button type="button" class="nav-button" data-href="/train">&lt;</button>
-      <span class="nav-label">TRAIN</span>
-    </div>
-    <div class="nav-group">
-      <span class="nav-label">EXPLAIN</span>
-      <!-- TODO: add data-href once the EXPLAIN page exists -->
-      <button type="button" class="nav-button nav-next" disabled>&gt;</button>
-    </div>
-  </footer>
+  {# TODO: aggiungere "href": "/explain" quando la pagina esisterà #}
+  {% set nav = {
+    "prev": {"label": "TRAIN", "href": "/train"},
+    "next": {"label": "EXPLAIN", "disabled": true, "css_class": "nav-next"}
+  } %}
+  {% include "footer.html" %}
 
   <script src="/static/shared.js"></script>
   <script src="/static/output-console.js"></script>
