@@ -1,4 +1,11 @@
-/* Layout finale della pagina che si sta caricando */
+/* Start layout (based on prev-page) */
+.train-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
+.train-page.from-test  .main-split { --split-from: 1fr 2fr; animation: split-in 1s ease both; }
+
+.test-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
+.test-page.from-train .main-split { --split-from: 2fr 1fr; animation: split-in 1s ease both; }
+
+/* End layout */
 .train-page .main-split {
   --split-to: 2fr 1fr;
   grid-template-columns: var(--split-to);
@@ -9,21 +16,7 @@
   grid-template-columns: var(--split-to);
 }
 
-/* Layout iniziale in base alla pagina di provenienza */
-.train-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
-.train-page.from-test  .main-split { --split-from: 1fr 2fr; animation: split-in 1s ease both; }
-
-.test-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
-.test-page.from-train .main-split { --split-from: 2fr 1fr; animation: split-in 1s ease both; }
-
 @keyframes split-in {
   from { grid-template-columns: var(--split-from); }
   to   { grid-template-columns: var(--split-to); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .train-page .main-split,
-  .test-page .main-split {
-    animation: none;
-  }
 }
