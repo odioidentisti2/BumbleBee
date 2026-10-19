@@ -10,10 +10,10 @@
 }
 
 /* Layout iniziale in base alla pagina di provenienza */
-.train-page.from-index .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
+.train-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
 .train-page.from-test  .main-split { --split-from: 1fr 2fr; animation: split-in 1s ease both; }
 
-.test-page.from-index .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
+.test-page.from-start .main-split { --split-from: 1fr 1fr; animation: split-in 1s ease both; }
 .test-page.from-train .main-split { --split-from: 2fr 1fr; animation: split-in 1s ease both; }
 
 @keyframes split-in {

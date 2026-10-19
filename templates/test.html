@@ -13,8 +13,9 @@
 </head>
 
 {% set page = "test" %}
+{% set prev_page = source.strip("/") or "start" %}
 
-<body class="test-page from-{{ source }}" data-page="{{ page }}">
+<body class="test-page from-{{ prev_page }}" data-page="{{ page }}">
 
   {% include "header.html" %}
 
@@ -28,8 +29,8 @@
   </main>
 
   {# TODO: aggiungere "href": "/explain" quando la pagina esisterà #}
-  {% set nav = {
-    "prev": {"label": "TRAIN", "href": "/train"},
+  {% set nav = {    
+    "prev": {"label": prev_page|upper, "href": source},
     "next": {"label": "EXPLAIN", "disabled": false, "css_class": "nav-next"}
   } %}
   {% include "footer.html" %}

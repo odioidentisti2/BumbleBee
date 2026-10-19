@@ -13,8 +13,9 @@
 </head>
 
 {% set page = "train" %}
+{% set prev_page = source.strip("/") or "start" %}
 
-<body class="train-page from-{{ source }}" data-page="{{ page }}">
+<body class="train-page from-{{ prev_page }}" data-page="{{ page }}">
   
   {% include "header.html" %}
 

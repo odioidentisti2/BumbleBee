@@ -81,13 +81,8 @@ session = AppSession()
 DEVICE_NAME = bumblebee.init_device()
 
 
-def arrival_source(request: Request) -> str:
-    path = urlparse(request.headers.get("referer", "")).path.rstrip("/")
-    if path.endswith("/train"):
-        return "train"
-    if path.endswith("/test"):
-        return "test"
-    return "index"
+def arrival_path(request: Request) -> str:
+    return urlparse(request.headers.get("referer", "")).path.rstrip("/") or "/"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -104,7 +99,7 @@ def train(request: Request):
         "train.html",
         {"request": request,
          "device": DEVICE_NAME,
-         "source": arrival_source(request)},
+         "source": arrival_path(request)},
     )
 
 @app.get("/test", response_class=HTMLResponse)
@@ -113,7 +108,7 @@ def test(request: Request):
         "test.html",
         {"request": request,
          "device": DEVICE_NAME,
-         "source": arrival_source(request)},
+         "source": arrival_path(request)},
     )
 
 
@@ -153,6 +148,15 @@ def load_and_train(trainingset_info):
 # def test_model(testset_info):
 #     testset = bumblebee.load_dataset(testset_info, train=False, flag='Test set')
 #     bumblebee.test(testset)
+
+
+# DEBUG ONLY!!!!
+@app.middleware("http")
+async def revalidate_static(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 if __name__ == "__main__":
