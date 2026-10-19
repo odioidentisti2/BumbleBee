@@ -75,8 +75,8 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 class AppSession:
     model: object = None
 
-
 session = AppSession()
+
 
 DEVICE_NAME = bumblebee.init_device()
 
@@ -111,13 +111,22 @@ def test(request: Request):
          "source": arrival_path(request)},
     )
 
+# TEMP FIX!
+def with_dataset_path(dataset_info: dict) -> dict:
+    dataset_info["path"] = str(BASE_DIR / "DATASETS" / dataset_info["file_name"])
+    return dataset_info
 
 @app.post("/api/train")
 def run_training(dataset_info: dict):
-    dataset_info["path"] = "DATASETS/" + dataset_info["file_name"]  # TEMP FIX!
-    load_and_train(dataset_info)
+    load_and_train(with_dataset_path(dataset_info))
     return {"success": True, "message": "Training completed"}
 
+@app.post("/api/test")
+def run_testing(dataset_info: dict):
+    if not session.model:
+        pass
+    load_and_test(with_dataset_path(dataset_info))
+    return {"success": True}
 
 # Output console
 @app.get("/api/logs")
@@ -131,23 +140,15 @@ async def stream_logs():
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
-# @app.post("/api/test")
-# def run_testing(config: dict):
-#     result = test(config)
-#     return {"success": True, "result": result}
-
 
 def load_and_train(trainingset_info):
-    trainingset = bumblebee.load_dataset(
-        trainingset_info,
-        kind="Training",
-    )
+    trainingset = bumblebee.load_dataset(trainingset_info, kind="Training")
     session.model = bumblebee.train(trainingset)
 
 
-# def test_model(testset_info):
-#     testset = bumblebee.load_dataset(testset_info, train=False, flag='Test set')
-#     bumblebee.test(testset)
+def load_and_test(testset_info):
+    testset = bumblebee.load_dataset(testset_info, kind="Test")
+    bumblebee.test(testset, session.model)
 
 
 # DEBUG ONLY!!!!

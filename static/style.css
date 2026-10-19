@@ -33,7 +33,8 @@
    ========================= */
 body {
   height: 100vh;
-  min-width: 800px;
+  min-width: 1020px;  /* [ 240 (run button) + 100 (padding) ] * 3 (split 1fr 2 fr) */
+  min-height: 530px;
   display: grid;
   grid-template-rows: 75px 1fr 50px;  /* header, main, nav bar */
   background: var(--whitish);
@@ -177,7 +178,7 @@ body {
 }
 
 .control-run-button {
-  width: 250px;
+  width: 240px;
   height: 100px;  
   align-self: center;
   justify-self: center;

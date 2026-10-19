@@ -72,7 +72,7 @@ def load(model_path: str) -> MAG:
 
 
 def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validation"]):
-    logger.info(f"{kind} set: {dataset_info['path']}")
+    logger.info(f"{kind} set: {dataset_info['file_name']}")
     logger.info("\nLoading...")
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
