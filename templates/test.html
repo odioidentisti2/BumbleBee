@@ -15,7 +15,8 @@
 {% set page = "test" %}
 {% set prev_page = source.strip("/") or "start" %}
 
-<body class="test-page from-{{ prev_page }}" data-page="{{ page }}">
+<body class="test-page from-{{ prev_page }}" data-page="{{ page }}"
+      data-has-trained-model="{{ 'true' if has_trained_model else 'false' }}">
 
   {% include "header.html" %}
 
@@ -37,7 +38,8 @@
   {% include "footer.html" %}
 
   <script src="/static/shared.js"></script>
-  <script src="/static/run-controls.js"></script>
+  <script src="/static/console.js"></script>
+  <script src="/static/controls.js"></script>
   <script src="/static/csv-preview.js"></script>
   <script src="/static/file-picker.js"></script>
 </body>

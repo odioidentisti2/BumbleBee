@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from pathlib import Path
 
 import torch
 
@@ -45,7 +46,7 @@ def load(model_path: str) -> MAG:
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
     model.calibration_data = ckpt['calibration']
-    logger.info(f"\nLoaded model from {model_path} with task: {model.task}")
+    logger.info(f"\nLoaded model from {Path(model_path).name} with task: {model.task}")
     return model
 
 

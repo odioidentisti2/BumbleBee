@@ -74,6 +74,7 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 @dataclass
 class AppSession:
     model: object = None
+    trained: bool = False
 
 session = AppSession()
 
@@ -108,30 +109,34 @@ def test(request: Request):
         "test.html",
         {"request": request,
          "device": DEVICE_NAME,
-         "source": arrival_path(request)},
+         "source": arrival_path(request),
+         "has_trained_model": session.trained},
     )
 
 # TEMP FIX!
-def with_dataset_path(dataset_info: dict) -> dict:
-    dataset_info["path"] = str(BASE_DIR / "DATASETS" / dataset_info["file_name"])
-    return dataset_info
+def get_path(file_name, dir):
+    return str(BASE_DIR / dir / file_name)
 
 @app.post("/api/train")
-def run_training(dataset_info: dict):
-    load_and_train(with_dataset_path(dataset_info))
+def run_training(body: dict):
+    dataset_info = body["dataset_info"]
+    dataset_info["path"] = get_path(dataset_info["file_name"], "DATASETS")
+    trainingset = bumblebee.load_dataset(dataset_info, kind="Training")
+    session.model = bumblebee.train(trainingset)
+    session.trained = True
     return {"success": True, "message": "Training completed"}
 
 @app.post("/api/test")
-def run_testing(payload: dict):
-    model_file_name = payload.pop("model_file_name", None)
-    if model_file_name:
-        model_path = BASE_DIR / "MODELS" / Path(model_file_name).name
-        if model_path.suffix.lower() != ".pt" or not model_path.is_file():
-            raise HTTPException(status_code=400, detail=f"Model not found: {model_path.name}")
-        session.model = bumblebee.load(str(model_path))
-    if session.model is None:
-        raise HTTPException(status_code=400, detail="No model loaded")
-    load_and_test(with_dataset_path(payload))
+def run_testing(body: dict):
+    dataset_info = body["dataset_info"]
+    model_name = body["model_name"]
+    dataset_info["path"] = get_path(dataset_info["file_name"], "DATASETS")
+    testset = bumblebee.load_dataset(dataset_info, kind="Test")
+    if model_name != "FROM TRAIN PAGE":
+        model_path = get_path(Path(model_name).name, "MODELS")
+        session.model = bumblebee.load(model_path)
+        session.trained = False
+    bumblebee.test(testset, session.model)
     return {"success": True}
 
 # Output console
@@ -145,16 +150,6 @@ async def stream_logs():
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-
-
-def load_and_train(trainingset_info):
-    trainingset = bumblebee.load_dataset(trainingset_info, kind="Training")
-    session.model = bumblebee.train(trainingset)
-
-
-def load_and_test(testset_info):
-    testset = bumblebee.load_dataset(testset_info, kind="Test")
-    bumblebee.test(testset, session.model)
 
 
 # DEBUG ONLY!!!!

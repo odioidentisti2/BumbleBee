@@ -192,6 +192,14 @@ body {
   cursor: not-allowed;
 }
 
+/* .control-run-button:not(:disabled) {
+  animation: enable-flash 0.6s ease-out;
+}
+
+@keyframes enable-flash {
+  50% { box-shadow: 0 0 18px rgba(23, 35, 45, 0.55); }
+} */
+
 .controls[inert],
 .nav-bar[inert] {
   opacity: 0.5;
