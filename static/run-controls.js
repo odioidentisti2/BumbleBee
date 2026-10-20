@@ -8,43 +8,60 @@ let dataset = null;
 let model = null;
 const endpoint = `/api/${document.body.dataset.page}`;
 
+function appendLine(parts) {
+  if (prompt.childNodes.length) {
+    prompt.appendChild(document.createElement("br"));
+  }
+
+  parts.forEach((part) => {
+    if (typeof part === "string") {
+      prompt.appendChild(document.createTextNode(part));
+      return;
+    }
+
+    const span = document.createElement("span");
+    span.className = "blink";
+    span.textContent = part.blink;
+    prompt.appendChild(span);
+  });
+}
+
 function refreshUI() {
   runButton.disabled = true;
   prompt.textContent = "";
 
   const page = document.body.dataset.page;
-  const lines = [];
 
   if (page === "train") {
     if (dataset) {
-      lines.push(`Dataset: ${dataset.file_name}`);
+      appendLine([`Dataset: ${dataset.file_name}`]);
       runButton.disabled = false;
+    } else {
+      appendLine(["> Upload a ", { blink: "DATASET" }]);
     }
-    prompt.textContent = lines.join("\n");
     return;
   }
 
   if (page !== "test") return;
 
   if (dataset) {
-    lines.push(`Dataset: ${dataset.file_name}`);
+    appendLine([`Dataset: ${dataset.file_name}`]);
   }
 
   if (model) {
-    lines.push(`Model: ${model.file_name}`);
+    appendLine([`Model: ${model.file_name}`]);
   }
 
   if (dataset && model) {
     runButton.disabled = false;
+    return;
   } else if (!dataset && !model) {
-    lines.push("\n> Upload a DATASET and a MODEL");
+    appendLine(["> Upload a ", { blink: "DATASET and a MODEL" }]);
   } else if (!dataset) {
-    lines.push("\n> Upload a DATASET");
+    appendLine(["> Upload a ", { blink: "DATASET" }]);
   } else {
-    lines.push("\n> Upload a MODEL");
+    appendLine(["> Upload a ", { blink: "MODEL" }]);
   }
-
-  prompt.textContent = lines.join("\n");
 }
 
 document.addEventListener("dataset:selected", (event) => {
