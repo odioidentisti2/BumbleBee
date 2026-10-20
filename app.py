@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -122,10 +122,16 @@ def run_training(dataset_info: dict):
     return {"success": True, "message": "Training completed"}
 
 @app.post("/api/test")
-def run_testing(dataset_info: dict):
-    if not session.model:
-        pass
-    load_and_test(with_dataset_path(dataset_info))
+def run_testing(payload: dict):
+    model_file_name = payload.pop("model_file_name", None)
+    if model_file_name:
+        model_path = BASE_DIR / "MODELS" / Path(model_file_name).name
+        if model_path.suffix.lower() != ".pt" or not model_path.is_file():
+            raise HTTPException(status_code=400, detail=f"Model not found: {model_path.name}")
+        session.model = bumblebee.load(str(model_path))
+    if session.model is None:
+        raise HTTPException(status_code=400, detail="No model loaded")
+    load_and_test(with_dataset_path(payload))
     return {"success": True}
 
 # Output console

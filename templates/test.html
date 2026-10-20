@@ -21,6 +21,7 @@
 
   <main class="main-split">
     <section class="panel controls">
+      {% set accept_types = ".csv,.pt" %}
       {% include "controls.html" %}
     </section>
     <section class="panel console">
@@ -38,6 +39,7 @@
   <script src="/static/shared.js"></script>
   <script src="/static/run-controls.js"></script>
   <script src="/static/csv-preview.js"></script>
+  <script src="/static/file-picker.js"></script>
 </body>
 
 </html>

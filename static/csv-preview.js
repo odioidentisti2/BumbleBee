@@ -388,8 +388,8 @@ function initCsvPreviewModal() {
   if (fileInput) {
     fileInput.addEventListener("change", () => {
       const file = fileInput.files?.[0];
-      if (file) {
-        openPreviewForFile(file);
+      if (file && file.name.toLowerCase().endsWith(".csv")) {
+         openPreviewForFile(file);
       }
     });
   }
