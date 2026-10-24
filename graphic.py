@@ -34,10 +34,10 @@ class Att_Depicter():
 
     def depict(self, graph, weights):
         logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f}", graph.smiles)
+        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
 
-        depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
     def att_ratios(weights):
@@ -75,7 +75,7 @@ class IG_Depicter():
         logger.debug(f"PREDICTION: {final_pred:.2f}")
         logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
 
-        depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
 
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
@@ -167,13 +167,14 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     
     
     logger.debug(f"Sum: {sum(bond_weights.values()):.2f}")
-    draw(graph, atom_colors, bond_colors)
+    return draw(graph, atom_colors, bond_colors), bond_weights
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
-    drawer = rdMolDraw2D.MolDraw2DCairo(500, 500)
+    drawer = rdMolDraw2D.MolDraw2DCairo(640, 640)
     
     # Set drawing options
     opts = drawer.drawOptions()
+    opts.clearBackground = False  # transparent background
     opts.addStereoAnnotation = bond_indices
     opts.addAtomIndices = atom_indices
     opts.multipleBondOffset = 0.18
@@ -181,7 +182,7 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
     target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}"  # \nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
+    legend = f"{graph.smiles}\n{target_label} \nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
 
     # Draw molecule with highlighting
     drawer.DrawMolecule(graph.mol,
@@ -192,12 +193,15 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
                         legend=legend)
     drawer.FinishDrawing()
 
-    # DEBUG: Check if running in Google Colab
-    if IN_COLAB:
-        image_bytes = drawer.GetDrawingText()
-        display(Image(data=image_bytes))
-    else:
-        Image.open(io.BytesIO(drawer.GetDrawingText())).show()
+
+    return drawer.GetDrawingText()
+
+    # # DEBUG: show image in PIL or Colab
+    # if IN_COLAB:  # Check if running in Google Colab
+    #     image_bytes = drawer.GetDrawingText()
+    #     display(Image(data=image_bytes))
+    # else:
+    #     Image.open(io.BytesIO(drawer.GetDrawingText())).show()
 
 
 

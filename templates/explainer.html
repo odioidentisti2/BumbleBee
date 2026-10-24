@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bumblebee - Explainer</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/explainer.css">
+</head>
+
+<body data-device="{{ device }}">
+
+  {% include "header.html" %}
+
+  {% set tabs = [("attention", "ATTENTION"), ("ig", "INTEGRATED GRADIENTS")] %}
+
+  <main class="explainer-main">
+    <div class="tabs">
+      {% for key, label in tabs %}
+      <button class="tab{% if loop.first %} is-active{% endif %}" data-tab="{{ key }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+
+    {% for key, label in tabs %}
+    <div class="main-split tab-content" id="{{ key }}" {% if not loop.first %}hidden{% endif %}>
+
+      <section class="panel explainer-image">
+        <img src="{{ explanations[key].image }}" alt="{{ label }}">
+      </section>
+
+      <section class="panel console explainer-tree">
+        <div class="tree-table-wrap">
+          <table class="tree-table">
+            <thead>
+              <tr><th>token</th><th>weight</th></tr>
+            </thead>
+            <tbody>
+              {% for token in explanations[key].tokens %}
+              <tr class="tree-row" data-node="{{ token.name }}">
+                <th class="tree-cell" data-depth="0">
+                  <button class="tree-toggle">&#9662;</button>{{ token.name }}
+                </th>
+                <td class="value" data-weight="{{ token.weight }}">{{ "%.2f" | format(token.weight) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th class="tree-cell">sum</th>
+                <td class="value"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+    </div>
+    {% endfor %}
+  </main>
+
+  {% set nav = { "prev": {"label": "TEST", "href": "/test"} } %}
+  {% include "footer.html" %}
+
+  <script src="/static/shared.js"></script>
+  <script src="/static/explainer.js"></script>
+
+</body>
+</html>

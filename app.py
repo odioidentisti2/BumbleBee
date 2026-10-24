@@ -75,6 +75,7 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 class AppSession:
     model: object = None
     trained: bool = False
+    testset: object = None
 
 session = AppSession()
 
@@ -113,6 +114,17 @@ def test(request: Request):
          "has_trained_model": session.trained},
     )
 
+@app.get("/explain", response_class=HTMLResponse)
+def explain(request: Request):
+    if session.testset is None:
+        raise HTTPException(400, "Run a test first")
+    return templates.TemplateResponse(
+        "explainer.html",
+        {"request": request,
+         "device": DEVICE_NAME,
+         "explanations": bumblebee.explain(session.model, session.testset)},
+    )
+
 # TEMP FIX!
 def get_path(file_name, dir):
     return str(BASE_DIR / dir / file_name)
@@ -132,6 +144,7 @@ def run_testing(body: dict):
     model_name = body["model_name"]
     dataset_info["path"] = get_path(dataset_info["file_name"], "DATASETS")
     testset = bumblebee.load_dataset(dataset_info, kind="Test")
+    session.testset = testset
     if model_name != "FROM TRAIN PAGE":
         model_path = get_path(Path(model_name).name, "MODELS")
         session.model = bumblebee.load(model_path)

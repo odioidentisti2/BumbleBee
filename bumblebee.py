@@ -115,6 +115,9 @@ def test(testset: Dataset, model: MAG) -> None:
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
+def explain(model: MAG, testset: Dataset) -> dict:
+    return Explainer(model.calibration_data).explain_first(model, testset)
+
 
 def main_loop(
     trainingset_info: dict, testset_info: dict, model_name: str | None = None,

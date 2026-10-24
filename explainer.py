@@ -1,7 +1,9 @@
 import torch
 from torch_geometric.utils import degree
-from graphic import *
 
+import base64
+
+from graphic import *
 from molecular_data import ATOM_DIM
 from parameters import OPTIMAL_BATCH_SIZE
 
@@ -37,6 +39,7 @@ class Explainer:
             for graph in batch.to_data_list():
                 repeat = True
                 while repeat:
+                    graph.prediction = self.ig_depicter.predictions[c]  # DEBUG
                     self.att_depicter.depict(graph, all_att_weights[c])
                     self.ig_depicter.depict(graph, all_ig_weights[c], count=c)
                     user_input = ''
@@ -221,7 +224,32 @@ class Explainer:
         return edge_importance
     
 
+    def explain_first(self, model, dataset):
+        device = next(model.parameters()).device
+        model.eval()
+        batch = next(iter(dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False))).to(device)
+        graph = batch.to_data_list()[0]
 
+        att_weights = self.att_attributions(model, batch.clone())[0]
+        ig_weights = self.ig_attributions(model, batch.clone())[0]
+        graph.prediction = self.ig_depicter.predictions[0]
+
+        att_image, att_bonds = self.att_depicter.depict(graph, att_weights)
+        ig_image, ig_bonds = self.ig_depicter.depict(graph, ig_weights, count=0)
+
+        return {
+            "attention": {"image": self._data_uri(att_image), "tokens": self._tokens(att_bonds)},
+            "ig": {"image": self._data_uri(ig_image), "tokens": self._tokens(ig_bonds)},
+        }
+
+    @staticmethod
+    def _data_uri(png):
+        return "data:image/png;base64," + base64.b64encode(png).decode()
+
+    @staticmethod
+    def _tokens(bond_weights):
+        return [{"name": f"token{bond_idx}", "weight": float(weight)}
+                for bond_idx, weight in sorted(bond_weights.items())]
     
     # def _shap(self, graph, background_size=1):  # Changed to 1
     #     """
