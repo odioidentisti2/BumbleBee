@@ -73,7 +73,7 @@ def load(model_path: str) -> MAG:
 
 
 def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validation"]):
-    logger.info(f"{kind} set: {dataset_info['file_name']}")
+    logger.info(f"{kind} set: {Path(dataset_info['path']).name}")
     logger.info("\nLoading...")
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     device = init_device()
     logger.info(f"DEVICE: {device}")
 
-    trainingset_info, testset_info = datasets.muta_train, datasets.muta_test
+    trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
     # trainingset_info, testset_info = datasets.logp_train, datasets.logp_test
     # trainingset_info = datasets.logp_split
 
