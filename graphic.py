@@ -68,7 +68,7 @@ class IG_Depicter():
         final_pred = self.predictions[count]
 
         logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f}", graph.smiles)
+        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(f"\nBaseline prediction: {baseline_pred:.2f}")
         logger.debug(f"Attribution sum: {attribution_sum:.2f}")
         logger.debug(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
