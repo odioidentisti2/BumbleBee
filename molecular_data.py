@@ -134,13 +134,13 @@ class InjectedDataset(Dataset):
         self.inject_generator = reproducibility.torch_generator()
         sample = graphs[0].target
         if isinstance(sample, float):
-            self.baseline = sum(g.target for g in graphs) / len(graphs)
+            self.avg_target = sum(g.target for g in graphs) / len(graphs)
         elif isinstance(sample, str):
             unique_y = set(g.y.item() for g in graphs)
-            self.baseline = sum(unique_y) / len(unique_y)
+            self.avg_target = sum(unique_y) / len(unique_y)
         else:
             raise ValueError(f"Unexpected target type: {type(sample)}")
-        logger.debug(f"Baseline = {self.baseline:.2f}")
+        logger.debug(f" Mean target = {self.avg_target:.2f}")
         
     def get(self, idx):
         data = super().get(idx)
@@ -150,7 +150,7 @@ class InjectedDataset(Dataset):
             data.x = torch.zeros_like(data.x)
             data.edge_attr = torch.zeros_like(data.edge_attr)
             # Inject baseline target
-            data.y = torch.tensor(self.baseline, dtype=torch.float)
+            data.y = torch.tensor(self.avg_target, dtype=torch.float)
         return data
         
     def get_loader(self, batch_size, is_train=False):
