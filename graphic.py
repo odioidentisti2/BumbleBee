@@ -118,13 +118,13 @@ def aggregate_two_directions(graph, edge_weights):
     bond_weights = torch.zeros(graph.mol.GetNumBonds(),
                                dtype=edge_weights.dtype,
                                device=edge_weights.device)
-    seen = set()
+    # seen = set()
     for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
         bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
-        if bond_idx in seen:  # 2nd directional pass, for logging
-            logger.debug(f"Bond {bond_idx}: {bond_weights[bond_idx] + weight:.2f} = "
-                         f"({bond_weights[bond_idx]:.4f} + {weight:.4f})")
-        seen.add(bond_idx)
+        # if bond_idx in seen:  # 2nd directional pass, for logging
+            # logger.debug(f"Bond {bond_idx}: {bond_weights[bond_idx] + weight:.2f} = "
+                        #  f"({bond_weights[bond_idx]:.4f} + {weight:.4f})")
+        # seen.add(bond_idx)
         bond_weights[bond_idx] += weight
     return bond_weights
 
