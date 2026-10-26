@@ -45,7 +45,7 @@ class Att_Depicter():
         # => weights.mean() = 1 / len(weights)
         # Therefore:
         #   weight * len(weights) == 1  means "average attention"
-        ratios = weights * 2 * len(weights) #  weights.shape[0]  # visualize the ratio to average attention
+        ratios = weights * len(weights)  # ratio to average attention
         return ratios
   
 
@@ -153,7 +153,7 @@ def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None)
         else:
             original_weight = weight
             if shift is not None:
-                weight = weight + shift * 2  # sum of 2 weights (clipping in yellow() for attention)
+                weight = weight + shift  # center average attention (== 1) at 0 (clipping in yellow())
             if factor is not None:
                 weight = weight * factor
             logger.debug(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
