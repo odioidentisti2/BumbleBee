@@ -37,7 +37,7 @@ class Att_Depicter():
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
 
-        return depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, aggregate_per_bond(graph, self.att_ratios(weights)), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
     def att_ratios(weights):
@@ -75,7 +75,7 @@ class IG_Depicter():
         logger.debug(f"PREDICTION: {final_pred:.2f}")
         logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
 
-        return depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, aggregate_per_bond(graph, weights), factor=self.factor * self.intensity, shift=self.shift)
 
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
@@ -111,11 +111,21 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
+#    The two directions of each bond are summed into a single per-bond weight
+def aggregate_per_bond(graph, edge_weights):
+    """4th aggregation step: sum the two directional weights of each bond -> {bond_idx: weight}."""
+    edge_weights = edge_weights.cpu().numpy().astype(float)  # moved here (was the first line of depict_tokens)
+    bond_weights = {}
+    for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
+        bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
+        if bond_idx in bond_weights:  # bonds are duplicated (directional), log at the 2nd pass
+            logger.debug(f"Bond {bond_idx}: {bond_weights[bond_idx] + weight:.2f} = ({bond_weights[bond_idx]:.4f} + {weight:.4f})")
+        bond_weights[bond_idx] = bond_weights.get(bond_idx, 0.0) + weight
+    return bond_weights
 
-    weights = weights.cpu().numpy().astype(float)
+def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None):
 
-    threshold = 0  # not needed anymore? (normalization in explainer)
+    # threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
     #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
     # logger.debug(f"\nThreshold: {threshold:.2f}")
@@ -124,23 +134,16 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
     #     logger.error("Invalid molecule object")
     #     return
     
-    bond_weights = {}
+    transformed_weights = {}
     atom_weights = {}
     bond_colors = {}
     atom_colors = {}
 
-    # Populating bond_intensity dict
-    edge_index = graph.edge_index.T
-    assert weights.shape[0] == edge_index.shape[0]  # DEBUG
-    for directional_weight, (src, dst) in zip(weights, edge_index):
-        bond = graph.mol.GetBondBetweenAtoms(int(src), int(dst))
-        bond_idx = bond.GetIdx()
-        if bond_idx not in bond_weights:
-            bond_weights[bond_idx] = directional_weight
-            continue  # bonds are duplicated (directional), apply the logic at the 2nd pass
-        weight = (bond_weights[bond_idx] + directional_weight)  # SUM weight for bidirectional bonds
+    for bond_idx, weight in bond_weights.items():
+        bond = graph.mol.GetBondWithIdx(bond_idx)
+
         if factor is None and shift is None:
-            logger.debug(f"Bond {bond_idx}: {weight:.2f} = ({bond_weights[bond_idx]:.4f} + {directional_weight:.4f})")
+            logger.debug(f"Bond {bond_idx}: {weight:.2f}")
         else:
             original_weight = weight
             if shift is not None:
@@ -148,10 +151,11 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
             if factor is not None:
                 weight = weight * factor
             logger.debug(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
-        bond_weights[bond_idx] = weight
+        transformed_weights[bond_idx] = weight
+
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
-        if abs(weight) > abs(threshold):  # Only highlight important bonds 
+        if abs(weight) > 0:  # abs(threshold):  # Only highlight important bonds 
             bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
 
             # Atoms connected by this bond
@@ -166,8 +170,8 @@ def depict_tokens(graph, weights, attention=False, factor=None, shift=None):
                 atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
     
     
-    logger.debug(f"Sum: {sum(bond_weights.values()):.2f}")
-    return draw(graph, atom_colors, bond_colors), bond_weights
+    logger.debug(f"Sum: {sum(transformed_weights.values()):.2f}")
+    return draw(graph, atom_colors, bond_colors), transformed_weights
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
     drawer = rdMolDraw2D.MolDraw2DCairo(640, 640)

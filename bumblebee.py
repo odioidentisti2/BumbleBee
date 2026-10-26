@@ -140,9 +140,9 @@ def main_loop(
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        # model_name = "L4_LOGP_early_stop.pt"
-        # save(f"MODELS/{model_name}", model)
-        # model = load(f"MODELS/{model_name}", model.device)
+        model_name = "L4_LOGP_10e.pt"
+        save(f"MODELS/{model_name}", model)
+        model = load(f"MODELS/{model_name}", model.device)
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}")
