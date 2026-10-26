@@ -142,7 +142,7 @@ def main_loop(
         ### Save model
         model_name = "L4_LOGP_10e.pt"
         save(f"MODELS/{model_name}", model)
-        model = load(f"MODELS/{model_name}", model.device)
+        model = load(f"MODELS/{model_name}")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}")
