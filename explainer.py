@@ -122,106 +122,19 @@ class Explainer:
             edge_count += num_edges
             
             # Aggregate for this graph
-            atom_feat_importance, bond_feat_importance = self.aggregate_per_feature(
+            atom_feat_importance, bond_feat_importance = _aggregate_per_feature(
                 graph_attributions.detach(), graph
             )
-            atom_importance, bond_importance = self.aggregate_per_atom_bond(
+            atom_importance, bond_importance = _aggregate_per_atom_bond(
                 atom_feat_importance, bond_feat_importance
             )
-            edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
+            edge_importance = _aggregate_per_edge(atom_importance, bond_importance, graph)
             edge_importance_list.append(edge_importance)
 
         return edge_importance_list
             # feat_importance_list.append(torch.cat([atom_feat_importance.flatten(), bond_feat_importance.flatten()]))
             # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
         # return feat_importance_list, atom_bond_importance_list, edge_importance_list
- 
-    @staticmethod
-    def aggregate_per_feature(attributions, graph):
-        # print("\n\nFEATURE IMPORTANCE:")
-        device = attributions.device
-        
-        # Split attributions by type
-        src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
-        dst_attr = attributions[:, ATOM_DIM:2*ATOM_DIM]    # [num_edges, num_atom_features]
-        edge_attr = attributions[:, 2*ATOM_DIM:]           # [num_edges, num_bond_features]
-        
-        num_atoms = graph.x.shape[0]
-        num_bonds = graph.mol.GetNumBonds()
-        num_atom_features = ATOM_DIM
-        num_bond_features = edge_attr.shape[1]
-        
-        # Initialize feature-level importance tensors
-        atom_feat_importance = torch.zeros(num_atoms, num_atom_features, device=device)
-        bond_feat_importance = torch.zeros(num_bonds, num_bond_features, device=device)
-        
-        src_idx = graph.edge_index[0]
-        dst_idx = graph.edge_index[1]
-        
-        # Accumulate feature vectors for each unique atom/bond
-        for i in range(attributions.shape[0]):
-            src = src_idx[i].item()
-            dst = dst_idx[i].item()
-            
-            # Accumulate atom feature attributions
-            atom_feat_importance[src] += src_attr[i]
-            atom_feat_importance[dst] += dst_attr[i]
-            
-            # Accumulate bond feature attributions
-            bond = graph.mol.GetBondBetweenAtoms(src, dst)
-            bond_idx = bond.GetIdx()
-            bond_feat_importance[bond_idx] += edge_attr[i]
-        
-        # print(f"Atom feature importance shape: {atom_feat_importance.shape}")
-        # print(f"Bond feature importance shape: {bond_feat_importance.shape}")
-        # print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
-        # print(f"Example bond features (bond 0): {bond_feat_importance[0]}")
-        
-        return atom_feat_importance, bond_feat_importance
-    
-    @staticmethod
-    def aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance):
-        # print("\n\nATOM/BOND IMPORTANCE:")        
-        # Sum across feature dimension
-        atom_importance = atom_feat_importance.sum(dim=1)  # [num_atoms]
-        bond_importance = bond_feat_importance.sum(dim=1)  # [num_bonds]
-        # print_weights(atom_importance, 
-        # title="BOND IMPORTANCE:")        
-        return atom_importance, bond_importance
-  
-    @staticmethod
-    def aggregate_per_edge(atom_importance, bond_importance, graph):
-        # print("\n\nEDGE IMPORTANCE:")
-        
-        src_idx = graph.edge_index[0]
-        dst_idx = graph.edge_index[1]
-        num_edges = src_idx.shape[0]
-        
-        # Compute atom appearance counts from degree
-        # Each atom appears in (degree × 2) edges (bidirectional)
-        atom_count = degree(src_idx, num_nodes=graph.x.shape[0]) + \
-                    degree(dst_idx, num_nodes=graph.x.shape[0])
-        
-        # All bonds appear exactly twice (bidirectional)
-        bond_count = 2
-        
-        # Build edge importance with averaged components (single pass)
-        edge_importance = torch.zeros(num_edges)
-        
-        for i in range(num_edges):
-            src = src_idx[i].item()
-            dst = dst_idx[i].item()
-            bond = graph.mol.GetBondBetweenAtoms(src, dst)
-            bond_idx = bond.GetIdx()
-            
-            # Each component divided by its count
-            edge_importance[i] = (
-                atom_importance[src] / atom_count[src] + 
-                atom_importance[dst] / atom_count[dst] + 
-                bond_importance[bond_idx] / bond_count
-            )
-        
-        return edge_importance
     
 
     def explain_first(self, model, dataset):
@@ -250,7 +163,112 @@ class Explainer:
     def _tokens(bond_weights):
         return [{"name": f"token{bond_idx}", "weight": float(weight)}
                 for bond_idx, weight in sorted(bond_weights.items())]
+
+
+# AGGREGATION:
+# IG computes attributions per (token, feature), not per token as attention does. But the
+# features of a chemical entity are duplicated across tokens (tokens incident to the same
+# atom share it, and atoms and bonds are further duplicated because of bidirectional edges).
+# Across different runs the "importance" of an atom/bond can be "spread" very inhomogeneously 
+# across tokens. This 3-step aggregation process removes that degree of freedom:
+# 1) attributions are gathered around each chemical entity (atom/bond), but each feature of
+#    the entity is still visible: per-entity feature vectors [num_atoms, ATOM_DIM],
+#    [num_bonds, BOND_DIM]
+# 2) the feature dimension is collapsed: we have a scalar for each entity
+# 3) the attributions are gathered back to the token dimension, but in a uniform way (each
+#    entity's scalar is split evenly over the tokens touching it; the total is preserved,
+#    token-level evidence is lost)
+
+def _aggregate_per_feature(attributions, graph):
+    """Returns atom_feat_importance [num_atoms, ATOM_DIM] and bond_feat_importance [num_bonds, BOND_DIM]."""
+    # print("\n\nFEATURE IMPORTANCE:")
+    device = attributions.device
     
+    # Split attributions by type
+    src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
+    dst_attr = attributions[:, ATOM_DIM:2*ATOM_DIM]    # [num_edges, num_atom_features]
+    edge_attr = attributions[:, 2*ATOM_DIM:]           # [num_edges, num_bond_features]
+    
+    num_atoms = graph.x.shape[0]
+    num_bonds = graph.mol.GetNumBonds()
+    num_atom_features = ATOM_DIM
+    num_bond_features = edge_attr.shape[1]
+    
+    # Initialize feature-level importance tensors
+    atom_feat_importance = torch.zeros(num_atoms, num_atom_features, device=device)
+    bond_feat_importance = torch.zeros(num_bonds, num_bond_features, device=device)
+    
+    src_idx = graph.edge_index[0]
+    dst_idx = graph.edge_index[1]
+    
+    # Accumulate feature vectors for each unique atom/bond
+    for i in range(attributions.shape[0]):
+        src = src_idx[i].item()
+        dst = dst_idx[i].item()
+        
+        # Accumulate atom feature attributions
+        atom_feat_importance[src] += src_attr[i]
+        atom_feat_importance[dst] += dst_attr[i]
+        
+        # Accumulate bond feature attributions
+        bond = graph.mol.GetBondBetweenAtoms(src, dst)
+        bond_idx = bond.GetIdx()
+        bond_feat_importance[bond_idx] += edge_attr[i]
+    
+    # print(f"Atom feature importance shape: {atom_feat_importance.shape}")
+    # print(f"Bond feature importance shape: {bond_feat_importance.shape}")
+    # print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
+    # print(f"Example bond features (bond 0): {bond_feat_importance[0]}")
+    
+    return atom_feat_importance, bond_feat_importance
+
+def _aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance):
+    """Returns atom_importance [num_atoms] and bond_importance [num_bonds]."""
+    # print("\n\nATOM/BOND IMPORTANCE:")        
+    # Sum across feature dimension
+    atom_importance = atom_feat_importance.sum(dim=1)
+    bond_importance = bond_feat_importance.sum(dim=1)
+    # print_weights(atom_importance, 
+    # title="BOND IMPORTANCE:")        
+    return atom_importance, bond_importance
+
+def _aggregate_per_edge(atom_importance, bond_importance, graph):
+    """Returns edge_importance [num_edges]."""
+    # print("\n\nEDGE IMPORTANCE:")
+    
+    src_idx = graph.edge_index[0]
+    dst_idx = graph.edge_index[1]
+    num_edges = src_idx.shape[0]
+    
+    # Compute atom appearance counts from degree
+    # Each atom appears in (degree × 2) edges (bidirectional)
+    atom_count = degree(src_idx, num_nodes=graph.x.shape[0]) + \
+                degree(dst_idx, num_nodes=graph.x.shape[0])
+    
+    # All bonds appear exactly twice (bidirectional)
+    bond_count = 2
+    
+    # Build edge importance with averaged components (single pass)
+    edge_importance = torch.zeros(num_edges)
+    
+    for i in range(num_edges):
+        src = src_idx[i].item()
+        dst = dst_idx[i].item()
+        bond = graph.mol.GetBondBetweenAtoms(src, dst)
+        bond_idx = bond.GetIdx()
+        
+        # Each component divided by its count
+        edge_importance[i] = (
+            atom_importance[src] / atom_count[src] + 
+            atom_importance[dst] / atom_count[dst] + 
+            bond_importance[bond_idx] / bond_count
+        )
+    
+    return edge_importance
+
+
+    # SHAP code
+    #
     # def _shap(self, graph, background_size=1):  # Changed to 1
     #     """
     #     SHAP explanation using KernelExplainer (model-agnostic).
