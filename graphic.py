@@ -37,7 +37,7 @@ class Att_Depicter():
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
 
-        return depict_tokens(graph, aggregate_per_bond(graph, self.att_ratios(weights)), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, self.att_ratios(aggregate_two_directions(graph, weights)), attention=True, factor=self.factor * self.intensity, shift=self.shift)
 
     @staticmethod
     def att_ratios(weights):
@@ -45,7 +45,7 @@ class Att_Depicter():
         # => weights.mean() = 1 / len(weights)
         # Therefore:
         #   weight * len(weights) == 1  means "average attention"
-        ratios = weights * weights.shape[0]  # visualize the ratio to average attention
+        ratios = weights * 2 * len(weights) #  weights.shape[0]  # visualize the ratio to average attention
         return ratios
   
 
@@ -75,7 +75,7 @@ class IG_Depicter():
         logger.debug(f"PREDICTION: {final_pred:.2f}")
         logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
 
-        return depict_tokens(graph, aggregate_per_bond(graph, weights), factor=self.factor * self.intensity, shift=self.shift)
+        return depict_tokens(graph, aggregate_two_directions(graph, weights), factor=self.factor * self.intensity, shift=self.shift)
 
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
@@ -112,15 +112,20 @@ def yellow(weight):
 #     return bond_keys, summed_weights
 
 #    The two directions of each bond are summed into a single per-bond weight
-def aggregate_per_bond(graph, edge_weights):
-    """4th aggregation step: sum the two directional weights of each bond -> {bond_idx: weight}."""
-    edge_weights = edge_weights.cpu().numpy().astype(float)  # moved here (was the first line of depict_tokens)
-    bond_weights = {}
+def aggregate_two_directions(graph, edge_weights):
+    import torch
+    """4th aggregation step: sum the two directional weights of each bond -> [num_bonds]."""
+    bond_weights = torch.zeros(graph.mol.GetNumBonds(),
+                               dtype=edge_weights.dtype,
+                               device=edge_weights.device)
+    seen = set()
     for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
         bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
-        if bond_idx in bond_weights:  # bonds are duplicated (directional), log at the 2nd pass
-            logger.debug(f"Bond {bond_idx}: {bond_weights[bond_idx] + weight:.2f} = ({bond_weights[bond_idx]:.4f} + {weight:.4f})")
-        bond_weights[bond_idx] = bond_weights.get(bond_idx, 0.0) + weight
+        if bond_idx in seen:  # 2nd directional pass, for logging
+            logger.debug(f"Bond {bond_idx}: {bond_weights[bond_idx] + weight:.2f} = "
+                         f"({bond_weights[bond_idx]:.4f} + {weight:.4f})")
+        seen.add(bond_idx)
+        bond_weights[bond_idx] += weight
     return bond_weights
 
 def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None):
@@ -139,7 +144,8 @@ def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None)
     bond_colors = {}
     atom_colors = {}
 
-    for bond_idx, weight in bond_weights.items():
+    for bond_idx, weight in enumerate(bond_weights):
+        weight = weight.item()
         bond = graph.mol.GetBondWithIdx(bond_idx)
 
         if factor is None and shift is None:

@@ -140,9 +140,9 @@ def main_loop(
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        model_name = "L4_LOGP_10e.pt"
-        save(f"MODELS/{model_name}", model)
-        model = load(f"MODELS/{model_name}")
+        # model_name = "L4_LOGP_10e.pt"
+        # save(f"MODELS/{model_name}", model)
+        # model = load(f"MODELS/{model_name}")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}")
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     # trainingset_info = datasets.logp_split
 
     model_name = None
-    # model_name = 'L4_LOGP_10e.pt'
+    model_name = 'L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
 
     # logger.debug("CV, MUTA, early stop")
