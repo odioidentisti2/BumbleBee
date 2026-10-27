@@ -1,56 +1,52 @@
 import torch
-from torch_geometric.utils import degree
-
 import base64
 
-from graphic import *
-from molecular_data import ATOM_DIM
+from explainer_att import AttentionExplainer
+from explainer_ig import IGExplainer
+
 from parameters import OPTIMAL_BATCH_SIZE
 
 from logging_config import getLogger
 logger = getLogger(__name__)
 
 
+# Every registered explainer is run by explain()
+EXPLAINERS = (AttentionExplainer, IGExplainer)
+
+
 class Explainer:
 
     def __init__(self, calibration_data):
         self.calibration_data = calibration_data
-        self.att_depicter = Att_Depicter(top=calibration_data['attn_factor_mean'] + calibration_data['attn_factor_std'])
-        self.ig_depicter = IG_Depicter(top=calibration_data['logit_std'])  # using PREDICTION std (not actual target)
-        
+        self.explainers = [cls(calibration_data) for cls in EXPLAINERS]
+
     def explain(self, model, dataset):
         device = next(model.parameters()).device
         model.eval()
-        all_att_weights = []
-        all_ig_weights = []
-        # ig_feat_list = []
-        # ig_atom_bond_list = []
-        # ig_edge_list = []
+        all_weights = {e.name: [] for e in self.explainers}
         c = b = 0
-        loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
-        for batch in loader:
+        for batch in dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False):
             batch = batch.to(device)
-            batch_arc_att = self.att_attributions(model, batch.clone())  # why clone()? for random seed consistency?
-            batch_arc_ig = self.ig_attributions(model, batch.clone())
+            directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}  # why clone()? for random seed consistency?
             for i, graph in enumerate(batch.to_data_list()):
-                edge_att = _to_undirected(graph, batch_arc_att[i])
-                edge_ig = _to_undirected(graph, batch_arc_ig[i])
+                weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
+                for e in self.explainers:
+                    e.annotate(graph, c)  # DEBUG
                 repeat = True
                 while repeat:
-                    graph.prediction = self.ig_depicter.predictions[c]  # DEBUG
-                    self.att_depicter.depict(graph, edge_att)
-                    self.ig_depicter.depict(graph, edge_ig, count=c)
+                    for e in self.explainers:
+                        e.depict(graph, weights[e.name], c)
                     user_input = ''
                     # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
                     minus_count = user_input.count('-')
                     if plus_count + minus_count > 0:
-                        self.att_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
-                        self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
+                        for e in self.explainers:
+                            e.depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
-                all_att_weights.append(edge_att)
-                all_ig_weights.append(edge_ig)
+                for e in self.explainers:
+                    all_weights[e.name].append(weights[e.name])
                 c += 1
                 if b >= 1:
                     break  # DEBUG
@@ -58,84 +54,7 @@ class Explainer:
                 break  # DEBUG
             b += 1
 
-            # # Unpack and extend the three lists
-            # feat_batch, atom_bond_batch, edge_batch = batch_ig
-            # ig_feat_list.extend(feat_batch)
-            # ig_atom_bond_list.extend(atom_bond_batch)
-            # ig_edge_list.extend(edge_batch)
-            # all_ig_weights = (ig_feat_list, ig_atom_bond_list, ig_edge_list)
-
-        return all_att_weights, all_ig_weights
-
-    def att_attributions(self, model, batch):
-        model.track_attention()
-        with torch.no_grad():
-            _ = model(batch)  # Forward pass to populate attention store
-        weight_list = [aw[:graph.edge_index.size(1)] for aw, graph in zip(model._attention_store, batch.to_data_list())]  # Remove padding
-        model.track_attention(enable=False)
-        return weight_list
-
-    def ig_attributions(self, model, batch, steps=100):
-        edge_feat = model.get_features(batch)   
-        baseline = torch.zeros_like(edge_feat)
-        integrated_grads = torch.zeros_like(edge_feat)
-
-        for alpha in torch.linspace(0, 1, steps):  # Interpolate between baseline and input
-            alpha = alpha.to(edge_feat.device)        
-            interp_feat = baseline + alpha * (edge_feat - baseline)
-            interp_feat.requires_grad_(True)
-            prediction = model.batch_forward(interp_feat, batch.edge_index, batch.batch)
-            integrated_grads += torch.autograd.grad(
-                                outputs=prediction.sum(),
-                                inputs=interp_feat,
-                                create_graph=False
-                            )[0]
-            if alpha == 0:
-                baseline_pred = prediction.detach()
-            elif alpha == 1:
-                final_pred = prediction.detach()
-        # Average gradients and scale by input difference
-        integrated_grads /= steps
-        attributions = (edge_feat - baseline) * integrated_grads
-
-        # DEBUG: Sanity checks
-        logger.debug(f"\nBATCH BASELINES: {baseline_pred}") 
-        if baseline_pred.shape[0] > 1:
-            assert baseline_pred.std() < 1e-4, "Baseline predictions are not constant!"
-        if self.ig_depicter.baseline_pred is not None:
-            assert torch.abs(baseline_pred.mean() - self.ig_depicter.baseline_pred) < 1e-4, "Baseline predictions differ from previous graphs!"
-        else:
-            self.ig_depicter.baseline_pred = baseline_pred.mean().item()
-        self.ig_depicter.predictions.extend(final_pred.tolist())  # DEBUG
-
-        # Process each graph in the batch
-        # feat_importance_list = []
-        # atom_bond_importance_list = []
-        edge_importance_list = []
-
-        # Split attributions by graph
-        edge_count = 0
-        for graph in batch.to_data_list():
-            # Slice per-graph attributions
-            num_edges = graph.edge_index.size(1)
-            graph_attributions = attributions[edge_count:edge_count + num_edges]
-            edge_count += num_edges
-            
-            # Aggregate for this graph
-            atom_feat_importance, bond_feat_importance = _aggregate_per_feature(
-                graph_attributions.detach(), graph
-            )
-            atom_importance, bond_importance = _aggregate_per_atom_bond(
-                atom_feat_importance, bond_feat_importance
-            )
-            edge_importance = _aggregate_per_edge(atom_importance, bond_importance, graph)
-            edge_importance_list.append(edge_importance)
-
-        return edge_importance_list
-            # feat_importance_list.append(torch.cat([atom_feat_importance.flatten(), bond_feat_importance.flatten()]))
-            # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
-        # return feat_importance_list, atom_bond_importance_list, edge_importance_list
-    
+        return all_weights
 
     def explain_first(self, model, dataset):
         device = next(model.parameters()).device
@@ -143,34 +62,22 @@ class Explainer:
         batch = next(iter(dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False))).to(device)
         graph = batch.to_data_list()[0]
 
-        arc_att = self.att_attributions(model, batch.clone())[0]
-        arc_ig = self.ig_attributions(model, batch.clone())[0]
-        graph.prediction = self.ig_depicter.predictions[0]
+        raw = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
+        for e in self.explainers:
+            e.annotate(graph, 0)
 
-        edge_att = _to_undirected(graph, arc_att)
-        edge_ig = _to_undirected(graph, arc_ig)
-        # att_bonds and ig_bonds are USELESS!!!!
-        att_image, att_bonds = self.att_depicter.depict(graph, edge_att)
-        ig_image, ig_bonds = self.ig_depicter.depict(graph, edge_ig, count=0)
-
-        return {
-            "attention": {"image": self._data_uri(att_image), "tokens": self._tokens(att_bonds)},
-            "ig": {"image": self._data_uri(ig_image), "tokens": self._tokens(ig_bonds)},
-        }
-
-    @staticmethod
-    def _data_uri(png):
-        return "data:image/png;base64," + base64.b64encode(png).decode()
-
-    @staticmethod
-    def _tokens(bond_weights):
-        return [{"name": f"token{bond_idx}", "weight": float(weight)}
-                for bond_idx, weight in sorted(bond_weights.items())]
+        explanations = {}
+        for e in self.explainers:
+            edge_weights = _to_undirected(graph, raw[e.name][0])
+            image = e.depict(graph, edge_weights, 0)
+            explanations[e.name] = {"label": e.name,
+                                    "image": _data_uri(image),
+                                    "tokens": _tokens(edge_weights)}
+        return explanations
 
 
-#    The two directions of each bond are summed into a single per-bond weight
+# The two directions of each bond are summed into a single per-bond weight
 def _to_undirected(graph, edge_weights, verbose=True):
-    import torch
     """4th aggregation step: sum the two directional weights of each bond -> [num_bonds]."""
     undirected_weights = torch.zeros(graph.mol.GetNumBonds(),
                             dtype=edge_weights.dtype,
@@ -186,194 +93,10 @@ def _to_undirected(graph, edge_weights, verbose=True):
     return undirected_weights
 
 
-# IG AGGREGATION:
-# IG computes attributions per (arc, feature), not per arc as attention does. But the
-# features of a chemical entity are duplicated across arcs (arcs incident to the same
-# atom share it, and atoms and bonds are further duplicated because of bidirectional edges).
-# Across different runs the "importance" of an atom/bond can be "spread" very inhomogeneously 
-# across arcs. This 3-step aggregation process removes that degree of freedom:
-# 1) attributions are gathered around each chemical entity (atom/bond), but each feature of
-#    the entity is still visible: per-entity feature vectors [num_atoms, ATOM_DIM],
-#    [num_bonds, BOND_DIM]
-# 2) the feature dimension is collapsed: we have a scalar for each entity
-# 3) the attributions are gathered back to the arc dimension, but in a uniform way (each
-#    entity's scalar is split evenly over the arcs touching it; the total is preserved,
-#    arc-level evidence is lost)
-
-def _aggregate_per_feature(attributions, graph):
-    """Returns atom_feat_importance [num_atoms, ATOM_DIM] and bond_feat_importance [num_bonds, BOND_DIM]."""
-    # print("\n\nFEATURE IMPORTANCE:")
-    device = attributions.device
-    
-    # Split attributions by type
-    src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
-    dst_attr = attributions[:, ATOM_DIM:2*ATOM_DIM]    # [num_edges, num_atom_features]
-    edge_attr = attributions[:, 2*ATOM_DIM:]           # [num_edges, num_bond_features]
-    
-    num_atoms = graph.x.shape[0]
-    num_bonds = graph.mol.GetNumBonds()
-    num_atom_features = ATOM_DIM
-    num_bond_features = edge_attr.shape[1]
-    
-    # Initialize feature-level importance tensors
-    atom_feat_importance = torch.zeros(num_atoms, num_atom_features, device=device)
-    bond_feat_importance = torch.zeros(num_bonds, num_bond_features, device=device)
-    
-    src_idx = graph.edge_index[0]
-    dst_idx = graph.edge_index[1]
-    
-    # Accumulate feature vectors for each unique atom/bond
-    for i in range(attributions.shape[0]):
-        src = src_idx[i].item()
-        dst = dst_idx[i].item()
-        
-        # Accumulate atom feature attributions
-        atom_feat_importance[src] += src_attr[i]
-        atom_feat_importance[dst] += dst_attr[i]
-        
-        # Accumulate bond feature attributions
-        bond = graph.mol.GetBondBetweenAtoms(src, dst)
-        bond_idx = bond.GetIdx()
-        bond_feat_importance[bond_idx] += edge_attr[i]
-    
-    # print(f"Atom feature importance shape: {atom_feat_importance.shape}")
-    # print(f"Bond feature importance shape: {bond_feat_importance.shape}")
-    # print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
-    # print(f"Example bond features (bond 0): {bond_feat_importance[0]}")
-    
-    return atom_feat_importance, bond_feat_importance
-
-def _aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance):
-    """Returns atom_importance [num_atoms] and bond_importance [num_bonds]."""
-    # print("\n\nATOM/BOND IMPORTANCE:")        
-    # Sum across feature dimension
-    atom_importance = atom_feat_importance.sum(dim=1)
-    bond_importance = bond_feat_importance.sum(dim=1)
-    # print_weights(atom_importance, 
-    # title="BOND IMPORTANCE:")        
-    return atom_importance, bond_importance
-
-def _aggregate_per_edge(atom_importance, bond_importance, graph):
-    """Returns edge_importance [num_edges]."""
-    # print("\n\nEDGE IMPORTANCE:")
-    
-    src_idx = graph.edge_index[0]
-    dst_idx = graph.edge_index[1]
-    num_edges = src_idx.shape[0]
-    
-    # Compute atom appearance counts from degree
-    # Each atom appears in (degree × 2) edges (bidirectional)
-    atom_count = degree(src_idx, num_nodes=graph.x.shape[0]) + \
-                degree(dst_idx, num_nodes=graph.x.shape[0])
-    
-    # All bonds appear exactly twice (bidirectional)
-    bond_count = 2
-    
-    # Build edge importance with averaged components (single pass)
-    edge_importance = torch.zeros(num_edges)
-    
-    for i in range(num_edges):
-        src = src_idx[i].item()
-        dst = dst_idx[i].item()
-        bond = graph.mol.GetBondBetweenAtoms(src, dst)
-        bond_idx = bond.GetIdx()
-        
-        # Each component divided by its count
-        edge_importance[i] = (
-            atom_importance[src] / atom_count[src] + 
-            atom_importance[dst] / atom_count[dst] + 
-            bond_importance[bond_idx] / bond_count
-        )
-    
-    return edge_importance
+def _data_uri(png):
+    return "data:image/png;base64," + base64.b64encode(png).decode()
 
 
-
-    # SHAP code
-    #
-    # def _shap(self, graph, background_size=1):  # Changed to 1
-    #     """
-    #     SHAP explanation using KernelExplainer (model-agnostic).
-    #     Uses same aggregation logic as IG for consistency.
-    #     """
-    #     import numpy as np
-    #     import shap
-        
-    #     utils.print_header("SHAP EXPLANATION")
-    #     graph = graph.cpu()
-    #     batched_graph = Batch.from_data_list([graph])
-        
-    #     # Get edge features
-    #     edge_feat = self.model.get_features(batched_graph)
-    #     num_edges = edge_feat.shape[0]
-        
-    #     # Use zero baseline (like your IG) - single sample
-    #     background = torch.zeros_like(edge_feat).unsqueeze(0).numpy()  # [1, num_edges, num_features]
-    #     background = background.reshape(1, -1)  # [1, num_edges*num_features]
-        
-    #     # Wrap model for SHAP
-    #     def model_fn(x):
-    #         """Takes numpy array, returns numpy array"""
-    #         x_tensor = torch.tensor(x, dtype=torch.float32, device=edge_feat.device)
-            
-    #         # Reshape from flat to [num_coalitions, num_edges, num_features]
-    #         num_coalitions = x_tensor.shape[0]
-    #         x_tensor = x_tensor.reshape(num_coalitions, num_edges, -1)
-            
-    #         predictions = []
-    #         for i in range(num_coalitions):
-    #             coalition_feat = x_tensor[i]  # [num_edges, num_features]
-                
-    #             with torch.no_grad():
-    #                 output = self.model.single_forward(
-    #                     coalition_feat,
-    #                     batched_graph.edge_index, 
-    #                     batched_graph.batch
-    #                 )
-    #             predictions.append(output.cpu().item())
-            
-    #         return np.array(predictions)
-    
-    #     # Create SHAP explainer
-    #     explainer = shap.KernelExplainer(
-    #         model_fn,
-    #         background
-    #     )
-        
-    #     # Flatten edge_feat for SHAP
-    #     edge_feat_flat = edge_feat.cpu().numpy().reshape(1, -1)  # [1, num_edges*num_features]
-        
-    #     # Compute SHAP values
-    #     shap_values = explainer.shap_values(edge_feat_flat, nsamples=1000)
-        
-    #     # Reshape back to [num_edges, num_features]
-    #     attributions = torch.tensor(shap_values, dtype=torch.float32).reshape(num_edges, -1).cpu().detach()
-        
-    #     if self.count == 1:
-    #         baseline_pred = self.model.single_forward(
-    #             torch.zeros_like(edge_feat), 
-    #             batched_graph.edge_index, 
-    #             batched_graph.batch
-    #         ).item()
-    #         final_pred = self.model.single_forward(
-    #             edge_feat, 
-    #             batched_graph.edge_index, 
-    #             batched_graph.batch
-    #         ).item()
-    #         _summary(graph, attributions, baseline_pred, final_pred)
-        
-    #     factor = self.intensity
-    #     if not hasattr(graph, 'label'):  # regression
-    #         factor *= 1 / self.model.training_predictions.std().item()
-        
-    #     graph.prediction = final_pred
-        
-    #     # First: atom/bond visualization (raw sums)
-    #     atom_importance, bond_importance = self._atom_bond_importance(attributions, graph)
-    #     depict_feat(graph, atom_importance, bond_importance, factor=factor)
-        
-    #     # Second: edge visualization (with averaging to handle duplication)
-    #     edge_importance = self.aggregate_per_edge(atom_importance, bond_importance, graph)
-    #     depict(graph, edge_importance, factor=factor)
-        
-    #     return attributions
+def _tokens(weights):
+    return [{"name": f"token{bond_idx}", "weight": float(weight)}
+            for bond_idx, weight in enumerate(weights.tolist())]

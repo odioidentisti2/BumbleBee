@@ -21,62 +21,6 @@ else:
     import io
 
 
- 
-class Att_Depicter():
-
-    def __init__(self, top):
-        self.intensity = 1
-        self.shift = -1  # shift so that average attention is at 0
-        self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
-
-        logger.debug(f"ATT top: {top:.2f}")
-        logger.debug(f"ATT factor: {self.factor:.2f}")
-
-    def depict(self, graph, weights):
-        logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
-        logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
-
-        return depict_tokens(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
-
-    @staticmethod
-    def att_ratios(weights):
-        # Weights come after softmax (they add up to 1): 
-        # => weights.mean() = 1 / len(weights)
-        # Therefore:
-        #   weight * len(weights) == 1  means "average attention"
-        ratios = weights * len(weights)  # ratio to average attention
-        return ratios
-  
-
-class IG_Depicter():
-    
-    def __init__(self, top):
-        self.intensity = 1
-        self.shift = 0 
-        self.factor =  1 / (top + self.shift)
-        self.baseline_pred = None  # DEBUG
-        self.predictions = []  # DEBUG
-
-        logger.debug(f"IG top: {top:.2f}")
-        logger.debug(f"IG factor: {self.factor:.2f}")
-
-    def depict(self, graph, weights, count=None):
-        # Verify the sum property (CRITICAL for IG correctness)
-        attribution_sum = weights.sum().item()
-        baseline_pred = self.baseline_pred
-        final_pred = self.predictions[count]
-
-        logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
-        logger.debug(f"\nBaseline prediction: {baseline_pred:.2f}")
-        logger.debug(f"Attribution sum: {attribution_sum:.2f}")
-        logger.debug(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-        logger.debug(f"PREDICTION: {final_pred:.2f}")
-        logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
-
-        return depict_tokens(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
-
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
         f"{title}",
@@ -111,9 +55,9 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None):
+def depict(graph, bond_weights, attention=False, factor=None, shift=None):
 
-    # threshold = 0  # not needed anymore? (normalization in explainer)
+    threshold = 0  # not needed anymore? (normalization in explainer)
     # if attention:
     #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
     # logger.debug(f"\nThreshold: {threshold:.2f}")
@@ -144,7 +88,7 @@ def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None)
 
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
-        if abs(weight) > 0:  # abs(threshold):  # Only highlight important bonds 
+        if abs(weight) > abs(threshold):  # Only highlight important bonds 
             bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
 
             # Atoms connected by this bond
@@ -160,7 +104,7 @@ def depict_tokens(graph, bond_weights, attention=False, factor=None, shift=None)
     
     
     logger.debug(f"Sum: {sum(transformed_weights.values()):.2f}")
-    return draw(graph, atom_colors, bond_colors), transformed_weights
+    return draw(graph, atom_colors, bond_colors)
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  
     drawer = rdMolDraw2D.MolDraw2DCairo(640, 640)
@@ -200,7 +144,7 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
 
 # def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
 #     graph = graph.detach()
-
+calibrate
 #     threshold = 0  # not needed anymore? (normalization in explainer)
 #     mol = graph.mol
 
