@@ -171,7 +171,7 @@ if __name__ == "__main__":
     # trainingset_info = datasets.logp_split
 
     model_name = None
-    model_name = 'NEW_L4_LOGP_10e.pt'
+    # model_name = 'NEW_L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
 
     # logger.debug("CV, MUTA, early stop")
