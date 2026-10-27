@@ -2,6 +2,7 @@ from typing import Any, Literal
 from pathlib import Path
 
 import torch
+import io
 
 from molecular_data import Dataset, InjectedDataset, load_from_csv
 from trainer import Trainer
@@ -119,6 +120,45 @@ def explain(model: MAG, testset: Dataset) -> dict:
     return Explainer(model.calibration_data).explain_first(model, testset)
 
 
+def review(explainer: Explainer, model: MAG, testset: Dataset) -> dict:
+    """CLI-only: show each molecule. Enter = next, '+'/'-' = double/halve intensity."""
+    from PIL import Image
+
+    # DEBUG
+    # Check if running in Google Colab
+    # I think if I use matplotlib I won't need this
+    IN_COLAB = False
+    try:
+        import google.colab # Try importing, if it succeeds, it's Colab
+        IN_COLAB = True
+        from IPython.display import display
+    except ImportError:
+        pass
+ 
+    all_weights = {e.name: [] for e in explainer.explainers}
+    intensity = 1.0  # shared by the whole run: declared before the molecule loop
+    for index, graph, weights in explainer.explanations(model, testset):
+        while True:
+            for e in explainer.explainers:
+                png = e.depict(graph, weights[e.name], index, intensity=intensity)
+                image = Image.open(io.BytesIO(png)).convert("RGBA")
+                white_background_image = Image.alpha_composite(
+                    Image.new("RGBA", image.size, "white"), image).convert("RGB")
+                if IN_COLAB:
+                    display(white_background_image)
+                else:
+                    white_background_image.show()
+            user_input = input("Enter = next, '+'/'-' = intensity: ")
+            plus_count = user_input.count('+')
+            minus_count = user_input.count('-')
+            if plus_count + minus_count == 0:
+                break
+            intensity *= (2 ** plus_count) / (2 ** minus_count)
+        for e in explainer.explainers:
+            all_weights[e.name].append(weights[e.name])
+    return all_weights
+
+
 def main_loop(
     trainingset_info: dict, testset_info: dict, model_name: str | None = None,
 ):
@@ -156,7 +196,7 @@ def main_loop(
         logger.debug("CALIBRATION", highlight=True)
         logger.debug(pformat(model.calibration_data))
         explainer = Explainer(model.calibration_data)
-        return explainer.explain(model, testset)
+        return review(explainer, model, testset)
 
 
 if __name__ == "__main__":

@@ -20,11 +20,11 @@ class Explainer:
         self.calibration_data = calibration_data
         self.explainers = [cls(calibration_data) for cls in EXPLAINERS]
 
-    def explain(self, model, dataset):
+    def explanations(self, model, dataset):
+        """Yield (index, graph, weights) for one molecule at a time. No rendering, no input()."""
         device = next(model.parameters()).device
         model.eval()
-        all_weights = {e.name: [] for e in self.explainers}
-        c = b = 0
+        c = 0
         for batch in dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False):
             batch = batch.to(device)
             directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}  # why clone()? for random seed consistency?
@@ -32,27 +32,15 @@ class Explainer:
                 weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
                 for e in self.explainers:
                     e.annotate(graph, c)  # DEBUG
-                repeat = True
-                while repeat:
-                    for e in self.explainers:
-                        e.depict(graph, weights[e.name], c)
-                    user_input = ''
-                    # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
-                    plus_count = user_input.count('+')
-                    minus_count = user_input.count('-')
-                    if plus_count + minus_count > 0:
-                        for e in self.explainers:
-                            e.depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
-                    else:
-                        repeat = False  # Move to next molecule
-                for e in self.explainers:
-                    all_weights[e.name].append(weights[e.name])
+                yield c, graph, weights
                 c += 1
-                if b >= 1:
-                    break  # DEBUG
-            if b >= 1:
-                break  # DEBUG
-            b += 1
+
+    def explain(self, model, dataset):
+        all_weights = {e.name: [] for e in self.explainers}
+        for index, graph, weights in self.explanations(model, dataset):
+            for e in self.explainers:
+                e.depict(graph, weights[e.name], index)
+                all_weights[e.name].append(weights[e.name])
 
         return all_weights
 

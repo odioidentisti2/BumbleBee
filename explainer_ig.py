@@ -11,7 +11,6 @@ logger = getLogger(__name__)
 class IG_Depicter():
     
     def __init__(self, top):
-        self.intensity = 1
         self.shift = 0 
         self.factor =  1 / (top + self.shift)
         self.baseline_pred = None  # DEBUG
@@ -20,7 +19,7 @@ class IG_Depicter():
         logger.debug(f"IG top: {top:.2f}")
         logger.debug(f"IG factor: {self.factor:.2f}")
 
-    def depict(self, graph, weights, count=None):
+    def depict(self, graph, weights, count=None, intensity=1):
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = weights.sum().item()
         baseline_pred = self.baseline_pred
@@ -34,7 +33,7 @@ class IG_Depicter():
         logger.debug(f"PREDICTION: {final_pred:.2f}")
         logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
 
-        return depict(graph, weights, factor=self.factor * self.intensity, shift=self.shift)
+        return depict(graph, weights, factor=self.factor * intensity, shift=self.shift)
 
 
 class IGExplainer:
@@ -108,8 +107,8 @@ class IGExplainer:
     def annotate(self, graph, index):
         graph.prediction = self.depicter.predictions[index]  # DEBUG
 
-    def depict(self, graph, weights, index):
-        return self.depicter.depict(graph, weights, count=index)
+    def depict(self, graph, weights, index, intensity=1):
+        return self.depicter.depict(graph, weights, count=index, intensity=intensity)
 
 
 # IG AGGREGATION:

@@ -9,19 +9,18 @@ logger = getLogger(__name__)
 class Att_Depicter():
 
     def __init__(self, top):
-        self.intensity = 1
         self.shift = -1  # shift so that average attention is at 0
         self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
 
         logger.debug(f"ATT top: {top:.2f}")
         logger.debug(f"ATT factor: {self.factor:.2f}")
 
-    def depict(self, graph, weights):
+    def depict(self, graph, weights, intensity=1):
         logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
 
-        return depict(graph, self.att_ratios(weights), attention=True, factor=self.factor * self.intensity, shift=self.shift)
+        return depict(graph, self.att_ratios(weights), attention=True, factor=self.factor * intensity, shift=self.shift)
 
     @staticmethod
     def att_ratios(weights):
@@ -51,5 +50,5 @@ class AttentionExplainer:
     def annotate(self, graph, index):
         pass
 
-    def depict(self, graph, weights, index):
-        return self.depicter.depict(graph, weights)
+    def depict(self, graph, weights, index, intensity=1):
+        return self.depicter.depict(graph, weights, intensity=intensity)

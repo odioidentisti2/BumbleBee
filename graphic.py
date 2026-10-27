@@ -4,23 +4,6 @@ from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-# DEBUG
-# Check if running in Google Colab
-# I think if I use matplotlib I won't need this
-IN_COLAB = False
-try:
-    import google.colab # Try importing, if it succeeds, it's Colab
-    IN_COLAB = True
-except ImportError:
-    pass # Not in Colab
-
-if IN_COLAB:
-    from IPython.display import Image, display
-else:
-    from PIL import Image
-    import io
-
-
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
         f"{title}",
@@ -133,18 +116,11 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
 
     return drawer.GetDrawingText()
 
-    # # DEBUG: show image in PIL or Colab
-    # if IN_COLAB:  # Check if running in Google Colab
-    #     image_bytes = drawer.GetDrawingText()
-    #     display(Image(data=image_bytes))
-    # else:
-    #     Image.open(io.BytesIO(drawer.GetDrawingText())).show()
-
 
 
 # def depict_atom_bond(graph, atom_importance, bond_importance, positive_only=False, factor=None, shift=None):
 #     graph = graph.detach()
-calibrate
+
 #     threshold = 0  # not needed anymore? (normalization in explainer)
 #     mol = graph.mol
 
