@@ -98,7 +98,7 @@ class Trainer:
         logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])  # It gets logits from tracker (not very clean)
         graphs = [graph for batch in loader for graph in batch.to_data_list()]
         attn_factors = torch.stack([
-            (und := _to_undirected(graph, aw)).max() * und.numel()
+            (und := _to_undirected(graph, aw, verbose=False)).max() * und.numel()
             for aw, graph in zip(model._attention_store, graphs)
         ])
         model.track_attention(enable=False)
