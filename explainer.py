@@ -178,10 +178,10 @@ def _to_undirected(graph, edge_weights):
     seen = set()  # DEBUG
     for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
         bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
-        if bond_idx in seen:  # DEBUG: 2nd directional pass, for logging
-            logger.debug(f"Bond {bond_idx}: {undirected_weights[bond_idx] + weight:.2f} = "  # DEBUG
-                        f"({undirected_weights[bond_idx]:.4f} + {weight:.4f})")  # DEBUG
-        seen.add(bond_idx)  # DEBUG
+        # if bond_idx in seen:  # DEBUG: 2nd directional pass, for logging
+        #     logger.debug(f"Bond {bond_idx}: {undirected_weights[bond_idx] + weight:.2f} = "  # DEBUG
+        #                 f"({undirected_weights[bond_idx]:.4f} + {weight:.4f})")  # DEBUG
+        # seen.add(bond_idx)  # DEBUG
         undirected_weights[bond_idx] += weight
     return undirected_weights
 
