@@ -1,8 +1,10 @@
 import asyncio
 import html
 import logging
+import threading
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from itertools import islice
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -76,11 +78,15 @@ class AppSession:
     model: object = None
     trained: bool = False
     testset: object = None
+    stream: object = None                      # cursor over bumblebee.GUI_explain()
+    shown: dict = field(default_factory=dict)  # explainer name -> accumulated molecules
 
 session = AppSession()
 
 
 DEVICE_NAME = bumblebee.init_device()
+EXPLAIN_PAGE = 1  # molecules fetched per request
+explain_lock = threading.Lock()  # a generator cannot be resumed from two threads
 
 
 def arrival_path(request: Request) -> str:
@@ -118,12 +124,28 @@ def test(request: Request):
 def explain(request: Request):
     if session.testset is None:
         raise HTTPException(400, "Run a test first")
+    session.stream = bumblebee.GUI_explain(session.model, session.testset)  # fresh cursor
+    session.shown = {}
+    return _explainer_page(request)
+
+
+def _explainer_page(request: Request):
+    with explain_lock:
+        for payload in islice(session.stream, EXPLAIN_PAGE):
+            for name, block in payload.items():
+                session.shown.setdefault(name, []).append(block)
     return templates.TemplateResponse(
         "explainer.html",
         {"request": request,
          "device": DEVICE_NAME,
-         "explanations": bumblebee.explain(session.model, session.testset)},
+         "explanations": session.shown},
     )
+
+
+@app.get("/explain/next", response_class=HTMLResponse)
+def explain_next(request: Request):
+    return _explainer_page(request)
+
 
 # TEMP FIX!
 def get_path(file_name, dir):

@@ -13,53 +13,58 @@
 
   {% include "header.html" %}
 
-  {% set tabs = [("attention", "ATTENTION"), ("ig", "INTEGRATED GRADIENTS")] %}
+  {% set tabs = ["Attention", "Integrated Gradients"] %}
 
   <main class="explainer-main">
     <div class="tabs">
-      {% for key, label in tabs %}
-      <button class="tab{% if loop.first %} is-active{% endif %}" data-tab="{{ key }}">{{ label }}</button>
+      {% for key in tabs %}
+      <button class="tab{% if loop.first %} is-active{% endif %}" data-tab="{{ key }}">{{ key|upper }}</button>
       {% endfor %}
     </div>
 
-    {% for key, label in tabs %}
-    <div class="main-split tab-content" id="{{ key }}" {% if not loop.first %}hidden{% endif %}>
+    {% for key in tabs %}
+    <div class="tab-content" id="tab-{{ loop.index }}" data-tab="{{ key }}" {% if not loop.first %}hidden{% endif %}>
 
-      <section class="panel explainer-image">
-        <img src="{{ explanations[key].image }}" alt="{{ label }}">
-      </section>
+      {% for molecule in explanations[key] %}
+      <div class="main-split">
+        <section class="panel explainer-image">
+          <img src="{{ molecule.image }}" alt="{{ key }}">
+        </section>
 
-      <section class="panel console explainer-tree">
-        <div class="tree-table-wrap">
-          <table class="tree-table">
-            <thead>
-              <tr><th>token</th><th>weight</th></tr>
-            </thead>
-            <tbody>
-              {% for token in explanations[key].tokens %}
-              <tr class="tree-row" data-node="{{ token.name }}">
-                <th class="tree-cell" data-depth="0">
-                  <button class="tree-toggle">&#9662;</button>{{ token.name }}
-                </th>
-                <td class="value" data-weight="{{ token.weight }}">{{ "%.2f" | format(token.weight) }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th class="tree-cell">sum</th>
-                <td class="value"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
+        <section class="panel console explainer-tree">
+          <div class="tree-table-wrap">
+            <table class="tree-table">
+              <thead>
+                <tr><th>token</th><th>weight</th></tr>
+              </thead>
+              <tbody>
+                {% for token in molecule.tokens %}
+                <tr class="tree-row" data-node="{{ token.name }}">
+                  <th class="tree-cell" data-depth="0">
+                    <button class="tree-toggle">&#9662;</button>{{ token.name }}
+                  </th>
+                  <td class="value" data-weight="{{ token.weight }}">{{ "%.2f" | format(token.weight) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th class="tree-cell">sum</th>
+                  <td class="value"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      </div>
+      {% endfor %}
 
     </div>
     {% endfor %}
   </main>
 
-  {% set nav = { "prev": {"label": "TEST", "href": "/test"} } %}
+  {% set nav = { "prev": {"label": "TEST", "href": "/test"},
+                 "next": {"label": "MORE", "href": "/explain/next"} } %}
   {% include "footer.html" %}
 
   <script src="/static/shared.js"></script>

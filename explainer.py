@@ -1,6 +1,5 @@
 import torch
-import base64
-
+ 
 from explainer_att import AttentionExplainer
 from explainer_ig import IGExplainer
 
@@ -10,7 +9,7 @@ from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-# Every registered explainer is run by explain()
+# Every registered explainer is run by Explainer.explanations()
 EXPLAINERS = (AttentionExplainer, IGExplainer)
 
 
@@ -19,6 +18,11 @@ class Explainer:
     def __init__(self, calibration_data):
         self.calibration_data = calibration_data
         self.explainers = [cls(calibration_data) for cls in EXPLAINERS]
+
+    def render(self, index, graph, weights, intensity=1.0):
+        """Render every explainer for one molecule: name -> PNG bytes."""
+        return {e.name: e.depict(graph, weights[e.name], index, intensity=intensity)
+                for e in self.explainers}
 
     def explanations(self, model, dataset):
         """Yield (index, graph, weights) for one molecule at a time. No rendering, no input()."""
@@ -35,35 +39,6 @@ class Explainer:
                 yield c, graph, weights
                 c += 1
 
-    def explain(self, model, dataset):
-        all_weights = {e.name: [] for e in self.explainers}
-        for index, graph, weights in self.explanations(model, dataset):
-            for e in self.explainers:
-                e.depict(graph, weights[e.name], index)
-                all_weights[e.name].append(weights[e.name])
-
-        return all_weights
-
-    def explain_first(self, model, dataset):
-        device = next(model.parameters()).device
-        model.eval()
-        batch = next(iter(dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False))).to(device)
-        graph = batch.to_data_list()[0]
-
-        raw = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
-        for e in self.explainers:
-            e.annotate(graph, 0)
-
-        explanations = {}
-        for e in self.explainers:
-            edge_weights = _to_undirected(graph, raw[e.name][0])
-            image = e.depict(graph, edge_weights, 0)
-            explanations[e.name] = {"label": e.name,
-                                    "image": _data_uri(image),
-                                    "tokens": _tokens(edge_weights)}
-        return explanations
-
-
 # The two directions of each bond are summed into a single per-bond weight
 def _to_undirected(graph, edge_weights, verbose=True):
     """4th aggregation step: sum the two directional weights of each bond -> [num_bonds]."""
@@ -79,12 +54,3 @@ def _to_undirected(graph, edge_weights, verbose=True):
         seen.add(bond_idx)  # DEBUG
         undirected_weights[bond_idx] += weight
     return undirected_weights
-
-
-def _data_uri(png):
-    return "data:image/png;base64," + base64.b64encode(png).decode()
-
-
-def _tokens(weights):
-    return [{"name": f"token{bond_idx}", "weight": float(weight)}
-            for bond_idx, weight in enumerate(weights.tolist())]

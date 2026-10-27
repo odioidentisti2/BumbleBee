@@ -1,6 +1,6 @@
 document.querySelectorAll(".tab").forEach(tab => tab.onclick = () => {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("is-active", t === tab));
-  document.querySelectorAll(".tab-content").forEach(c => c.hidden = c.id !== tab.dataset.tab);
+  document.querySelectorAll(".tab-content").forEach(c => c.hidden = c.dataset.tab !== tab.dataset.tab);
 });
 
 const toggleTree = (row, open) => {

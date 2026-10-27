@@ -1,6 +1,7 @@
 from typing import Any, Literal
 from pathlib import Path
 
+import base64
 import torch
 import io
 
@@ -116,47 +117,18 @@ def test(testset: Dataset, model: MAG) -> None:
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
-def explain(model: MAG, testset: Dataset) -> dict:
-    return Explainer(model.calibration_data).explain_first(model, testset)
-
-
-def review(explainer: Explainer, model: MAG, testset: Dataset) -> dict:
-    """CLI-only: show each molecule. Enter = next, '+'/'-' = double/halve intensity."""
-    from PIL import Image
-
-    # DEBUG
-    # Check if running in Google Colab
-    # I think if I use matplotlib I won't need this
-    IN_COLAB = False
-    try:
-        import google.colab # Try importing, if it succeeds, it's Colab
-        IN_COLAB = True
-        from IPython.display import display
-    except ImportError:
-        pass
- 
-    all_weights = {e.name: [] for e in explainer.explainers}
-    intensity = 1.0  # shared by the whole run: declared before the molecule loop
+def GUI_explain(model: MAG, testset: Dataset):
+    explainer = Explainer(model.calibration_data)
     for index, graph, weights in explainer.explanations(model, testset):
-        while True:
-            for e in explainer.explainers:
-                png = e.depict(graph, weights[e.name], index, intensity=intensity)
-                image = Image.open(io.BytesIO(png)).convert("RGBA")
-                white_background_image = Image.alpha_composite(
-                    Image.new("RGBA", image.size, "white"), image).convert("RGB")
-                if IN_COLAB:
-                    display(white_background_image)
-                else:
-                    white_background_image.show()
-            user_input = input("Enter = next, '+'/'-' = intensity: ")
-            plus_count = user_input.count('+')
-            minus_count = user_input.count('-')
-            if plus_count + minus_count == 0:
-                break
-            intensity *= (2 ** plus_count) / (2 ** minus_count)
-        for e in explainer.explainers:
-            all_weights[e.name].append(weights[e.name])
-    return all_weights
+        payload = {}
+        for name, png in explainer.render(index, graph, weights).items():  # transparent: the page provides the background
+            payload[name] = {
+                "image": "data:image/png;base64," + base64.b64encode(png).decode(),
+                "tokens": [{"name": f"token{bond_index}", "weight": float(weight)}
+                           for bond_index, weight in enumerate(weights[name].tolist())],
+            }
+        yield payload
+
 
 
 def main_loop(
@@ -195,8 +167,41 @@ def main_loop(
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
         logger.debug("CALIBRATION", highlight=True)
         logger.debug(pformat(model.calibration_data))
+        
+        from PIL import Image
+
+        # DEBUG: check if running in Google Colab
+        IN_COLAB = False
+        try:
+            import google.colab # Try importing, if it succeeds, it's Colab
+            IN_COLAB = True
+            from IPython.display import display
+        except ImportError:
+            pass
+
         explainer = Explainer(model.calibration_data)
-        return review(explainer, model, testset)
+        # all_weights = {e.name: [] for e in explainer.explainers}
+        intensity = 1.0  # shared by the whole run: declared before the molecule loop
+        for index, graph, weights in explainer.explanations(model, testset):
+            while True:
+                for png in explainer.render(index, graph, weights, intensity).values():
+                    image = Image.open(io.BytesIO(png)).convert("RGBA")
+                    white_background_image = Image.alpha_composite(
+                        Image.new("RGBA", image.size, "white"), image).convert("RGB")
+                    if IN_COLAB:
+                        display(white_background_image)
+                    else:
+                        white_background_image.show()
+                user_input = input("Enter = next, '+'/'-' = intensity: ")
+                plus_count = user_input.count('+')
+                minus_count = user_input.count('-')
+                if plus_count + minus_count == 0:
+                    break
+                intensity *= (2 ** plus_count) / (2 ** minus_count)
+        #     for e in explainer.explainers:
+        #         all_weights[e.name].append(weights[e.name])
+        # return all_weights
+
 
 
 if __name__ == "__main__":
