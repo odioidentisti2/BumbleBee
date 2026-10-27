@@ -30,18 +30,16 @@ class Explainer:
         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
         for batch in loader:
             batch = batch.to(device)
-            ## Attention
-            batch_att = self.att_attributions(model, batch.clone())  # why clone()? for random seed consistency?
-            all_att_weights.extend(batch_att)
-            ## Integrated Gradients
-            batch_ig = self.ig_attributions(model, batch.clone())
-            all_ig_weights.extend(batch_ig)
-            for graph in batch.to_data_list():
+            batch_arc_att = self.att_attributions(model, batch.clone())  # why clone()? for random seed consistency?
+            batch_arc_ig = self.ig_attributions(model, batch.clone())
+            for i, graph in enumerate(batch.to_data_list()):
+                edge_att = _to_undirected(graph, batch_arc_att[i])
+                edge_ig = _to_undirected(graph, batch_arc_ig[i])
                 repeat = True
                 while repeat:
                     graph.prediction = self.ig_depicter.predictions[c]  # DEBUG
-                    self.att_depicter.depict(graph, all_att_weights[c])
-                    self.ig_depicter.depict(graph, all_ig_weights[c], count=c)
+                    self.att_depicter.depict(graph, edge_att)
+                    self.ig_depicter.depict(graph, edge_ig, count=c)
                     user_input = ''
                     # user_input = input("Press Enter to continue, '-' to halve intensity, '+' to double intensity: ")
                     plus_count = user_input.count('+')
@@ -51,6 +49,8 @@ class Explainer:
                         self.ig_depicter.intensity *= (2 ** plus_count) / (2 ** minus_count)
                     else:
                         repeat = False  # Move to next molecule
+                all_att_weights.append(edge_att)
+                all_ig_weights.append(edge_ig)
                 c += 1
                 if b >= 1:
                     break  # DEBUG
@@ -143,12 +143,15 @@ class Explainer:
         batch = next(iter(dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False))).to(device)
         graph = batch.to_data_list()[0]
 
-        att_weights = self.att_attributions(model, batch.clone())[0]
-        ig_weights = self.ig_attributions(model, batch.clone())[0]
+        arc_att = self.att_attributions(model, batch.clone())[0]
+        arc_ig = self.ig_attributions(model, batch.clone())[0]
         graph.prediction = self.ig_depicter.predictions[0]
 
-        att_image, att_bonds = self.att_depicter.depict(graph, att_weights)
-        ig_image, ig_bonds = self.ig_depicter.depict(graph, ig_weights, count=0)
+        edge_att = _to_undirected(graph, arc_att)
+        edge_ig = _to_undirected(graph, arc_ig)
+        # att_bonds and ig_bonds are USELESS!!!!
+        att_image, att_bonds = self.att_depicter.depict(graph, edge_att)
+        ig_image, ig_bonds = self.ig_depicter.depict(graph, edge_ig, count=0)
 
         return {
             "attention": {"image": self._data_uri(att_image), "tokens": self._tokens(att_bonds)},
@@ -165,19 +168,37 @@ class Explainer:
                 for bond_idx, weight in sorted(bond_weights.items())]
 
 
-# AGGREGATION:
-# IG computes attributions per (token, feature), not per token as attention does. But the
-# features of a chemical entity are duplicated across tokens (tokens incident to the same
+#    The two directions of each bond are summed into a single per-bond weight
+def _to_undirected(graph, edge_weights):
+    import torch
+    """4th aggregation step: sum the two directional weights of each bond -> [num_bonds]."""
+    undirected_weights = torch.zeros(graph.mol.GetNumBonds(),
+                            dtype=edge_weights.dtype,
+                            device=edge_weights.device)
+    seen = set()  # DEBUG
+    for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
+        bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
+        if bond_idx in seen:  # DEBUG: 2nd directional pass, for logging
+            logger.debug(f"Bond {bond_idx}: {undirected_weights[bond_idx] + weight:.2f} = "  # DEBUG
+                        f"({undirected_weights[bond_idx]:.4f} + {weight:.4f})")  # DEBUG
+        seen.add(bond_idx)  # DEBUG
+        undirected_weights[bond_idx] += weight
+    return undirected_weights
+
+
+# IG AGGREGATION:
+# IG computes attributions per (arc, feature), not per arc as attention does. But the
+# features of a chemical entity are duplicated across arcs (arcs incident to the same
 # atom share it, and atoms and bonds are further duplicated because of bidirectional edges).
 # Across different runs the "importance" of an atom/bond can be "spread" very inhomogeneously 
-# across tokens. This 3-step aggregation process removes that degree of freedom:
+# across arcs. This 3-step aggregation process removes that degree of freedom:
 # 1) attributions are gathered around each chemical entity (atom/bond), but each feature of
 #    the entity is still visible: per-entity feature vectors [num_atoms, ATOM_DIM],
 #    [num_bonds, BOND_DIM]
 # 2) the feature dimension is collapsed: we have a scalar for each entity
-# 3) the attributions are gathered back to the token dimension, but in a uniform way (each
-#    entity's scalar is split evenly over the tokens touching it; the total is preserved,
-#    token-level evidence is lost)
+# 3) the attributions are gathered back to the arc dimension, but in a uniform way (each
+#    entity's scalar is split evenly over the arcs touching it; the total is preserved,
+#    arc-level evidence is lost)
 
 def _aggregate_per_feature(attributions, graph):
     """Returns atom_feat_importance [num_atoms, ATOM_DIM] and bond_feat_importance [num_bonds, BOND_DIM]."""
@@ -265,6 +286,7 @@ def _aggregate_per_edge(atom_importance, bond_importance, graph):
         )
     
     return edge_importance
+
 
 
     # SHAP code

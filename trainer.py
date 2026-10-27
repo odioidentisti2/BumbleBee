@@ -91,14 +91,14 @@ class Trainer:
         return metric
     
     def calibrate(self, model, trainingset):
-        from graphic import aggregate_two_directions
+        from explainer import _to_undirected
         model.track_attention()
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])  # It gets logits from tracker (not very clean)
         graphs = [graph for batch in loader for graph in batch.to_data_list()]
         attn_factors = torch.stack([
-            (agg := aggregate_two_directions(graph, aw)).max() * agg.numel()
+            (und := _to_undirected(graph, aw)).max() * und.numel()
             for aw, graph in zip(model._attention_store, graphs)
         ])
         model.track_attention(enable=False)
