@@ -34,8 +34,8 @@ class Explainer:
             directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}  # why clone()? for random seed consistency?
             for i, graph in enumerate(batch.to_data_list()):
                 weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
-                for e in self.explainers:
-                    e.annotate(graph, c)  # DEBUG
+                # for e in self.explainers:
+                #     e.annotate(graph, c)  # DEBUG
                 yield c, graph, weights
                 c += 1
 

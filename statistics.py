@@ -71,11 +71,13 @@ class AccuracyTracker(MetricTracker):
 
     def __init__(self):
         super().__init__()
-
+        self.values['predictions'] = []  # DEBUG
+    
     def update(self, logits, targets):
         super().update(logits, targets)
         stats = self.stats[-1]
         preds = (torch.sigmoid(logits) > 0.5)
+        stats['predictions'].append(preds)
         stats['total_samples'] += len(targets)
         stats['num_correct'] += (preds == targets).sum().item()
 

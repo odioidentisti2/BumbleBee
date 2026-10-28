@@ -47,8 +47,8 @@ class AttentionExplainer:
         model.track_attention(enable=False)
         return weight_list
 
-    def annotate(self, graph, index):
-        pass
+    # def annotate(self, graph, index):
+    #     pass
 
     def depict(self, graph, weights, index, intensity=1):
         return self.depicter.depict(graph, weights, intensity=intensity)

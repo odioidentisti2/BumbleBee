@@ -1,7 +1,6 @@
 import torch
 from torch_geometric.utils import degree
 
-from molecular_data import ATOM_DIM
 from graphic import depict, weight_summary
 
 from logging_config import getLogger
@@ -80,8 +79,6 @@ class IGExplainer:
         # feat_importance_list = []
         # atom_bond_importance_list = []
         edge_importance_list = []
-
-        # Split attributions by graph
         edge_count = 0
         for graph in batch.to_data_list():
             # Slice per-graph attributions
@@ -89,7 +86,7 @@ class IGExplainer:
             graph_attributions = attributions[edge_count:edge_count + num_edges]
             edge_count += num_edges
             
-            # Aggregate for this graph
+            # Aggregate
             atom_feat_importance, bond_feat_importance = _aggregate_per_feature(
                 graph_attributions.detach(), graph
             )
@@ -99,13 +96,12 @@ class IGExplainer:
             edge_importance = _aggregate_per_edge(atom_importance, bond_importance, graph)
             edge_importance_list.append(edge_importance)
 
-        return edge_importance_list
             # feat_importance_list.append(torch.cat([atom_feat_importance.flatten(), bond_feat_importance.flatten()]))
             # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
-        # return feat_importance_list, atom_bond_importance_list, edge_importance_list
+        return edge_importance_list  #, feat_importance_list, atom_bond_importance_list
 
-    def annotate(self, graph, index):
-        graph.prediction = self.depicter.predictions[index]  # DEBUG
+    # def annotate(self, graph, index):
+    #     graph.prediction = self.depicter.predictions[index]  # DEBUG
 
     def depict(self, graph, weights, index, intensity=1):
         return self.depicter.depict(graph, weights, count=index, intensity=intensity)
@@ -126,41 +122,40 @@ class IGExplainer:
 #    arc-level evidence is lost)
 
 def _aggregate_per_feature(attributions, graph):
-    """Returns atom_feat_importance [num_atoms, ATOM_DIM] and bond_feat_importance [num_bonds, BOND_DIM]."""
-    # print("\n\nFEATURE IMPORTANCE:")
-    device = attributions.device
+    """Returns atom_feat_importance [num_atoms, atom_dim] and bond_feat_importance [num_bonds, bond_dim]."""
+
+    # Feature dimensions
+    atom_dim = graph.x.shape[1]
+    bond_dim = graph.edge_attr.shape[1]
+    assert attributions.shape[1] == 2 * atom_dim + bond_dim, \
+        f"Attribution width {attributions.shape[1]} != 2*{atom_dim} + {bond_dim}"  # DEBUG
     
     # Split attributions by type
-    src_attr = attributions[:, :ATOM_DIM]              # [num_edges, num_atom_features]
-    dst_attr = attributions[:, ATOM_DIM:2*ATOM_DIM]    # [num_edges, num_atom_features]
-    edge_attr = attributions[:, 2*ATOM_DIM:]           # [num_edges, num_bond_features]
-    
+    src_attr = attributions[:, :atom_dim]            # [num_edges, num_atom_features]
+    dst_attr = attributions[:, atom_dim:2*atom_dim]  # [num_edges, num_atom_features]
+    edge_attr = attributions[:, 2*atom_dim:]         # [num_edges, num_bond_features]
+        
+    # Initialize feature-level importance tensors
     num_atoms = graph.x.shape[0]
     num_bonds = graph.mol.GetNumBonds()
-    num_atom_features = ATOM_DIM
-    num_bond_features = edge_attr.shape[1]
-    
-    # Initialize feature-level importance tensors
-    atom_feat_importance = torch.zeros(num_atoms, num_atom_features, device=device)
-    bond_feat_importance = torch.zeros(num_bonds, num_bond_features, device=device)
-    
-    src_idx = graph.edge_index[0]
-    dst_idx = graph.edge_index[1]
-    
+    atom_feat_importance = torch.zeros(num_atoms, atom_dim, device=attributions.device)
+    bond_feat_importance = torch.zeros(num_bonds, bond_dim, device=attributions.device)
+     
     # Accumulate feature vectors for each unique atom/bond
+    src_idx = graph.edge_index[0]
+    dst_idx = graph.edge_index[1]   
     for i in range(attributions.shape[0]):
         src = src_idx[i].item()
-        dst = dst_idx[i].item()
-        
-        # Accumulate atom feature attributions
+        dst = dst_idx[i].item()        
+        # Atoms
         atom_feat_importance[src] += src_attr[i]
-        atom_feat_importance[dst] += dst_attr[i]
-        
-        # Accumulate bond feature attributions
+        atom_feat_importance[dst] += dst_attr[i]        
+        # Bonds
         bond = graph.mol.GetBondBetweenAtoms(src, dst)
         bond_idx = bond.GetIdx()
         bond_feat_importance[bond_idx] += edge_attr[i]
-    
+
+    # print("\n\nFEATURE IMPORTANCE:")
     # print(f"Atom feature importance shape: {atom_feat_importance.shape}")
     # print(f"Bond feature importance shape: {bond_feat_importance.shape}")
     # print(f"Example atom features (atom 0): {atom_feat_importance[0]}")
@@ -170,17 +165,16 @@ def _aggregate_per_feature(attributions, graph):
 
 def _aggregate_per_atom_bond(atom_feat_importance, bond_feat_importance):
     """Returns atom_importance [num_atoms] and bond_importance [num_bonds]."""
-    # print("\n\nATOM/BOND IMPORTANCE:")        
     # Sum across feature dimension
     atom_importance = atom_feat_importance.sum(dim=1)
     bond_importance = bond_feat_importance.sum(dim=1)
-    # print_weights(atom_importance, 
-    # title="BOND IMPORTANCE:")        
+    # print("\n\nATOM/BOND IMPORTANCE:")        
+    # print_weights(atom_importance, title="ATOM IMPORTANCE:")       
+    # print_weights(bond_importance, title="BOND IMPORTANCE:")
     return atom_importance, bond_importance
 
 def _aggregate_per_edge(atom_importance, bond_importance, graph):
     """Returns edge_importance [num_edges]."""
-    # print("\n\nEDGE IMPORTANCE:")
     
     src_idx = graph.edge_index[0]
     dst_idx = graph.edge_index[1]
@@ -208,6 +202,7 @@ def _aggregate_per_edge(atom_importance, bond_importance, graph):
         )
     
     return edge_importance
+
 
 
     # SHAP code

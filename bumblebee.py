@@ -117,23 +117,22 @@ def test(testset: Dataset, model: MAG) -> None:
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
+
 def GUI_explain(model: MAG, testset: Dataset):
     explainer = Explainer(model.calibration_data)
     for index, graph, weights in explainer.explanations(model, testset):
         payload = {}
-        for name, png in explainer.render(index, graph, weights).items():  # transparent: the page provides the background
+        for name, png in explainer.render(index, graph, weights).items():
             payload[name] = {
                 "image": "data:image/png;base64," + base64.b64encode(png).decode(),
-                "tokens": [{"name": f"token{bond_index}", "weight": float(weight)}
+                "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
                            for bond_index, weight in enumerate(weights[name].tolist())],
             }
         yield payload
 
 
 
-def main_loop(
-    trainingset_info: dict, testset_info: dict, model_name: str | None = None,
-):
+def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None = None):
     
     if not model_name:  # Train model
 
@@ -165,7 +164,7 @@ def main_loop(
 
     ### Explain
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
-        logger.debug("CALIBRATION", highlight=True)
+        logger.debug("CALIBRATION DATA", highlight=True)
         logger.debug(pformat(model.calibration_data))
         
         from PIL import Image
