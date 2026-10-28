@@ -88,6 +88,7 @@ class Trainer:
         loss = self._eval(model, loader)
         metric = self.tracker.metric()
         logger.info(f"> {flag}: Loss {loss:.3f}  Metric {metric:.3f}")
+        testset.logits = self.tracker.logits()  # DEBUG
         return metric
     
     def calibrate(self, model, trainingset):
@@ -95,7 +96,7 @@ class Trainer:
         model.track_attention()
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
-        logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])  # It gets logits from tracker (not very clean)
+        logit_tensor = torch.cat(self.tracker.logits())  # It gets logits from tracker (not very clean)
         # _attention_store is aligned with the dataset because the calibration loader does not shuffle.
         assert len(trainingset.graphs) == len(model._attention_store)
         attn_factors = []

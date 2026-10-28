@@ -21,7 +21,7 @@ class Explainer:
 
     def render(self, index, graph, weights, intensity=1.0):
         """Render every explainer for one molecule: name -> PNG bytes."""
-        return {e.name: e.depict(graph, weights[e.name], index, intensity=intensity)
+        return {e.name: e.depict(graph, weights[e.name], intensity=intensity)
                 for e in self.explainers}
 
     def explanations(self, model, dataset):
@@ -29,14 +29,16 @@ class Explainer:
         device = next(model.parameters()).device
         model.eval()
         c = 0
-        for batch in dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False):
+        loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
+        for batch_idx, batch in enumerate(loader):
             batch = batch.to(device)
-            directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}  # why clone()? for random seed consistency?
+            directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
             for i, graph in enumerate(batch.to_data_list()):
                 weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
-                # for e in self.explainers:
-                #     e.annotate(graph, c)  # DEBUG
-                yield c, graph, weights
+                for e in self.explainers:  # DEBUG
+                    assert torch.allclose(dataset.logits[batch_idx][i], e.last_batch_logits[i], atol=1e-6)
+                    e.summary(graph, weights[e.name], c)
+                yield c, graph, weights, dataset.logits[batch_idx][i].item()
                 c += 1
 
 # The two directions of each bond are summed into a single per-bond weight

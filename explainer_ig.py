@@ -1,38 +1,10 @@
 import torch
 from torch_geometric.utils import degree
 
-from graphic import depict, weight_summary
+from graphic import depict as draw_molecule, weight_summary
 
 from logging_config import getLogger
 logger = getLogger(__name__)
-
-
-class IG_Depicter():
-    
-    def __init__(self, top):
-        self.shift = 0 
-        self.factor =  1 / (top + self.shift)
-        self.baseline_pred = None  # DEBUG
-        self.predictions = []  # DEBUG ......... you should probably refactor this
-
-        logger.debug(f"IG top: {top:.2f}")
-        logger.debug(f"IG factor: {self.factor:.2f}")
-
-    def depict(self, graph, weights, count=None, intensity=1):
-        # Verify the sum property (CRITICAL for IG correctness)
-        attribution_sum = weights.sum().item()
-        baseline_pred = self.baseline_pred
-        final_pred = self.predictions[count]
-
-        logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
-        logger.debug(f"\nBaseline prediction: {baseline_pred:.2f}")
-        logger.debug(f"Attribution sum: {attribution_sum:.2f}")
-        logger.debug(f"Baseline + Attribution sum: {baseline_pred + attribution_sum:.2f}")    
-        logger.debug(f"PREDICTION: {final_pred:.2f}")
-        logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
-
-        return depict(graph, weights, factor=self.factor * intensity, shift=self.shift)
 
 
 class IGExplainer:
@@ -40,7 +12,15 @@ class IGExplainer:
     name = "Integrated Gradients"
 
     def __init__(self, calibration_data):
-        self.depicter = IG_Depicter(top=calibration_data['logit_std'])  # using PREDICTION std (not actual target)
+        top = calibration_data['logit_std']  # using PREDICTION std (not actual target)
+        self.shift = 0
+        self.factor = 1 / (top + self.shift)
+        self.baseline_logits = None  # DEBUG: for logging (see depict)
+        self.logits = []  # DEBUG: for logging (see depict)
+        self.last_batch_logits = None  # DEBUG: checked in an assert in Explainer base class
+
+        logger.debug(f"IG top: {top:.2f}")
+        logger.debug(f"IG factor: {self.factor:.2f}")
 
     def attributions(self, model, batch, steps=100):
         edge_feat = model.get_features(batch)   
@@ -51,29 +31,29 @@ class IGExplainer:
             alpha = alpha.to(edge_feat.device)        
             interp_feat = baseline + alpha * (edge_feat - baseline)
             interp_feat.requires_grad_(True)
-            prediction = model.batch_forward(interp_feat, batch.edge_index, batch.batch)
+            logits = model.batch_forward(interp_feat, batch.edge_index, batch.batch)
             integrated_grads += torch.autograd.grad(
-                                outputs=prediction.sum(),
+                                outputs=logits.sum(),
                                 inputs=interp_feat,
                                 create_graph=False
                             )[0]
             if alpha == 0:
-                baseline_pred = prediction.detach()
+                baseline_logits = logits.detach()
             elif alpha == 1:
-                final_pred = prediction.detach()
+                self.last_batch_logits = logits.detach().cpu()  # DEBUG
         # Average gradients and scale by input difference
         integrated_grads /= steps
         attributions = (edge_feat - baseline) * integrated_grads
 
         # DEBUG: Sanity checks
-        logger.debug(f"\nBATCH BASELINES: {baseline_pred}") 
-        if baseline_pred.shape[0] > 1:
-            assert baseline_pred.std() < 1e-4, "Baseline predictions are not constant!"
-        if self.depicter.baseline_pred is not None:
-            assert torch.abs(baseline_pred.mean() - self.depicter.baseline_pred) < 1e-4, "Baseline predictions differ from previous graphs!"
+        logger.debug(f"\nBATCH BASELINES: {baseline_logits}") 
+        if baseline_logits.shape[0] > 1:
+            assert baseline_logits.std() < 1e-4, "Baseline predictions are not constant!"
+        if self.baseline_logits is not None:
+            assert torch.abs(baseline_logits.mean() - self.baseline_logits) < 1e-4, "Baseline predictions differ from previous graphs!"
         else:
-            self.depicter.baseline_pred = baseline_pred.mean().item()
-        self.depicter.predictions.extend(final_pred.tolist())  # DEBUG
+            self.baseline_logits = baseline_logits.mean().item()
+        self.logits.extend(self.last_batch_logits.tolist())
 
         # Process each graph in the batch
         # feat_importance_list = []
@@ -100,11 +80,20 @@ class IGExplainer:
             # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
         return edge_importance_list  #, feat_importance_list, atom_bond_importance_list
 
-    # def annotate(self, graph, index):
-    #     graph.prediction = self.depicter.predictions[index]  # DEBUG
+    def depict(self, graph, weights, intensity=1):
+        return draw_molecule(graph, weights, factor=self.factor * intensity, shift=self.shift)
 
-    def depict(self, graph, weights, index, intensity=1):
-        return self.depicter.depict(graph, weights, count=index, intensity=intensity)
+    def summary(self, graph, weights, index):
+        # Verify the sum property (CRITICAL for IG correctness)
+        attribution_sum = weights.sum().item()
+        logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
+        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
+        logger.debug(f"\nBaseline prediction: {self.baseline_logits:.2f}")
+        logger.debug(f"Attribution sum: {attribution_sum:.2f}")
+        logger.debug(f"Baseline + Attribution sum: {self.baseline_logits + attribution_sum:.2f}")
+        logger.debug(f"PREDICTION: {self.logits[index]:.2f}")
+        logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
+
 
 
 # IG AGGREGATION:

@@ -120,11 +120,12 @@ def test(testset: Dataset, model: MAG) -> None:
 
 def GUI_explain(model: MAG, testset: Dataset):
     explainer = Explainer(model.calibration_data)
-    for index, graph, weights in explainer.explanations(model, testset):
+    for index, graph, weights, prediction in explainer.explanations(model, testset):
         payload = {}
         for name, png in explainer.render(index, graph, weights).items():
             payload[name] = {
                 "image": "data:image/png;base64," + base64.b64encode(png).decode(),
+                "prediction": prediction,
                 "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
                            for bond_index, weight in enumerate(weights[name].tolist())],
             }
@@ -181,7 +182,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         explainer = Explainer(model.calibration_data)
         # all_weights = {e.name: [] for e in explainer.explainers}
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
-        for index, graph, weights in explainer.explanations(model, testset):
+        for index, graph, weights, prediction in explainer.explanations(model, testset):
             while True:
                 for png in explainer.render(index, graph, weights, intensity).values():
                     image = Image.open(io.BytesIO(png)).convert("RGBA")
@@ -215,7 +216,7 @@ if __name__ == "__main__":
     # trainingset_info = datasets.logp_split
 
     model_name = None
-    # model_name = 'NEW_L4_LOGP_10e.pt'
+    model_name = 'NEW_L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
 
     # logger.debug("CV, MUTA, early stop")

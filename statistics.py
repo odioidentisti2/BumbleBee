@@ -23,8 +23,13 @@ class MetricTracker:
     def update(self, logits, targets):
         """Update statistics for current run."""
         stats = self.stats[-1]
-        stats['logits'].append(logits)  # Read by trainer.calibrate!!!!!!!!!!
+        # SHouldn't I do extend? or is it better a list of tensors, one for each batch?
+        stats['logits'].append(logits)  # DEBUG: Read by trainer.calibrate!!!!!!!!!!
         stats['targets'].append(targets)  # DEBUG
+
+    def logits(self, index=-1):  # DEBUG
+        run = self.stats[index]
+        return run['logits']
     
     def metric(self, index=-1):
         """Compute metric for specific run. Default: last run."""
