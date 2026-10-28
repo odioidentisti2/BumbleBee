@@ -96,11 +96,14 @@ class Trainer:
         loader = trainingset.get_loader(batch_size=OPTIMAL_BATCH_SIZE[self.device.type])
         loss = self._eval(model, loader)
         logit_tensor = torch.cat(self.tracker.stats[-1]["logits"])  # It gets logits from tracker (not very clean)
-        graphs = [graph for batch in loader for graph in batch.to_data_list()]
-        attn_factors = torch.stack([
-            (und := _to_undirected(graph, aw, verbose=False)).max() * und.numel()
-            for aw, graph in zip(model._attention_store, graphs)
-        ])
+        # _attention_store is aligned with the dataset because the calibration loader does not shuffle.
+        assert len(trainingset.graphs) == len(model._attention_store)
+        attn_factors = []
+        for graph, attention in zip(trainingset.graphs, model._attention_store):
+            assert attention.numel() == graph.edge_index.size(1)  # store in sync with this graph
+            undirected = _to_undirected(graph, attention, verbose=False)
+            attn_factors.append(undirected.max() * undirected.numel())
+        attn_factors = torch.stack(attn_factors)
         model.track_attention(enable=False)
         model.calibration_data = {
             "attn_factor_mean": attn_factors.mean().item(),
