@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/explainer.css">
 </head>
 
-<body data-device="{{ device }}">
+<body class="explainer-page" data-device="{{ device }}">
 
   {% include "header.html" %}
 
@@ -32,26 +32,38 @@
         </section>
 
         <section class="panel console explainer-tree">
+          <div class="tree-prediction">PREDICTION = {{ "%.2f" | format(molecule.prediction) }}</div>
           <div class="tree-table-wrap">
             <table class="tree-table">
               <thead>
-                <tr><th>token</th><th>weight</th></tr>
+                <tr><th>edge</th><th>weight</th></tr>
               </thead>
               <tbody>
-                {% for token in molecule.tokens %}
-                <tr class="tree-row" data-node="{{ token.name }}">
+                {% for edge in molecule.edges %}
+                <tr class="tree-row" data-node="{{ edge.name }}">
                   <th class="tree-cell" data-depth="0">
-                    <button class="tree-toggle">&#9662;</button>{{ token.name }}
+                    <button class="tree-toggle">&#9662;</button>{{ edge.name }}
                   </th>
-                  <td class="value" data-weight="{{ token.weight }}">{{ "%.2f" | format(token.weight) }}</td>
+                  <td class="value" data-weight="{{ edge.weight }}">{{ "%.2f" | format(edge.weight) }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
               <tfoot>
                 <tr>
                   <th class="tree-cell">sum</th>
-                  <td class="value"></td>
+                  <td class="value" data-role="sum"></td>
                 </tr>
+                {% set baseline = molecule.get("baseline") %}
+                {% if baseline is not none %}
+                <tr>
+                  <th class="tree-cell">+ baseline</th>
+                  <td class="value" data-baseline="{{ baseline }}">{{ "%.2f" | format(baseline) }}</td>
+                </tr>
+                <tr>
+                  <th class="tree-cell">= TOTAL</th>
+                  <td class="value" data-role="total"></td>
+                </tr>
+                {% endif %}
               </tfoot>
             </table>
           </div>

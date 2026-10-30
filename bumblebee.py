@@ -121,11 +121,13 @@ def test(testset: Dataset, model: MAG) -> None:
 def GUI_explain(model: MAG, testset: Dataset):
     explainer = Explainer(model.calibration_data)
     for index, graph, weights, prediction in explainer.explanations(model, testset):
+        extras = explainer.extras()  # dataset-constant, same for every molecule
         payload = {}
         for name, png in explainer.render(index, graph, weights).items():
             payload[name] = {
                 "image": "data:image/png;base64," + base64.b64encode(png).decode(),
                 "prediction": prediction,
+                **extras[name],
                 "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
                            for bond_index, weight in enumerate(weights[name].tolist())],
             }
@@ -184,7 +186,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         for index, graph, weights, prediction in explainer.explanations(model, testset):
             for e in explainer.explainers:  # summary logging happens only in the interactive loop
-                e.summary(graph, weights[e.name], index)
+                e.summary(graph, weights[e.name], prediction)
             while True:
                 for png in explainer.render(index, graph, weights, intensity).values():
                     image = Image.open(io.BytesIO(png)).convert("RGBA")

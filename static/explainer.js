@@ -20,5 +20,9 @@ document.querySelectorAll(".tree-toggle").forEach(btn => btn.onclick = () => {
 document.querySelectorAll(".tree-table").forEach(table => {
   const sum = [...table.tBodies[0].rows]
     .reduce((total, row) => total + Number(row.cells[1].dataset.weight), 0);
-  table.querySelector("tfoot td").textContent = (Math.round(sum * 100) / 100 || 0).toFixed(2);
+  table.querySelector('[data-role="sum"]').textContent = sum.toFixed(2);
+  const baseline = table.querySelector("tfoot [data-baseline]");
+  if (baseline) {
+    table.querySelector('[data-role="total"]').textContent = (Number(baseline.dataset.baseline) + sum).toFixed(2);
+  }
 });

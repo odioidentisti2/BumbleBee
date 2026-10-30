@@ -14,7 +14,7 @@ class AttentionExplainer:
         top = calibration_data['attn_factor_mean'] + calibration_data['attn_factor_std']
         self.shift = -1  # shift so that average attention is at 0
         self.factor = 1 / (top + self.shift)  # scale so that top attention is at 1
-        self.last_batch_logits = None  # DEBUG: checked in an assert in Explainer base class
+        self.batch_logits = None  # DEBUG: checked in an assert in Explainer base class
 
         logger.debug(f"ATT top: {top:.2f}")
         logger.debug(f"ATT factor: {self.factor:.2f}")
@@ -25,8 +25,12 @@ class AttentionExplainer:
             logits = model(batch)  # Forward pass to populate attention store
         weight_list = [aw[:graph.edge_index.size(1)] for aw, graph in zip(model._attention_store, batch.to_data_list())]  # Remove padding
         model.track_attention(enable=False)
-        self.last_batch_logits = logits.cpu()  # DEBUG
+        self.batch_logits = logits.cpu()  # DEBUG
         return weight_list
+    
+    def extras(self):
+        """Return a dict of extra info."""
+        return {}
 
     def _transform(self, weights, intensity=1):
         # Weights come after softmax (they add up to 1):
@@ -39,7 +43,7 @@ class AttentionExplainer:
     def depict(self, graph, weights, intensity=1):
         return draw_molecule(graph, self._transform(weights, intensity), attention=True)
 
-    def summary(self, graph, weights, index):
+    def summary(self, graph, weights, prediction):
         logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))

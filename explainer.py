@@ -24,6 +24,10 @@ class Explainer:
         return {e.name: e.depict(graph, weights[e.name], intensity=intensity)
                 for e in self.explainers}
 
+    def extras(self):
+        """Return a dict of extra info for the explainer page."""
+        return {e.name: e.extras() for e in self.explainers}
+
     def explanations(self, model, dataset):
         """Yield (index, graph, weights, prediction) for one molecule at a time. No rendering, no logging, no input()."""
         device = next(model.parameters()).device
@@ -35,14 +39,15 @@ class Explainer:
             directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
             for i, graph in enumerate(batch.to_data_list()):
                 weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
+                logits = dataset.logits[batch_idx][i]
                 for e in self.explainers:  # DEBUG
-                    assert torch.allclose(dataset.logits[batch_idx][i], e.last_batch_logits[i], atol=1e-6)
-                yield c, graph, weights, dataset.logits[batch_idx][i].item()
+                    assert torch.allclose(logits, e.batch_logits[i], atol=1e-6)
+                yield c, graph, weights, logits.item()
                 c += 1
 
 # The two directions of each bond are summed into a single per-bond weight
 def _to_undirected(graph, edge_weights, verbose=True):
-    """4th aggregation step: sum the two directional weights of each bond -> [num_bonds]."""
+    """Sum the two directional weights of each bond -> [num_bonds]."""
     undirected_weights = torch.zeros(graph.mol.GetNumBonds(),
                             dtype=edge_weights.dtype,
                             device=edge_weights.device)
