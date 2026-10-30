@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.utils import degree
 
-from graphic import depict as draw_molecule, weight_summary
+from graphic import depict as draw_molecule, weight_summary, bond_summary
 
 from logging_config import getLogger
 logger = getLogger(__name__)
@@ -80,12 +80,16 @@ class IGExplainer:
             # atom_bond_importance_list.append(torch.cat([atom_importance, bond_importance]))
         return edge_importance_list  #, feat_importance_list, atom_bond_importance_list
 
+    def _transform(self, weights, intensity=1):
+        return (weights + self.shift) * self.factor * intensity
+
     def depict(self, graph, weights, intensity=1):
-        return draw_molecule(graph, weights, factor=self.factor * intensity, shift=self.shift)
+        return draw_molecule(graph, self._transform(weights, intensity))
 
     def summary(self, graph, weights, index):
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = weights.sum().item()
+
         logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(f"\nBaseline prediction: {self.baseline_logits:.2f}")
@@ -93,6 +97,7 @@ class IGExplainer:
         logger.debug(f"Baseline + Attribution sum: {self.baseline_logits + attribution_sum:.2f}")
         logger.debug(f"PREDICTION: {self.logits[index]:.2f}")
         logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
+        logger.debug(bond_summary(weights, self._transform(weights), title="EDGE IMPORTANCE (scaled):"))
 
 
 

@@ -1,8 +1,5 @@
 from rdkit.Chem.Draw import rdMolDraw2D
 
-from logging_config import getLogger
-logger = getLogger(__name__)
-
 
 def weight_summary(weights, average=False, title="WEIGHTS:"):
     lines = [
@@ -13,6 +10,14 @@ def weight_summary(weights, average=False, title="WEIGHTS:"):
     if average:
         lines.append(f"Weights Average: {weights.mean().item():.4f}")
     lines.extend([f"Weight sum: {weights.sum():.2f}"])
+    return '\n' + '\n'.join(lines) + '\n'
+
+def bond_summary(weights, transformed, title="BOND WEIGHTS:"):
+    """Per-bond raw vs. scaled weights, plus the sum (pairs with weight_summary)."""
+    raw, scaled = weights.tolist(), transformed.tolist()
+    lines = [title]
+    lines.extend(f"Bond {i}: {t:.2f} <- {w:.2f}" for i, (w, t) in enumerate(zip(raw, scaled)))
+    lines.append(f"Sum: {sum(scaled):.2f}")
     return '\n' + '\n'.join(lines) + '\n'
 
 def red_or_green(weight):
@@ -38,18 +43,11 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def depict(graph, bond_weights, attention=False, factor=None, shift=None):
+def depict(graph, bond_weights, attention=False):
+    """Render `graph`. `bond_weights` must already be shifted/scaled by the explainer."""
 
     threshold = 0  # not needed anymore? (normalization in explainer)
-    # if attention:
-    #     threshold = weights.mean() * 2  # + weights.std()  # Mean + 1 std dev
-    # logger.debug(f"\nThreshold: {threshold:.2f}")
 
-    # if (mol := graph.mol) is None:
-    #     logger.error("Invalid molecule object")
-    #     return
-    
-    transformed_weights = {}
     atom_weights = {}
     bond_colors = {}
     atom_colors = {}
@@ -57,17 +55,6 @@ def depict(graph, bond_weights, attention=False, factor=None, shift=None):
     for bond_idx, weight in enumerate(bond_weights):
         weight = weight.item()
         bond = graph.mol.GetBondWithIdx(bond_idx)
-
-        if factor is None and shift is None:
-            logger.debug(f"Bond {bond_idx}: {weight:.2f}")
-        else:
-            original_weight = weight
-            if shift is not None:
-                weight = weight + shift  # center average attention (== 1) at 0 (clipping in yellow())
-            if factor is not None:
-                weight = weight * factor
-            logger.debug(f"Bond {bond_idx}: {weight:.2f} <- {original_weight:.2f}")
-        transformed_weights[bond_idx] = weight
 
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
@@ -84,9 +71,7 @@ def depict(graph, bond_weights, attention=False, factor=None, shift=None):
                 else:
                     continue
                 atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
-    
-    
-    logger.debug(f"Sum: {sum(transformed_weights.values()):.2f}")
+
     return draw(graph, atom_colors, bond_colors)
 
 def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True):  

@@ -1,6 +1,6 @@
 import torch
 
-from graphic import depict as draw_molecule, weight_summary
+from graphic import depict as draw_molecule, weight_summary, bond_summary
 
 from logging_config import getLogger
 logger = getLogger(__name__)
@@ -28,17 +28,19 @@ class AttentionExplainer:
         self.last_batch_logits = logits.cpu()  # DEBUG
         return weight_list
 
-    def depict(self, graph, weights, intensity=1):
+    def _transform(self, weights, intensity=1):
         # Weights come after softmax (they add up to 1):
         # => weights.mean() = 1 / len(weights)
         # Therefore:
         #   weight * len(weights) == 1  means "average attention"
         attention_ratios = weights * len(weights)  # ratio to average attention
+        return (attention_ratios + self.shift) * self.factor * intensity
 
-        return draw_molecule(graph, attention_ratios, attention=True,
-                             factor=self.factor * intensity, shift=self.shift)
+    def depict(self, graph, weights, intensity=1):
+        return draw_molecule(graph, self._transform(weights, intensity), attention=True)
 
     def summary(self, graph, weights, index):
         logger.debug("ATTENTION-BASED EXPLANATION", highlight=True)
         logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(weight_summary(weights, average=True, title="ATTENTION WEIGHTS:"))
+        logger.debug(bond_summary(weights, self._transform(weights), title="ATTENTION (scaled):"))

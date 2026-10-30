@@ -25,7 +25,7 @@ class Explainer:
                 for e in self.explainers}
 
     def explanations(self, model, dataset):
-        """Yield (index, graph, weights) for one molecule at a time. No rendering, no input()."""
+        """Yield (index, graph, weights, prediction) for one molecule at a time. No rendering, no logging, no input()."""
         device = next(model.parameters()).device
         model.eval()
         c = 0
@@ -37,7 +37,6 @@ class Explainer:
                 weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
                 for e in self.explainers:  # DEBUG
                     assert torch.allclose(dataset.logits[batch_idx][i], e.last_batch_logits[i], atol=1e-6)
-                    e.summary(graph, weights[e.name], c)
                 yield c, graph, weights, dataset.logits[batch_idx][i].item()
                 c += 1
 

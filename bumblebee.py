@@ -183,6 +183,8 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         # all_weights = {e.name: [] for e in explainer.explainers}
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         for index, graph, weights, prediction in explainer.explanations(model, testset):
+            for e in explainer.explainers:  # summary logging happens only in the interactive loop
+                e.summary(graph, weights[e.name], index)
             while True:
                 for png in explainer.render(index, graph, weights, intensity).values():
                     image = Image.open(io.BytesIO(png)).convert("RGBA")
