@@ -1,23 +1,22 @@
 import torch
 from torch_geometric.utils import degree
 
-from graphic import depict as draw_molecule, weight_summary, bond_summary
+from explainer import Explainer
 
 from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-class IGExplainer:
+class IGExplainer(Explainer):
 
     name = "Integrated Gradients"
+    color_scheme = 'red_or_green'
 
     def __init__(self, calibration_data):
+        super().__init__(calibration_data)
         top = calibration_data['logit_std']  # using PREDICTION std (not actual target)
-        self.shift = 0
         self.factor = 1 / (top + self.shift)
         self.baseline = None
-        self.batch_logits = None  # DEBUG: checked in an assert in Explainer base class
-
         logger.debug(f"IG top: {top:.2f}")
         logger.debug(f"IG factor: {self.factor:.2f}")
 
@@ -79,27 +78,16 @@ class IGExplainer:
         return edge_importance_list  #, feat_importance_list, atom_bond_importance_list
 
     def extras(self):
-        """Return a dict of extra info."""
         return {"baseline": self.baseline}
 
-    def _transform(self, weights, intensity=1):
-        return (weights + self.shift) * self.factor * intensity
-
-    def depict(self, graph, weights, intensity=1):
-        return draw_molecule(graph, self._transform(weights, intensity))
-
-    def summary(self, graph, weights, prediction):
+    def _summary(self, weights):
         # Verify the sum property (CRITICAL for IG correctness)
         attribution_sum = weights.sum().item()
 
-        logger.debug("INTEGRATED GRADIENTS EXPLANATION", highlight=True)
-        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
         logger.debug(f"\nBaseline prediction: {self.baseline:.2f}")
         logger.debug(f"Attribution sum: {attribution_sum:.2f}")
         logger.debug(f"Baseline + Attribution sum: {self.baseline + attribution_sum:.2f}")
-        logger.debug(f"PREDICTION: {prediction:.2f}")
-        logger.debug(weight_summary(weights, title="EDGE IMPORTANCE (averaged components):"))
-        logger.debug(bond_summary(weights, self._transform(weights), title="EDGE IMPORTANCE (scaled):"))
+        super()._summary(weights)
 
 
 

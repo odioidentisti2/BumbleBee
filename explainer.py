@@ -1,35 +1,59 @@
 import torch
- 
-from explainer_att import AttentionExplainer
-from explainer_ig import IGExplainer
 
 from parameters import OPTIMAL_BATCH_SIZE
+from graphic import depict as draw_molecule
+
+from abc import ABC, abstractmethod
 
 from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-# Every registered explainer is run by Explainer.explanations()
-EXPLAINERS = (AttentionExplainer, IGExplainer)
+class Explainer(ABC):
+    """Base class for explainers."""
 
-
-class Explainer:
+    name = "Base"
+    color_scheme = 'red_or_green'
 
     def __init__(self, calibration_data):
-        self.calibration_data = calibration_data
-        self.explainers = [cls(calibration_data) for cls in EXPLAINERS]
+        """Initialize the explainer with calibration data."""
+        self.shift = 0
+        self.factor = 1
+        self.batch_logits = None  # DEBUG: checked in an assert in explanations()
 
-    def render(self, index, graph, weights, intensity=1.0):
-        """Render every explainer for one molecule: name -> PNG bytes."""
-        return {e.name: e.depict(graph, weights[e.name], intensity=intensity)
-                for e in self.explainers}
+    @abstractmethod
+    def attributions(self, model, batch):
+        """Return a list of per-graph, per-direction edge weights for the batch."""
 
     def extras(self):
-        """Return a dict of extra info for the explainer page."""
-        return {e.name: e.extras() for e in self.explainers}
+        """Return a dict of extra info."""
+        return {}
+    
+    def summary(self, graph, weights, prediction):
+        """Log the explanation of one molecule."""
+        logger.debug(f"{self.name.upper()} EXPLANATION", highlight=True)
+        logger.debug(f"{graph.y.item():.2f} {graph.smiles}")
+        logger.debug(f"PREDICTION: {prediction:.2f}")
+        self._summary(weights)
+
+    def _summary(self, weights, print_mean=False):
+        """Log the method-specific part of summary()."""
+        logger.debug(weight_summary(weights, print_mean=print_mean))
+        logger.debug(scaled_summary(weights, self._transform(weights)))
+
+    def _transform(self, weights):
+        return (weights + self.shift) * self.factor
+    
+    def depict(self, graph, weights, intensity=1):
+        return draw_molecule(graph, self._transform(weights) * intensity, self.color_scheme)
+
+
+class ExplainerSuite:
+    def __init__(self, explainers, calibration_data):
+        self.explainers = [cls(calibration_data) for cls in explainers]
 
     def explanations(self, model, dataset):
-        """Yield (index, graph, weights, prediction) for one molecule at a time. No rendering, no logging, no input()."""
+        """Yield (index, graph, weights, prediction) for one molecule at a time."""
         device = next(model.parameters()).device
         model.eval()
         c = 0
@@ -45,8 +69,34 @@ class Explainer:
                 yield c, graph, weights, logits.item()
                 c += 1
 
-# The two directions of each bond are summed into a single per-bond weight
-def _to_undirected(graph, edge_weights, verbose=True):
+    def render(self, index, graph, weights, intensity=1.0):
+        return {e.name: e.depict(graph, weights[e.name], intensity=intensity) for e in self.explainers}
+
+    def extras(self):
+        return {e.name: e.extras() for e in self.explainers}
+    
+
+def weight_summary(weights, print_mean=False, title="WEIGHTS:"):
+    lines = [
+        f"{title}",
+        str(weights),
+        f"Weights range: {weights.min():.4f} - {weights.max():.4f}",
+    ]
+    if print_mean:
+        lines.append(f"Weights mean: {weights.mean().item():.4f}")
+    lines.extend([f"Weight sum: {weights.sum():.2f}"])
+    return '\n' + '\n'.join(lines) + '\n'
+
+def scaled_summary(weights, transformed, title="WEIGHTS (scaled):"):
+    """Per-edge raw vs. scaled weights, plus the sum (pairs with weight_summary)."""
+    raw, scaled = weights.tolist(), transformed.tolist()
+    lines = [title]
+    lines.extend(f"Edge {i}: {t:.2f} <- {w:.2f}" for i, (w, t) in enumerate(zip(raw, scaled)))
+    lines.append(f"Sum: {sum(scaled):.2f}")
+    return '\n' + '\n'.join(lines) + '\n'
+
+# The two directions of each bond are summed into a single per-edge weight
+def _to_undirected(graph, edge_weights, verbose=True):  # change it to False
     """Sum the two directional weights of each bond -> [num_bonds]."""
     undirected_weights = torch.zeros(graph.mol.GetNumBonds(),
                             dtype=edge_weights.dtype,
@@ -55,7 +105,7 @@ def _to_undirected(graph, edge_weights, verbose=True):
     for weight, (src, dst) in zip(edge_weights, graph.edge_index.T):
         bond_idx = graph.mol.GetBondBetweenAtoms(int(src), int(dst)).GetIdx()
         if verbose and bond_idx in seen:  # DEBUG: 2nd directional pass, for logging
-            logger.debug(f"Bond {bond_idx}: {undirected_weights[bond_idx] + weight:.2f} = "  # DEBUG
+            logger.debug(f"Edge {bond_idx}: {undirected_weights[bond_idx] + weight:.2f} = "  # DEBUG
                         f"({undirected_weights[bond_idx]:.4f} + {weight:.4f})")  # DEBUG
         seen.add(bond_idx)  # DEBUG
         undirected_weights[bond_idx] += weight

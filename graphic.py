@@ -1,31 +1,12 @@
 from rdkit.Chem.Draw import rdMolDraw2D
 
 
-def weight_summary(weights, average=False, title="WEIGHTS:"):
-    lines = [
-        f"{title}",
-        str(weights),
-        f"Weights range: {weights.min():.4f} - {weights.max():.4f}",
-    ]
-    if average:
-        lines.append(f"Weights Average: {weights.mean().item():.4f}")
-    lines.extend([f"Weight sum: {weights.sum():.2f}"])
-    return '\n' + '\n'.join(lines) + '\n'
-
-def bond_summary(weights, transformed, title="BOND WEIGHTS:"):
-    """Per-bond raw vs. scaled weights, plus the sum (pairs with weight_summary)."""
-    raw, scaled = weights.tolist(), transformed.tolist()
-    lines = [title]
-    lines.extend(f"Bond {i}: {t:.2f} <- {w:.2f}" for i, (w, t) in enumerate(zip(raw, scaled)))
-    lines.append(f"Sum: {sum(scaled):.2f}")
-    return '\n' + '\n'.join(lines) + '\n'
-
 def red_or_green(weight):
     if weight > 0:
         return (1.0, 1.0-weight, 1.0-weight)
     else:
         return (1.0-abs(weight), 1.0, 1.0-abs(weight))
-
+    
 def yellow(weight):
     if weight < 0: weight = 0
     return (1.0, 1.0, 1.0-weight)
@@ -43,8 +24,13 @@ def yellow(weight):
 #     summed_weights.scatter_add_(0, inverse_indices, weights)
 #     return bond_keys, summed_weights
 
-def depict(graph, bond_weights, attention=False):
+def depict(graph, bond_weights, color_scheme):
     """Render `graph`. `bond_weights` must already be shifted/scaled by the explainer."""
+
+    color_func = {
+        'red_or_green': red_or_green,
+        'yellow': yellow
+    }.get(color_scheme, red_or_green)
 
     threshold = 0  # not needed anymore? (normalization in explainer)
 
@@ -59,7 +45,7 @@ def depict(graph, bond_weights, attention=False):
         bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
 
         if abs(weight) > abs(threshold):  # Only highlight important bonds 
-            bond_colors[bond_idx] = yellow(weight) if attention else red_or_green(weight)
+            bond_colors[bond_idx] = color_func(weight)
 
             # Atoms connected by this bond
             for atom in (bond.GetBeginAtom(), bond.GetEndAtom()):
@@ -70,7 +56,7 @@ def depict(graph, bond_weights, attention=False):
                     atom_weights[atom_idx] = weight
                 else:
                     continue
-                atom_colors[atom_idx] = yellow(weight) if attention else red_or_green(weight)
+                atom_colors[atom_idx] = color_func(weight)
 
     return draw(graph, atom_colors, bond_colors)
 

@@ -8,8 +8,10 @@ import io
 from molecular_data import Dataset, InjectedDataset, load_from_csv
 from trainer import Trainer
 from model import MAG
-from explainer import Explainer
-import reproducibility
+from explainer_att import AttentionExplainer
+from explainer_ig import IGExplainer
+from explainer import ExplainerSuite
+
 
 # CV
 from preprocessing import cv_subsets
@@ -18,13 +20,15 @@ import statistics
 from pprint import pformat
 import datasets
 from parameters import parameter_summary
+import reproducibility
 
 from logging_config import getLogger
 logger = getLogger(__name__)
 
 
-# Global DEVICE
+# Global
 DEVICE: torch.device | None = None  # To be initalized by main or GUI
+EXPLAINERS = (AttentionExplainer, IGExplainer)  # Every registered explainer is run by explanations()
 
 def init_device() -> str:
     global DEVICE
@@ -119,7 +123,7 @@ def test(testset: Dataset, model: MAG) -> None:
 
 
 def GUI_explain(model: MAG, testset: Dataset):
-    explainer = Explainer(model.calibration_data)
+    explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
     for index, graph, weights, prediction in explainer.explanations(model, testset):
         extras = explainer.extras()  # dataset-constant, same for every molecule
         payload = {}
@@ -181,7 +185,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         except ImportError:
             pass
 
-        explainer = Explainer(model.calibration_data)
+        explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
         # all_weights = {e.name: [] for e in explainer.explainers}
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         for index, graph, weights, prediction in explainer.explanations(model, testset):
