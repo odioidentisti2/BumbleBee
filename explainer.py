@@ -61,20 +61,20 @@ class ExplainerSuite:
         """Yield (index, graph, weights, prediction) for one molecule at a time."""
         device = next(model.parameters()).device
         model.eval()
-        c = 0
+        # c = 0
         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
         for batch_idx, batch in enumerate(loader):
             batch = batch.to(device)
             batch_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
             for i, graph in enumerate(batch.to_data_list()):
                 weights = {e.name: batch_weights[e.name][i] for e in self.explainers}
-                logits = dataset.logits[batch_idx][i]
-                for e in self.explainers:  # DEBUG
-                    assert torch.allclose(logits, e.batch_logits[i], atol=1e-6)
-                yield c, graph, weights, logits.item()
-                c += 1
+                # logits = dataset.logits[c]
+                # for e in self.explainers:  # DEBUG
+                #     assert abs(logits - e.batch_logits[i].item()) < 1e-6
+                yield graph, weights
+                # c += 1
 
-    def render(self, index, graph, weights, intensity=1.0):
+    def render(self, graph, weights, intensity=1.0):
         return {e.name: e.depict(graph, weights[e.name], intensity=intensity) for e in self.explainers}
 
     def extras(self):

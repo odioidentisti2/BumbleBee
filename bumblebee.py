@@ -5,7 +5,7 @@ import base64
 import torch
 import io
 
-from molecular_data import Dataset, InjectedDataset, load_from_csv
+from molecular_data import Testset, Trainingset, load_from_csv
 from trainer import Trainer
 from model import MAG
 from explainer_att import AttentionExplainer
@@ -66,8 +66,8 @@ def load(model_path: str) -> MAG:
 #         reproducibility.set_torch_seed()
 #         logger.info(f"Fold {fold}/{folds}", highlight=True)
 
-#         trainingset  = InjectedDataset([graphs[i] for i in train_indices])
-#         testset      = Dataset([graphs[i] for i in test_indices])
+#         trainingset  = Trainingset([graphs[i] for i in train_indices])
+#         testset      = Testset([graphs[i] for i in test_indices])
 #         logger.info(f"Train size: {len(trainingset)}, Test size: {len(testset)}")
 
 #         trainer = Trainer(dataset_info['task'], DEVICE)
@@ -84,14 +84,14 @@ def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validati
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
     if kind == 'Training':
-        dataset = InjectedDataset(graphs)
+        dataset = Trainingset(graphs)
     else:
-        dataset = Dataset(graphs)
+        dataset = Testset(graphs)
     dataset.task = dataset_info['task']
     return dataset
 
     
-def train(trainingset: InjectedDataset, validation_set: Dataset | None = None) -> MAG:    
+def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MAG:    
     ### Reproducibility
     reproducibility.set_torch_seed()
     if trainingset.task == 'binary_classification':
@@ -116,28 +116,28 @@ def train(trainingset: InjectedDataset, validation_set: Dataset | None = None) -
     return model
 
 
-def test(testset: Dataset, model: MAG) -> None:
+def test(testset: Testset, model: MAG) -> None:
     logger.info("\nTesting...")
     trainer = Trainer(testset.task, model.device)
     trainer.eval(model, testset, flag="Test")
 
 
-def GUI_explain(model: MAG, testset: Dataset):
+def GUI_explain(model: MAG, testset: Testset):
     explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
-    for index, graph, weights, prediction in explainer.explanations(model, testset):
+    c = 0
+    for graph, weights in explainer.explanations(model, testset):
         extras = explainer.extras()  # dataset-constant, same for every molecule
         payload = {}
-        for name, png in explainer.render(index, graph, weights).items():
+        for name, png in explainer.render(graph, weights).items():
             payload[name] = {
                 "image": "data:image/png;base64," + base64.b64encode(png).decode(),
-                "prediction": prediction,
+                "prediction": testset.logits[c],
                 **extras[name],
                 "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
                            for bond_index, weight in enumerate(weights[name].tolist())],
             }
+        c += 1
         yield payload
-
-
 
 def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None = None):
     
@@ -188,11 +188,12 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
         # all_weights = {e.name: [] for e in explainer.explainers}
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
-        for index, graph, weights, prediction in explainer.explanations(model, testset):
+        c = 0
+        for graph, weights in explainer.explanations(model, testset):
             for e in explainer.explainers:  # summary logging happens only in the interactive loop
-                e.summary(graph, weights[e.name], prediction)
+                e.summary(graph, weights[e.name], testset.logits[c])
             while True:
-                for png in explainer.render(index, graph, weights, intensity).values():
+                for png in explainer.render(graph, weights, intensity).values():
                     image = Image.open(io.BytesIO(png)).convert("RGBA")
                     white_background_image = Image.alpha_composite(
                         Image.new("RGBA", image.size, "white"), image).convert("RGB")
@@ -206,6 +207,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
                 if plus_count + minus_count == 0:
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
+            c += 1
         #     for e in explainer.explainers:
         #         all_weights[e.name].append(weights[e.name])
         # return all_weights

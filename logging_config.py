@@ -38,6 +38,8 @@ root_logger.setLevel(level)
 root_logger.handlers.clear()
 root_logger.addHandler(handler)
 
+logging.getLogger("PIL").setLevel(logging.WARNING)
+
 
 def getLogger(name):
     return logging.getLogger(name)

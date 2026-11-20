@@ -114,6 +114,7 @@ class Dataset(PyGDataset):
         super().__init__()
         self.graphs = graphs
         self.generator = reproducibility.torch_generator()
+
     def len(self):
         return len(self.graphs)
 
@@ -125,7 +126,7 @@ class Dataset(PyGDataset):
         return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
 
 
-class InjectedDataset(Dataset):
+class Trainingset(Dataset):
     injection_probability = 0.001
 
     def __init__(self, graphs):
@@ -145,7 +146,7 @@ class InjectedDataset(Dataset):
     def get(self, idx):
         data = super().get(idx)
         if self.inject and \
-            torch.rand(1, generator=self.inject_generator).item() < InjectedDataset.injection_probability:
+            torch.rand(1, generator=self.inject_generator).item() < Trainingset.injection_probability:
             data = data.clone()
             data.x = torch.zeros_like(data.x)
             data.edge_attr = torch.zeros_like(data.edge_attr)
@@ -157,6 +158,11 @@ class InjectedDataset(Dataset):
         self.inject = is_train
         self.inject_generator = reproducibility.torch_generator()
         return super().get_loader(batch_size, is_train)
+
+class Testset(Dataset):
+    def __init__(self, graphs):
+        super().__init__(graphs)
+        self.logits = None  # Store predictions
 
 
 def load_from_csv(dataset_info, split=None):

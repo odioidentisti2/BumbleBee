@@ -83,10 +83,10 @@ if __name__ == "__main__":
 
 
     # m1 = main(device, datasets.muta, 'muta_benchmark.pt')
-    # l1 = torch.cat(m1.stats[-1]['logits'])
+    # l1 = torch.tensor(m1.stats[-1]['logits'])
 
     # m2 = main(device, datasets.muta, 'muta_RAND30.pt')
-    # l2 = torch.cat(m2.stats[-1]['logits'])
+    # l2 = torch.tensor(m2.stats[-1]['logits'])
 
     # logits_close = torch.allclose(l1, l2, rtol=1e-5, atol=1e-8)
     # logit_diff = (l1 - l2).abs()
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     # print(f"Logits difference: min={logit_diff.min().item():.6f}, max={logit_diff.max().item():.6f}, mean={logit_diff.mean().item():.6f}, std={logit_diff.std().item():.6f}   \n")
     
     # # Binary predictions
-    # pred1 = torch.cat(m1.stats[-1]['predictions'])
-    # pred2 = torch.cat(m2.stats[-1]['predictions'])
+    # pred1 = torch.tensor(m1.stats[-1]['predictions'])
+    # pred2 = torch.tensor(m2.stats[-1]['predictions'])
     # agree = sum(p1 == p2 for p1, p2 in zip(pred1, pred2))
     # print(f"\nModels agreement: {agree} / {len(pred1)}")
     # diff_idx = (pred1 != pred2).nonzero(as_tuple=True)[0]

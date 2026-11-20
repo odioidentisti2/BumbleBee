@@ -23,13 +23,12 @@ class MetricTracker:
     def update(self, logits, targets):
         """Update statistics for current run."""
         stats = self.stats[-1]
-        # SHouldn't I do extend? or is it better a list of tensors, one for each batch?
-        stats['logits'].append(logits)  # DEBUG: Read by trainer.calibrate!!!!!!!!!!
-        stats['targets'].append(targets)  # DEBUG
+        stats['logits'].extend(logits.tolist())  # DEBUG:
+        stats['targets'].extend(targets.tolist())  # DEBUG
 
     def logits(self, index=-1):  # DEBUG
-        run = self.stats[index]
-        return run['logits']
+        """Recorded logits of a run."""
+        return self.stats[index]['logits']
     
     def metric(self, index=-1):
         """Compute metric for specific run. Default: last run."""
@@ -82,7 +81,7 @@ class AccuracyTracker(MetricTracker):
         super().update(logits, targets)
         stats = self.stats[-1]
         preds = (torch.sigmoid(logits) > 0.5)
-        stats['predictions'].append(preds)
+        stats['predictions'].extend(preds.tolist())  
         stats['total_samples'] += len(targets)
         stats['num_correct'] += (preds == targets).sum().item()
 
