@@ -20,7 +20,7 @@ class IGExplainer(Explainer):
         logger.debug(f"IG top: {top:.2f}")
         logger.debug(f"IG factor: {self.factor:.2f}")
 
-    def attributions(self, model, batch, steps=100):
+    def _attributions(self, model, batch, steps=100):
         edge_feat = model.get_features(batch)   
         baseline = torch.zeros_like(edge_feat)
         integrated_grads = torch.zeros_like(edge_feat)

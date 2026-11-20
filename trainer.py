@@ -102,7 +102,7 @@ class Trainer:
         attn_factors = []
         for graph, attention in zip(trainingset.graphs, model._attention_store):
             assert attention.numel() == graph.edge_index.size(1)  # store in sync with this graph
-            undirected = _to_undirected(graph, attention, verbose=False)
+            undirected = _to_undirected(graph, attention)
             attn_factors.append(undirected.max() * undirected.numel())
         attn_factors = torch.stack(attn_factors)
         model.track_attention(enable=False)

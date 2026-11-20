@@ -21,9 +21,14 @@ class Explainer(ABC):
         self.factor = 1
         self.batch_logits = None  # DEBUG: checked in an assert in explanations()
 
-    @abstractmethod
     def attributions(self, model, batch):
-        """Return a list of per-graph, per-direction edge weights for the batch."""
+        """Return a list of UNDIRECTED edge attribution tensors for the batch."""
+        directional = self._attributions(model, batch)
+        return [_to_undirected(graph, w) for graph, w in zip(batch.to_data_list(), directional)]
+
+    @abstractmethod
+    def _attributions(self, model, batch):
+        """Return a list of DIRECTIONAL edge attribution tensors for the batch."""
 
     def extras(self):
         """Return a dict of extra info."""
@@ -60,9 +65,9 @@ class ExplainerSuite:
         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
         for batch_idx, batch in enumerate(loader):
             batch = batch.to(device)
-            directional_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
+            batch_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
             for i, graph in enumerate(batch.to_data_list()):
-                weights = {e.name: _to_undirected(graph, directional_weights[e.name][i]) for e in self.explainers}
+                weights = {e.name: batch_weights[e.name][i] for e in self.explainers}
                 logits = dataset.logits[batch_idx][i]
                 for e in self.explainers:  # DEBUG
                     assert torch.allclose(logits, e.batch_logits[i], atol=1e-6)
@@ -96,7 +101,7 @@ def scaled_summary(weights, transformed, title="WEIGHTS (scaled):"):
     return '\n' + '\n'.join(lines) + '\n'
 
 # The two directions of each bond are summed into a single per-edge weight
-def _to_undirected(graph, edge_weights, verbose=True):  # change it to False
+def _to_undirected(graph, edge_weights, verbose=False):
     """Sum the two directional weights of each bond -> [num_bonds]."""
     undirected_weights = torch.zeros(graph.mol.GetNumBonds(),
                             dtype=edge_weights.dtype,

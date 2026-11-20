@@ -20,7 +20,7 @@ class AttentionExplainer(Explainer):
         logger.debug(f"ATT top: {top:.2f}")
         logger.debug(f"ATT factor: {self.factor:.2f}")
 
-    def attributions(self, model, batch):
+    def _attributions(self, model, batch):
         model.track_attention()
         with torch.no_grad():
             logits = model(batch)  # Forward pass to populate attention store
