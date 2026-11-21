@@ -1,3 +1,6 @@
+import io
+
+from PIL import Image
 from rdkit.Chem.Draw import rdMolDraw2D
 
 
@@ -84,8 +87,19 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
                         legend=legend)
     drawer.FinishDrawing()
 
-
     return drawer.GetDrawingText()
+    # return _indexed_png(drawer.GetDrawingText())
+
+
+def _indexed_png(png: bytes, colors: int = 256) -> bytes:
+    """Re-encode a PNG as an 8-bit indexed-palette PNG to reduce size."""
+    with Image.open(io.BytesIO(png)) as image:
+        indexed = image.convert("RGBA").quantize(
+            colors=colors, method=Image.Quantize.FASTOCTREE
+        )
+        out = io.BytesIO()
+        indexed.save(out, format="PNG", optimize=True)
+        return out.getvalue()
 
 
 

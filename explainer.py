@@ -58,7 +58,7 @@ class ExplainerSuite:
         self.explainers = [cls(calibration_data) for cls in explainers]
 
     def explanations(self, model, dataset):
-        """Yield (index, graph, weights, prediction) for one molecule at a time."""
+        """Yield (graph, weights) for one molecule at a time."""
         device = next(model.parameters()).device
         model.eval()
         # c = 0
