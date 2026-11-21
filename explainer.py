@@ -62,11 +62,10 @@ def explanations(model, dataset, explainer):
     for batch in loader:
         batch = batch.to(device)
         batch_attributions = explainer.attributions(model, batch.clone())
-        for i, attributions in enumerate(batch_attributions):
+        for i in range(len(batch_attributions)):
             assert abs(dataset.logits[c] - explainer.batch_logits[i].item()) < 1e-6
-            yield attributions
             c += 1
-
+        yield explainer.attributions(model, batch.clone()) 
 
 def weight_summary(weights, print_mean=False, title="WEIGHTS:"):
     lines = [

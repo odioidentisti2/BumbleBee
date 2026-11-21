@@ -129,18 +129,21 @@ def GUI_explain(model: MAG, testset: Testset):
     explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
     streams = (explanations(model, testset, e) for e in explainers)
     c = 0
-    for attribution_tuple in zip(*streams): # one entry per explainer
+    for attribution_batch in zip(*streams):  # one attribution list per explainer
         payload = {}
-        for e, attributions in zip(explainers, attribution_tuple):
-            png = e.depict(testset.get(c), attributions)
-            payload[e.name] = {
-                "image": "data:image/png;base64," + base64.b64encode(png).decode(),
-                "prediction": testset.logits[c],
-                **e.extras(),
-                "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
-                           for bond_index, weight in enumerate(attributions.tolist())],
-            }
-        c += 1
+        for e, attributions_list in zip(explainers, attribution_batch):
+            payload[e.name] = [
+                {
+                    "image": "data:image/png;base64," + base64.b64encode(
+                        e.depict(testset.get(c + i), attributions)).decode(),
+                    "prediction": testset.logits[c + i],
+                    **e.extras(),
+                    "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
+                               for bond_index, weight in enumerate(attributions.tolist())],
+                }
+                for i, attributions in enumerate(attributions_list)
+            ]
+        c += len(attribution_batch[0])  # batch size
         yield payload
  
     
@@ -210,27 +213,30 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         streams = (explanations(model, testset, e) for e in explainers)
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         c = 0
-        for attribution_tuple in zip(*streams):  # one entry per explainer
-            graph = testset.get(c)
-            prediction = testset.logits[c]
+        for attribution_batch in zip(*streams):  # one attribution list per explainer
+            size = len(attribution_batch[0])     # molecules in this batch
+            graphs = [testset.get(c + i) for i in range(size)]
+            for i, graph in enumerate(graphs):   # summary: whole page up front
+                for e, attributions_list in zip(explainers, attribution_batch):
+                    e.summary(graph, attributions_list[i], testset.logits[c + i])
             while True:
-                for e, attributions in zip(explainers, attribution_tuple):
-                    e.summary(graph, attributions, prediction)
-                    png = e.depict(graph, attributions, intensity)
-                    image = Image.open(io.BytesIO(png)).convert("RGBA")
-                    white_background_image = Image.alpha_composite(
-                        Image.new("RGBA", image.size, "white"), image).convert("RGB")
-                    if IN_COLAB:
-                        display(white_background_image)
-                    else:
-                        white_background_image.show()
-                user_input = input("Enter = next, '+'/'-' = intensity: ")
+                for i, graph in enumerate(graphs):
+                    for e, attributions_list in zip(explainers, attribution_batch):
+                        png = e.depict(graph, attributions_list[i], intensity)
+                        image = Image.open(io.BytesIO(png)).convert("RGBA")
+                        white_background_image = Image.alpha_composite(
+                            Image.new("RGBA", image.size, "white"), image).convert("RGB")
+                        if IN_COLAB:
+                            display(white_background_image)
+                        else:
+                            white_background_image.show()
+                user_input = input("Enter = next page, '+'/'-' = intensity: ")
                 plus_count = user_input.count('+')
                 minus_count = user_input.count('-')
                 if plus_count + minus_count == 0:
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
-            c += 1
+            c += size
 
 
 

@@ -131,9 +131,10 @@ def explain(request: Request):
 
 def _explainer_page(request: Request):
     with explain_lock:
-        for payload in islice(session.stream, EXPLAIN_PAGE):
-            for name, block in payload.items():
-                session.shown.setdefault(name, []).append(block)
+        page = next(session.stream, None)  # one page = one batch
+        if page is not None:
+            for name, blocks in page.items():
+                session.shown.setdefault(name, []).extend(blocks)
     return templates.TemplateResponse(
         "explainer.html",
         {"request": request,
