@@ -10,7 +10,7 @@ from trainer import Trainer
 from model import MAG
 from explainer_att import AttentionExplainer
 from explainer_ig import IGExplainer
-from explainer import ExplainerSuite
+from explainer import explanations
 
 
 # CV
@@ -28,12 +28,19 @@ logger = getLogger(__name__)
 
 # Global
 DEVICE: torch.device | None = None  # To be initalized by main or GUI
-EXPLAINERS = (AttentionExplainer, IGExplainer)  # Every registered explainer is run by explanations()
+EXPLAINERS = (AttentionExplainer, IGExplainer)
 
 def init_device() -> str:
     global DEVICE
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return str(DEVICE)
+
+def configure_reproducibility(use_deterministic: bool = True):
+    reproducibility.set_torch_seed()
+    if use_deterministic:
+        # (MSELoss => regression is deterministic enough ?)
+        reproducibility.use_deterministic_algorithms(DEVICE)
+        logger.debug("\n(DETERMINISTIC algorithms)")
 
 
 def save(path: str, model: MAG) -> None:
@@ -93,11 +100,7 @@ def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validati
     
 def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MAG:    
     ### Reproducibility
-    reproducibility.set_torch_seed()
-    if trainingset.task == 'binary_classification':
-        # (MSELoss => regression is deterministic enough ?)
-        reproducibility.use_deterministic_algorithms(DEVICE)
-        logger.debug("\n(DETERMINISTIC algorithms)")
+    configure_reproducibility(use_deterministic=(trainingset.task == 'binary_classification'))
 
     ### DEBUG
     logger.debug(parameter_summary())
@@ -123,21 +126,39 @@ def test(testset: Testset, model: MAG) -> None:
 
 
 def GUI_explain(model: MAG, testset: Testset):
-    explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
+    explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
+    streams = (explanations(model, testset, e) for e in explainers)
     c = 0
-    for graph, weights in explainer.explanations(model, testset):
-        extras = explainer.extras()  # dataset-constant, same for every molecule
+    for attribution_tuple in zip(*streams): # one entry per explainer
         payload = {}
-        for name, png in explainer.render(graph, weights).items():
-            payload[name] = {
+        for e, attributions in zip(explainers, attribution_tuple):
+            png = e.depict(testset.get(c), attributions)
+            payload[e.name] = {
                 "image": "data:image/png;base64," + base64.b64encode(png).decode(),
                 "prediction": testset.logits[c],
-                **extras[name],
+                **e.extras(),
                 "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
-                           for bond_index, weight in enumerate(weights[name].tolist())],
+                           for bond_index, weight in enumerate(attributions.tolist())],
             }
         c += 1
         yield payload
+ 
+    
+    # explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
+    # c = 0
+    # for weights in explainer.explanations(model, testset):
+    #     extras = explainer.extras()  # dataset-constant, same for every molecule
+    #     payload = {}
+    #     for name, png in explainer.render(testset.get(c), weights).items():
+    #         payload[name] = {
+    #             "image": "data:image/png;base64," + base64.b64encode(png).decode(),
+    #             "prediction": testset.logits[c],
+    #             **extras[name],
+    #             "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
+    #                        for bond_index, weight in enumerate(weights[name].tolist())],
+    #         }
+    #     c += 1
+    #     yield payload
 
 def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None = None):
     
@@ -179,21 +200,23 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         # DEBUG: check if running in Google Colab
         IN_COLAB = False
         try:
-            import google.colab # Try importing, if it succeeds, it's Colab
+            import google.colab
             IN_COLAB = True
             from IPython.display import display
         except ImportError:
             pass
 
-        explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
-        # all_weights = {e.name: [] for e in explainer.explainers}
+        explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
+        streams = (explanations(model, testset, e) for e in explainers)
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         c = 0
-        for graph, weights in explainer.explanations(model, testset):
-            for e in explainer.explainers:  # summary logging happens only in the interactive loop
-                e.summary(graph, weights[e.name], testset.logits[c])
+        for attribution_tuple in zip(*streams):  # one entry per explainer
+            graph = testset.get(c)
+            prediction = testset.logits[c]
             while True:
-                for png in explainer.render(graph, weights, intensity).values():
+                for e, attributions in zip(explainers, attribution_tuple):
+                    e.summary(graph, attributions, prediction)
+                    png = e.depict(graph, attributions, intensity)
                     image = Image.open(io.BytesIO(png)).convert("RGBA")
                     white_background_image = Image.alpha_composite(
                         Image.new("RGBA", image.size, "white"), image).convert("RGB")
@@ -208,9 +231,6 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
             c += 1
-        #     for e in explainer.explainers:
-        #         all_weights[e.name].append(weights[e.name])
-        # return all_weights
 
 
 

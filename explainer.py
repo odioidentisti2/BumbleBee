@@ -53,32 +53,47 @@ class Explainer(ABC):
         return draw_molecule(graph, self._transform(weights) * intensity, self.color_scheme)
 
 
-class ExplainerSuite:
-    def __init__(self, explainers, calibration_data):
-        self.explainers = [cls(calibration_data) for cls in explainers]
+def explanations(model, dataset, explainer):
+    """Yield attributions for one molecule at a time."""
+    device = next(model.parameters()).device
+    model.eval()
+    loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
+    c = 0
+    for batch in loader:
+        batch = batch.to(device)
+        batch_attributions = explainer.attributions(model, batch.clone())
+        for i, attributions in enumerate(batch_attributions):
+            assert abs(dataset.logits[c] - explainer.batch_logits[i].item()) < 1e-6
+            yield attributions
+            c += 1
 
-    def explanations(self, model, dataset):
-        """Yield (graph, weights) for one molecule at a time."""
-        device = next(model.parameters()).device
-        model.eval()
-        # c = 0
-        loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
-        for batch_idx, batch in enumerate(loader):
-            batch = batch.to(device)
-            batch_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
-            for i, graph in enumerate(batch.to_data_list()):
-                weights = {e.name: batch_weights[e.name][i] for e in self.explainers}
-                # logits = dataset.logits[c]
-                # for e in self.explainers:  # DEBUG
-                #     assert abs(logits - e.batch_logits[i].item()) < 1e-6
-                yield graph, weights
-                # c += 1
 
-    def render(self, graph, weights, intensity=1.0):
-        return {e.name: e.depict(graph, weights[e.name], intensity=intensity) for e in self.explainers}
+# class ExplainerSuite:
+#     def __init__(self, explainers, calibration_data):
+#         self.explainers = [cls(calibration_data) for cls in explainers]
 
-    def extras(self):
-        return {e.name: e.extras() for e in self.explainers}
+#     def explanations(self, model, dataset):
+#         """Yield weights for one molecule at a time."""
+#         device = next(model.parameters()).device
+#         model.eval()
+#         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
+#         # c = 0 
+#         for batch_idx, batch in enumerate(loader):
+#             batch = batch.to(device)
+#             batch_weights = {e.name: e.attributions(model, batch.clone()) for e in self.explainers}
+#             for i in enumerate(batch.to_data_list()):
+#                 weights = {e.name: batch_weights[e.name][i] for e in self.explainers}
+#                 # logits = dataset.logits[c]
+#                 # for e in self.explainers:  # DEBUG
+#                 #     assert abs(logits - e.batch_logits[i].item()) < 1e-6
+#                 yield weights
+#                 # c += 1
+
+#     def render(self, graph, weights, intensity=1.0):
+#         return {e.name: e.depict(graph, weights[e.name], intensity=intensity) for e in self.explainers}
+
+#     def extras(self):
+#         return {e.name: e.extras() for e in self.explainers}
     
 
 def weight_summary(weights, print_mean=False, title="WEIGHTS:"):
