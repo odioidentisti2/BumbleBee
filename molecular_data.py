@@ -119,7 +119,9 @@ class Dataset(PyGDataset):
         return len(self.graphs)
 
     def get(self, idx):
-        return self.graphs[idx]    
+        graph = self.graphs[idx]
+        graph.idx = idx
+        return graph  
     
     def get_loader(self, batch_size, is_train=False):
         self.generator = reproducibility.torch_generator()

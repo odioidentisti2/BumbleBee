@@ -85,7 +85,7 @@ session = AppSession()
 
 
 DEVICE_NAME = bumblebee.init_device()
-EXPLAIN_PAGE = 1  # molecules fetched per request
+EXPLAIN_PAGE = 10  # molecules rendered per page
 explain_lock = threading.Lock()  # a generator cannot be resumed from two threads
 
 
@@ -131,10 +131,9 @@ def explain(request: Request):
 
 def _explainer_page(request: Request):
     with explain_lock:
-        page = next(session.stream, None)  # one page = one batch
-        if page is not None:
-            for name, blocks in page.items():
-                session.shown.setdefault(name, []).extend(blocks)
+        for payload in islice(session.stream, EXPLAIN_PAGE):  # one molecule per item
+            for name, block in payload.items():
+                session.shown.setdefault(name, []).append(block)
     return templates.TemplateResponse(
         "explainer.html",
         {"request": request,

@@ -127,40 +127,19 @@ def test(testset: Testset, model: MAG) -> None:
 def GUI_explain(model: MAG, testset: Testset):
     explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
     streams = (e.explain(model, testset) for e in explainers)
-    c = 0
-    for attribution_batch in zip(*streams):  # one attribution list per explainer
+    for explanations in zip(*streams):
         payload = {}
-        for e, attributions_list in zip(explainers, attribution_batch):
-            payload[e.name] = [
-                {
-                    "image": "data:image/png;base64," + base64.b64encode(
-                        e.depict(testset.get(c + i), attributions)).decode(),
-                    "prediction": testset.logits[c + i],
-                    **e.extras(),
-                    "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
-                               for bond_index, weight in enumerate(attributions.tolist())],
-                }
-                for i, attributions in enumerate(attributions_list)
-            ]
-        c += len(attribution_batch[0])  # batch size
+        for e, (graph, attributions) in zip(explainers, explanations):
+            payload[e.name] = {
+                "image": "data:image/png;base64," + base64.b64encode(
+                    e.depict(graph, attributions)).decode(),
+                "prediction": testset.logits[graph.idx],
+                **e.extras(),
+                "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
+                            for bond_index, weight in enumerate(attributions.tolist())],
+            }
         yield payload
- 
-    
-    # explainer = ExplainerSuite(EXPLAINERS, model.calibration_data)
-    # c = 0
-    # for weights in explainer.explanations(model, testset):
-    #     extras = explainer.extras()  # dataset-constant, same for every molecule
-    #     payload = {}
-    #     for name, png in explainer.render(testset.get(c), weights).items():
-    #         payload[name] = {
-    #             "image": "data:image/png;base64," + base64.b64encode(png).decode(),
-    #             "prediction": testset.logits[c],
-    #             **extras[name],
-    #             "edges": [{"name": f"edge{bond_index}", "weight": float(weight)}
-    #                        for bond_index, weight in enumerate(weights[name].tolist())],
-    #         }
-    #     c += 1
-    #     yield payload
+
 
 def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None = None):
     
@@ -209,33 +188,26 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
             pass
 
         explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
-        streams = (e.explain(model, testset, e) for e in explainers)
-        intensity = 1.0  # shared by the whole run: declared before the molecule loop
-        c = 0
-        for attribution_batch in zip(*streams):  # one attribution list per explainer
-            size = len(attribution_batch[0])     # molecules in this batch
-            graphs = [testset.get(c + i) for i in range(size)]
-            for i, graph in enumerate(graphs):   # summary: whole page up front
-                for e, attributions_list in zip(explainers, attribution_batch):
-                    e.summary(graph, attributions_list[i], testset.logits[c + i])
+        streams = (e.explain(model, testset) for e in explainers)
+        intensity = 1.0
+        for explanations in zip(*streams):
             while True:
-                for i, graph in enumerate(graphs):
-                    for e, attributions_list in zip(explainers, attribution_batch):
-                        png = e.depict(graph, attributions_list[i], intensity)
-                        image = Image.open(io.BytesIO(png)).convert("RGBA")
-                        white_background_image = Image.alpha_composite(
-                            Image.new("RGBA", image.size, "white"), image).convert("RGB")
-                        if IN_COLAB:
-                            display(white_background_image)
-                        else:
-                            white_background_image.show()
-                user_input = input("Enter = next page, '+'/'-' = intensity: ")
+                for e, (graph, attributions) in zip(explainers, explanations):
+                    e.summary(graph, attributions, testset.logits[graph.idx])
+                    png = e.depict(graph, attributions, intensity)
+                    image = Image.open(io.BytesIO(png)).convert("RGBA")
+                    white_background_image = Image.alpha_composite(
+                        Image.new("RGBA", image.size, "white"), image).convert("RGB")
+                    if IN_COLAB:
+                        display(white_background_image)
+                    else:
+                        white_background_image.show()
+                user_input = input("Enter = next, '+'/'-' = intensity: ")
                 plus_count = user_input.count('+')
                 minus_count = user_input.count('-')
                 if plus_count + minus_count == 0:
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
-            c += size
 
 
 

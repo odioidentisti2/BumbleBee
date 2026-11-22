@@ -53,18 +53,18 @@ class Explainer(ABC):
         return draw_molecule(graph, self._transform(weights) * intensity, self.color_scheme)
 
     def explain(self, model, dataset):
-        """Yield attributions for one batch at a time."""
         device = next(model.parameters()).device
         model.eval()
         loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
-        c = 0
         for batch in loader:
             batch = batch.to(device)
             batch_attributions = self.attributions(model, batch.clone())
-            for i in range(len(batch_attributions)):  # DEBUG
-                assert abs(dataset.logits[c] - self.batch_logits[i].item()) < 1e-6
-                c += 1
-            yield self.attributions(model, batch.clone()) 
+            i = 0  # DEBUG
+            for graph, attributions in zip(batch.to_data_list(), batch_attributions):
+                assert abs(dataset.logits[graph.idx] - self.batch_logits[i].item()) < 1e-6  # DEBUG
+                i += 1  # DEBUG
+                yield graph, attributions
+
 
 def weight_summary(weights, print_mean=False, title="WEIGHTS:"):
     lines = [
