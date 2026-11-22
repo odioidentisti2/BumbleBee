@@ -52,20 +52,19 @@ class Explainer(ABC):
     def depict(self, graph, weights, intensity=1):
         return draw_molecule(graph, self._transform(weights) * intensity, self.color_scheme)
 
-
-def explanations(model, dataset, explainer):
-    """Yield attributions for one molecule at a time."""
-    device = next(model.parameters()).device
-    model.eval()
-    loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
-    c = 0
-    for batch in loader:
-        batch = batch.to(device)
-        batch_attributions = explainer.attributions(model, batch.clone())
-        for i in range(len(batch_attributions)):
-            assert abs(dataset.logits[c] - explainer.batch_logits[i].item()) < 1e-6
-            c += 1
-        yield explainer.attributions(model, batch.clone()) 
+    def explain(self, model, dataset):
+        """Yield attributions for one batch at a time."""
+        device = next(model.parameters()).device
+        model.eval()
+        loader = dataset.get_loader(OPTIMAL_BATCH_SIZE[device.type], is_train=False)
+        c = 0
+        for batch in loader:
+            batch = batch.to(device)
+            batch_attributions = self.attributions(model, batch.clone())
+            for i in range(len(batch_attributions)):  # DEBUG
+                assert abs(dataset.logits[c] - self.batch_logits[i].item()) < 1e-6
+                c += 1
+            yield self.attributions(model, batch.clone()) 
 
 def weight_summary(weights, print_mean=False, title="WEIGHTS:"):
     lines = [

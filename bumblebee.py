@@ -10,7 +10,6 @@ from trainer import Trainer
 from model import MAG
 from explainer_att import AttentionExplainer
 from explainer_ig import IGExplainer
-from explainer import explanations
 
 
 # CV
@@ -127,7 +126,7 @@ def test(testset: Testset, model: MAG) -> None:
 
 def GUI_explain(model: MAG, testset: Testset):
     explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
-    streams = (explanations(model, testset, e) for e in explainers)
+    streams = (e.explain(model, testset) for e in explainers)
     c = 0
     for attribution_batch in zip(*streams):  # one attribution list per explainer
         payload = {}
@@ -210,7 +209,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
             pass
 
         explainers = [cls(model.calibration_data) for cls in EXPLAINERS]
-        streams = (explanations(model, testset, e) for e in explainers)
+        streams = (e.explain(model, testset, e) for e in explainers)
         intensity = 1.0  # shared by the whole run: declared before the molecule loop
         c = 0
         for attribution_batch in zip(*streams):  # one attribution list per explainer
