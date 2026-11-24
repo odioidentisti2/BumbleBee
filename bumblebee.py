@@ -26,7 +26,7 @@ logger = getLogger(__name__)
 
 
 # Global
-DEVICE: torch.device | None = None  # To be initalized by main or GUI
+DEVICE = None  # To be initalized by main or GUI
 EXPLAINERS = (AttentionExplainer, IGExplainer)
 
 def init_device() -> str:
@@ -111,8 +111,9 @@ def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MA
     trainer.train(model, trainingset, val_set=validation_set)
 
     ### Calibration (for Explainer)
-    logger.info("\nCalibrating...")
-    trainer.calibrate(model, trainingset)
+    if EXPLAIN:  # DEBUG
+        logger.info("\nCalibrating...")
+        trainer.calibrate(model, trainingset)
 
     logger.info("\nTraining completed.")
     return model
@@ -160,9 +161,9 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        # model_name = "NEW_L4_LOGP_10e.pt"
-        # save(f"MODELS/{model_name}", model)
-        # model = load(f"MODELS/{model_name}")
+        model_name = "T4_LOGp_100e.pt"
+        save(f"MODELS/{model_name}", model)
+        model = load(f"MODELS/{model_name}")
 
     else:  # Load saved model
         model = load(f"MODELS/{model_name}")
@@ -172,6 +173,8 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
     test(testset, model)
 
     ### Explain
+    if not EXPLAIN:
+        return
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
         logger.debug("CALIBRATION DATA", highlight=True)
         logger.debug(pformat(model.calibration_data))
@@ -209,7 +212,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
 
-
+EXPLAIN = False
 
 if __name__ == "__main__":
     import time
@@ -223,7 +226,7 @@ if __name__ == "__main__":
     # trainingset_info = datasets.logp_split
 
     model_name = None
-    model_name = 'NEW_L4_LOGP_10e.pt'
+    # model_name = 'NEW_L4_LOGP_10e.pt'
     # model_name = 'L4_MUTA_new_inj.pt'
 
     # logger.debug("CV, MUTA, early stop")
