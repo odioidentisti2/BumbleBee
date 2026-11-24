@@ -54,11 +54,27 @@
 }
 
 /* =========================
+   Row
+   ========================= */
+.row {
+  display: flex;
+  flex-direction: column;
+}
+
+.row::after {
+  content: "";
+  margin: 6px 0;
+  border-top: 1px solid var(--line-gray);
+}
+
+/* =========================
    Left — molecule image
    ========================= */
 .explainer-image {
   align-items: center;
   justify-content: center;
+  border-top: none;
+  border-bottom: none;
   /* padding: 15px; */
 }
 
@@ -80,6 +96,7 @@
 
 .main-split {
   height: 500px;
+  /* flex-shrink: 0;    */
 }
 
 .tree-table-wrap {
@@ -103,7 +120,7 @@
   border-bottom: 1px solid;
 }
 
-.tree-table td.value {
+.tree-table .value {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }

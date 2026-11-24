@@ -45,7 +45,7 @@ def depict(graph, bond_weights, color_scheme):
         weight = weight.item()
         bond = graph.mol.GetBondWithIdx(bond_idx)
 
-        bond.SetProp("bondNote", str(bond_idx))  # DEBUG: Draw bond index
+        bond.SetProp("bondNote", str(bond_idx))  # Draw bond index
 
         if abs(weight) > abs(threshold):  # Only highlight important bonds 
             bond_colors[bond_idx] = color_func(weight)
@@ -76,7 +76,7 @@ def draw(graph, atom_colors, bond_colors, atom_indices=False, bond_indices=True)
     opts.prepareMolsBeforeDrawing = False  # Important for custom drawing
 
     target_label = graph.label if hasattr(graph, 'label') else f"{graph.y.item():.2f}"
-    legend = f"{graph.smiles}\n{target_label}"  #\nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
+    legend = f"{graph.smiles}\nendpoint = {target_label}"  #\nPrediction: {getattr(graph, 'prediction', float('nan')):.2f}"
 
     # Draw molecule with highlighting
     drawer.DrawMolecule(graph.mol,
