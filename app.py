@@ -199,9 +199,10 @@ async def revalidate_static(request: Request, call_next):
 if __name__ == "__main__":
     # threading.Timer(1.0, open_browser).start()
 
+    import os
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=8000,
+        host=os.getenv("BUMBLEBEE_HOST", "127.0.0.1"),
+        port=int(os.getenv("BUMBLEBEE_PORT", "8000")),
         reload=False,
     )
