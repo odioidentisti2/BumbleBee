@@ -1,7 +1,16 @@
 
 /* =========================
    CSV Preview Modal
+   -------------------------
+   Sections, in order:
+     - Overlay           backdrop + centring
+     - Modal frame       card, header, body, footer buttons
+     - Column wizard     step list + preview table (SMILES -> TARGET -> CAS)
+     - Task selector     prediction-task radios
+     - Tox map           0/1 assignment (gradient bar + left/right switch)
    ========================= */
+
+/* Overlay */
 .csv-modal-overlay {
   position: fixed;
   inset: 0;
@@ -16,6 +25,7 @@
   display: flex;
 }
 
+/* Modal frame */
 .csv-modal {
   font-weight: 300;
   width: min(1000px, 92vw);
@@ -47,6 +57,7 @@
   overflow: auto;
 }
 
+/* Column wizard: step list */
 .csv-selection-list {
   display: grid;
   gap: 6px;
@@ -81,6 +92,7 @@
   font-weight: 600;
 }
 
+/* Column wizard: preview table */
 .csv-table-wrap {
   border: 1px solid #d4d9dd;
   max-height: 52vh;
@@ -128,6 +140,7 @@
   cursor: default;
 }
 
+/* Modal frame: footer actions */
 .csv-modal-actions {
   background: var(--teal1);
   display: flex;
@@ -156,6 +169,7 @@
   cursor: not-allowed;
 }
 
+/* Task selector */
 .task-panel {
   display: grid;
   gap: 10px;
@@ -177,7 +191,14 @@
   margin: 0;
 }
 
-/* Tox map: class0  0 [====gradient====] 1  class1 */
+/* =========================
+   Tox map
+   -------------------------
+   class0  0 [====gradient====] 1  class1
+   0 labels the green end, 1 labels the red end.
+   ========================= */
+
+/* Visibility */
 .tox-map {
   display: none;
   font-size: 14px;
@@ -191,6 +212,7 @@
   color: #a1a8af;
 }
 
+/* Bar layout */
 .tox-map-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
@@ -202,6 +224,7 @@
   grid-row: 1;
 }
 
+/* Bar text */
 .tox-map-label {
   min-width: 0;
   overflow: hidden;
@@ -214,6 +237,7 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Bar items: 0 end (label + digit) */
 .tox-map-zero {
   grid-column: 1;
   justify-self: end;
@@ -224,6 +248,7 @@
   grid-column: 2;
 }
 
+/* Gradient bar */
 .tox-map-gradient {
   grid-column: 3;
   width: 160px;
@@ -232,6 +257,7 @@
   background: linear-gradient(90deg, #00ff00 0%, #a3c243 50%, #ff0000 100%);
 }
 
+/* Bar items: 1 end (digit + label) */
 .tox-map-bit-one {
   grid-column: 4;
 }
@@ -242,6 +268,7 @@
   text-align: left;
 }
 
+/* Mirrored */
 .tox-map.is-mirrored .tox-map-zero {
   grid-column: 5;
   justify-self: start;
@@ -266,12 +293,14 @@
   background: linear-gradient(90deg, #ff0000 0%, #a3c243 50%, #00ff00 100%);
 }
 
+/* Switch: left/right knob */
 .tox-map-switch-row {
   display: flex;
   justify-content: center;
   margin-top: 6px;
 }
 
+/* Switch: native checkbox (invisible) + track with sliding knob */
 .tox-map-switch {
   display: inline-flex;
   align-items: center;

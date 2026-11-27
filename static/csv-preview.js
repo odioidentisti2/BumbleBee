@@ -1,3 +1,7 @@
+// =========================
+// CSV parsing helpers
+// =========================
+
 function parseCsvLine(line) {
   const out = [];
   let cur = "";
@@ -58,10 +62,9 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// function makeDatasetKey() {
-//   const page = (document.body.dataset.pageLabel || "dataset").toLowerCase();
-//   return `bumblebee_dataset_config_${page}`;
-// }
+// =========================
+// Modal shell
+// =========================
 
 function buildModal() {
   const template = document.getElementById("csv-preview-template");
@@ -76,6 +79,20 @@ function buildModal() {
   document.body.appendChild(overlay);
   return overlay;
 }
+
+// =========================
+// CSV preview modal
+//
+// Blocks inside initCsvPreviewModal():
+//   - State                 loaded CSV, wizard step, task and tox map
+//   - Open / close          modal visibility
+//   - Column wizard         SMILES -> TARGET -> CAS steps + back button
+//   - Task selector         binary vs regression radios
+//   - Tox map               0/1 assignment for binary targets
+//   - Rendering + reset     table rendering and state resets
+//   - Event wiring          confirm, keyboard, overlay dismissal
+//   - File input            reading the chosen .csv
+// =========================
 
 function initCsvPreviewModal() {
   if (!document.querySelector(".controls")) {
@@ -105,20 +122,31 @@ function initCsvPreviewModal() {
     task: overlay.querySelector('[data-step-name="task"]'),
   };
 
+  // =========================
+  // State
+  // =========================
+
   const state = {
+    // loaded CSV
     file: null,
     headers: [],
     rows: [],
+    // column wizard
     activeStep: 0,
     selections: {
       smiles: -1,
       target: -1,
       cas: -1,
     },
+    // task selector + tox map
     task: null,
     toxClasses: null,
     toxSwapped: false,
   };
+
+  // =========================
+  // Open / close
+  // =========================
 
   function openModal() {
     overlay.classList.add("is-open");
@@ -127,6 +155,10 @@ function initCsvPreviewModal() {
   function closeModal() {
     overlay.classList.remove("is-open");
   }
+
+  // =========================
+  // Column wizard
+  // =========================
 
   function activeStepName() {
     if (state.activeStep === 0) {
@@ -170,6 +202,10 @@ function initCsvPreviewModal() {
     confirmBtn.disabled = state.activeStep !== 2 || !state.task;
   }
 
+  // =========================
+  // Task selector
+  // =========================
+
   function updateTaskControls() {
     const isActive = state.activeStep === 2;
 
@@ -190,6 +226,10 @@ function initCsvPreviewModal() {
       renderToxMap();
     }
   }
+
+  // =========================
+  // Tox map
+  // =========================
 
   // First two distinct labels of the target column, in order of appearance.
   function findToxClasses(targetIndex) {
@@ -214,7 +254,7 @@ function initCsvPreviewModal() {
     return state.toxSwapped ? classA : classB;
   }
 
-  // 0 is always drawn next to the green end, 1 next to the red end.
+  // Fills the label next to each digit and mirrors the bar.
   function renderToxMap() {
     toxMapZero.textContent = classForBit(0);
     toxMapOne.textContent = classForBit(1);
@@ -228,6 +268,10 @@ function initCsvPreviewModal() {
     }
     return { [classForBit(0)]: 0, [classForBit(1)]: 1 };
   }
+
+  // =========================
+  // Rendering + reset
+  // =========================
 
   function renderTable() {
     const headerHtml = state.headers
@@ -281,6 +325,10 @@ function initCsvPreviewModal() {
       resetTask();
     }
   }
+
+  // =========================
+  // Event wiring
+  // =========================
 
   thead.addEventListener("click", (event) => {
     const target = event.target;
@@ -370,6 +418,9 @@ function initCsvPreviewModal() {
     }
   });
 
+  // =========================
+  // File input
+  // =========================
 
   function openPreviewForFile(file) {
     if (!(file instanceof File)) {
