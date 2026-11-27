@@ -1,9 +1,10 @@
 from pprint import pformat
 
 
-print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
+# print("DEBUG: OPTIMAL BATCH SIZE = 2")  # DEBUG
 # OPTIMAL_BATCH_SIZE = {'cpu': 2, 'cuda': 2}  # DEBUG
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
+MODEL_BASE_DIR = "MODELS"
 
 train_params = {
     'train_batch_size': 32,

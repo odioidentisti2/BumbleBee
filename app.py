@@ -157,6 +157,7 @@ def run_training(body: dict):
     dataset_info["path"] = get_path(dataset_info["file_name"], "DATASETS")
     trainingset = bumblebee.load_dataset(dataset_info, kind="Training")
     session.model = bumblebee.train(trainingset)
+
     session.trained = True
     return {"success": True, "message": "Training completed"}
 
@@ -168,8 +169,8 @@ def run_testing(body: dict):
     testset = bumblebee.load_dataset(dataset_info, kind="Test")
     session.testset = testset
     if model_name != "FROM TRAIN PAGE":
-        model_path = get_path(Path(model_name).name, "MODELS")
-        session.model = bumblebee.load(model_path)
+        # model_path = get_path(Path(model_name).name, "MODELS")
+        session.model = bumblebee.load(model_name)
         session.trained = False
     bumblebee.test(testset, session.model)
     return {"success": True}

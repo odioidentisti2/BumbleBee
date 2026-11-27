@@ -1,5 +1,6 @@
 muta_train = {
     'task': 'binary_classification',
+    'file_name': 'MUTA_train.csv',
     'path': 'DATASETS/MUTA_train.csv',
     'id_header': 'Id',
     'smiles_header': 'SMILES',
@@ -9,6 +10,7 @@ muta_train = {
 
 muta_test = {
     'task': 'binary_classification',
+    'file_name': 'MUTA_test.csv',
     'path': 'DATASETS/MUTA_test.csv',
     'id_header': 'Id',
     'smiles_header': 'SMILES',
@@ -18,6 +20,7 @@ muta_test = {
 
 logp_train = {
     'task': 'regression',
+    'file_name': 'LOGP_train.csv',
     'path': 'DATASETS/LOGP_train.csv',
     'id_header': 'Id',
     'smiles_header': 'SMILES',
@@ -26,6 +29,7 @@ logp_train = {
 
 logp_test = {
     'task': 'regression',
+    'file_name': 'LOGP_test.csv',
     'path': 'DATASETS/LOGP_test.csv',
     'id_header': 'Id',
     'smiles_header': 'SMILES',
@@ -35,6 +39,7 @@ logp_test = {
 
 muta = {
     'task': 'binary_classification',
+    'file_name': 'MUTA_SARPY_4204.csv',
     'path': 'DATASETS/MUTA_SARPY_4204.csv',
     'smiles_header': 'SMILES',
     'target_header': 'Experimental_value',
@@ -48,6 +53,7 @@ muta = {
 
 logp_split = {
     'task': 'regression',
+    'file_name': 'logp_split.csv',
     'path': 'DATASETS/logp_split.csv',
     'smiles_header': 'SMILES',
     'target_header': 'Experimental value',

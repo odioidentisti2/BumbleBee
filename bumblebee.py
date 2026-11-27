@@ -1,5 +1,4 @@
 from typing import Any, Literal
-from pathlib import Path
 
 import base64
 import torch
@@ -18,7 +17,7 @@ import statistics
 
 from pprint import pformat
 import datasets
-from parameters import parameter_summary
+from parameters import parameter_summary, MODEL_BASE_DIR
 import reproducibility
 
 from logging_config import getLogger
@@ -42,23 +41,25 @@ def configure_reproducibility(use_deterministic: bool = True):
         logger.debug("\n(DETERMINISTIC algorithms)")
 
 
-def save(path: str, model: MAG) -> None:
+def save(model: MAG, model_name: str,) -> None:
     ckpt = {
         'task': model.task,
         'state_dict': model.state_dict(),
         'calibration': getattr(model, 'calibration_data', None),
     }
+    path = f"{MODEL_BASE_DIR}/{model_name}"
     torch.save(ckpt, path)
     logger.info(f"\nModel saved to: {path}")
 
 
-def load(model_path: str) -> MAG:
-    ckpt = torch.load(model_path, map_location=DEVICE)
+def load(model_name: str) -> MAG:
+    path = f"{MODEL_BASE_DIR}/{model_name}"
+    ckpt = torch.load(path, map_location=DEVICE)
     model = MAG(DEVICE)
     model.load_state_dict(ckpt['state_dict'])
     model.task = ckpt['task']
     model.calibration_data = ckpt['calibration']
-    logger.info(f"\nLoaded model from {Path(model_path).name} with task: {model.task}")
+    logger.info(f"\nLoaded model {model_name} with task: {model.task}")
     return model
 
 
@@ -85,7 +86,7 @@ def load(model_path: str) -> MAG:
 
 
 def load_dataset(dataset_info: dict, kind: Literal["Training", "Test", "Validation"]):
-    logger.info(f"{kind} set: {Path(dataset_info['path']).name}")
+    logger.info(f"{kind} set: {dataset_info['file_name']}")
     logger.info("\nLoading...")
     graphs = load_from_csv(dataset_info)
     logger.info(f" Loaded {len(graphs)} structures")
@@ -162,11 +163,11 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
 
         ### Save model
         model_name = "T4_LOGp_100e.pt"
-        save(f"MODELS/{model_name}", model)
-        model = load(f"MODELS/{model_name}")
+        save(model, model_name)
+        model = load(model_name)
 
     else:  # Load saved model
-        model = load(f"MODELS/{model_name}")
+        model = load(model_name)
 
     ### Test 
     testset = load_dataset(testset_info, kind='Test')
