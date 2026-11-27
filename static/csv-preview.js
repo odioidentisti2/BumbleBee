@@ -64,54 +64,14 @@ function escapeHtml(value) {
 // }
 
 function buildModal() {
+  const template = document.getElementById("csv-preview-template");
+  if (!template) {
+    return null;
+  }
+
   const overlay = document.createElement("div");
   overlay.className = "csv-modal-overlay";
-  overlay.innerHTML = `
-    <div class="csv-modal" role="dialog">
-      <div class="csv-modal-header">
-        <div class="csv-modal-title">CSV Preview</div>
-      </div>
-      <div class="csv-modal-body">
-        <div class="csv-selection-list">
-          <div class="csv-selection-step is-active" data-step-name="smiles">
-            <span class="csv-selection-label">Select the SMILES header:</span>
-            <span class="csv-selection-value"></span>
-          </div>
-          <div class="csv-selection-step is-inactive" data-step-name="target">
-            <span class="csv-selection-label">Select the TARGET header:</span>
-            <span class="csv-selection-value"></span>
-          </div>
-          <div class="csv-selection-step is-inactive" data-step-name="cas">
-            <span class="csv-selection-label">Select the CAS header (optional):</span>
-            <span class="csv-selection-value"></span>
-          </div>
-        </div>
-        <div class="csv-table-wrap">
-          <table class="csv-preview-table">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="task-panel is-inactive">
-          <div class="csv-selection-step is-inactive" data-step-name="task">
-            <span class="csv-selection-label">Prediction task:</span>
-          </div>
-          <label class="task-option">
-            <input type="radio" name="prediction-task" value="binary_classification">
-            <span>Binary classification</span>
-          </label>
-          <label class="task-option">
-            <input type="radio" name="prediction-task" value="regression">
-            <span>Regression (Numeric)</span>
-          </label>
-        </div>
-      </div>
-      <div class="csv-modal-actions">
-        <button type="button" class="csv-modal-back" disabled>&lt;</button>
-        <button type="button" class="csv-modal-confirm" disabled>&gt;</button>
-      </div>
-    </div>
-  `;
+  overlay.innerHTML = template.innerHTML;
 
   document.body.appendChild(overlay);
   return overlay;
@@ -123,6 +83,10 @@ function initCsvPreviewModal() {
   }
 
   const overlay = buildModal();
+  if (!overlay) {
+    return;
+  }
+
   const titleNode = overlay.querySelector(".csv-modal-title");
   const thead = overlay.querySelector(".csv-preview-table thead");
   const tbody = overlay.querySelector(".csv-preview-table tbody");
@@ -130,6 +94,11 @@ function initCsvPreviewModal() {
   const confirmBtn = overlay.querySelector(".csv-modal-confirm");
   const taskPanel = overlay.querySelector(".task-panel");
   const taskInputs = Array.from(overlay.querySelectorAll('input[name="prediction-task"]'));
+  const toxMap = overlay.querySelector(".tox-map");
+  const toxMapZero = overlay.querySelector(".tox-map-zero");
+  const toxMapOne = overlay.querySelector(".tox-map-one");
+  const toxMapGradient = overlay.querySelector(".tox-map-gradient");
+  const toxMapToggle = overlay.querySelector(".tox-map-toggle");
   const stepNodes = {
     smiles: overlay.querySelector('[data-step-name="smiles"]'),
     target: overlay.querySelector('[data-step-name="target"]'),
@@ -147,7 +116,9 @@ function initCsvPreviewModal() {
       target: -1,
       cas: -1,
     },
-    task: "binary_classification",
+    task: null,
+    toxMap: null,
+    toxSwapped: false,
   };
 
   function openModal() {
@@ -197,7 +168,7 @@ function initCsvPreviewModal() {
 
   function updateButtons() {
     backBtn.disabled = state.activeStep === 0;
-    confirmBtn.disabled = state.activeStep !== 2;
+    confirmBtn.disabled = state.activeStep !== 2 || !state.task;
   }
 
   function updateTaskControls() {
@@ -210,6 +181,61 @@ function initCsvPreviewModal() {
       input.disabled = !isActive;
       input.checked = input.value === state.task;
     });
+
+    const showToxMap = isActive && state.task === "binary_classification" && Boolean(state.toxMap);
+    toxMap.classList.toggle("is-visible", showToxMap);
+    toxMap.classList.toggle("is-inactive", !showToxMap);
+    toxMapToggle.disabled = !showToxMap;
+
+    if (showToxMap) {
+      renderToxMap();
+    }
+  }
+
+  function scanTargetClasses(targetIndex) {
+    const labels = new Set();
+    state.rows.forEach((row) => {
+      const value = String(row[targetIndex] ?? "").trim();
+      if (value) {
+        labels.add(value);
+      }
+    });
+    return [...labels].slice(0, 2);
+  }
+
+  function buildToxMap(targetIndex) {
+    if (targetIndex < 0) {
+      return null;
+    }
+
+    const [classA, classB] = scanTargetClasses(targetIndex);
+    if (!classA || !classB) {
+      return null;
+    }
+
+    return { classA, classB };
+  }
+
+  function orderedToxClasses() {
+    const map = state.toxMap;
+    return state.toxSwapped ? [map.classA, map.classB] : [map.classB, map.classA];
+  }
+
+  function renderToxMap() {
+    const [zeroClass, oneClass] = orderedToxClasses();
+    toxMapZero.textContent = zeroClass;
+    toxMapOne.textContent = oneClass;
+    toxMapToggle.checked = state.toxSwapped;
+    toxMapGradient.classList.toggle("is-mirrored", state.toxSwapped);
+  }
+
+  function currentToxMap() {
+    if (!state.toxMap) {
+      return null;
+    }
+
+    const [zeroClass, oneClass] = orderedToxClasses();
+    return { [zeroClass]: 0, [oneClass]: 1 };
   }
 
   function renderTable() {
@@ -239,7 +265,9 @@ function initCsvPreviewModal() {
     state.selections.smiles = -1;
     state.selections.target = -1;
     state.selections.cas = -1;
-    state.task = "binary_classification";
+    state.task = null;
+    state.toxMap = null;
+    state.toxSwapped = false;
   }
 
   function clearStep(stepIndex) {
@@ -247,20 +275,26 @@ function initCsvPreviewModal() {
       state.selections.smiles = -1;
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = "binary_classification";
+      state.task = null;
+      state.toxMap = null;
+      state.toxSwapped = false;
       return;
     }
 
     if (stepIndex === 1) {
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = "binary_classification";
+      state.task = null;
+      state.toxMap = null;
+      state.toxSwapped = false;
       return;
     }
 
     if (stepIndex === 2) {
       state.selections.cas = -1;
-      state.task = "binary_classification";
+      state.task = null;
+      state.toxMap = null;
+      state.toxSwapped = false;
     }
   }
 
@@ -286,7 +320,8 @@ function initCsvPreviewModal() {
     if (stepName === "smiles") {
       state.activeStep = 1;
     } else if (stepName === "target") {
-      state.task = detectTaskFromFirstTarget();
+      state.toxMap = buildToxMap(idx);
+      state.toxSwapped = false;
       state.activeStep = 2;
     }
 
@@ -313,6 +348,7 @@ function initCsvPreviewModal() {
         smiles_header: state.headers[state.selections.smiles] || "",
         target_header: state.headers[state.selections.target] || "",
         id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
+        tox_map: state.task === "binary_classification" ? currentToxMap() : null,
       },
     }));
    });
@@ -325,7 +361,17 @@ function initCsvPreviewModal() {
 
       state.task = input.value;
       updateTaskControls();
+      updateButtons();
     });
+  });
+
+  toxMapToggle.addEventListener("change", () => {
+    if (!state.toxMap || state.task !== "binary_classification") {
+      return;
+    }
+
+    state.toxSwapped = toxMapToggle.checked;
+    renderToxMap();
   });
 
   overlay.addEventListener("click", (event) => {
@@ -340,23 +386,6 @@ function initCsvPreviewModal() {
     }
   });
 
-
-  // =========================
-  // Task detection helpers
-  // =========================
-  function detectTaskFromFirstTarget() {
-    const targetIndex = state.selections.target;
-    if (targetIndex < 0 || state.rows.length === 0) {
-      return "binary_classification";
-    }
-
-    const firstTargetCell = String(state.rows[0][targetIndex] ?? "").trim();
-    if (!firstTargetCell) {
-      return "binary_classification";
-    }
-
-    return Number.isFinite(Number(firstTargetCell)) ? "regression" : "binary_classification";
-  }
 
   function openPreviewForFile(file) {
     if (!(file instanceof File)) {

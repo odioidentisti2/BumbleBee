@@ -66,7 +66,7 @@
 
 .csv-selection-step.is-inactive,
 .csv-selection-step.is-complete {
-  color: var(--gray4);
+  color: #a1a8af;
 }
 
 .csv-selection-step[data-step-name="task"] {
@@ -162,7 +162,7 @@
 }
 
 .task-panel.is-inactive {
-  color: var(--gray4);
+  color: #a1a8af;
 }
 
 .task-option {
@@ -175,4 +175,137 @@
 
 .task-option input {
   margin: 0;
+}
+
+/* Tox map: class1  0 [====gradient====] 1  class2 */
+.tox-map {
+  display: none;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.tox-map.is-visible {
+  display: block;
+}
+
+.tox-map.is-inactive {
+  color: #a1a8af;
+}
+
+/* Gradient column is fixed and centered; only the labels stretch. */
+.tox-map-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr);
+  grid-template-areas:
+    "label0 bits0 gradient bits1 label1"
+    ".      .     switch  .     .";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+}
+
+.tox-map-zero {
+  grid-area: label0;
+  justify-self: end;
+  text-align: right;
+}
+
+.tox-map-bit-low {
+  grid-area: bits0;
+}
+
+.tox-map-gradient {
+  grid-area: gradient;
+}
+
+.tox-map-bit-high {
+  grid-area: bits1;
+}
+
+.tox-map-one {
+  grid-area: label1;
+  justify-self: start;
+  text-align: left;
+}
+
+.tox-map-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tox-map-bit {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tox-map-gradient {
+  display: block;
+  width: 160px;
+  margin: 0 auto;
+  height: 1em;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #00ff00 0%, #a3c243 50%, #ff0000 100%);
+}
+
+.tox-map-gradient.is-mirrored {
+  background: linear-gradient(90deg, #ff0000 0%, #a3c243 50%, #00ff00 100%);
+}
+
+.tox-map-switch {
+  grid-area: switch;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tox-map-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.tox-map-switch-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #c3c8ce;
+  transition: background 0.15s ease;
+}
+
+.tox-map-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.tox-map-switch input:checked + .tox-map-switch-track {
+  background: #6fa9a4;
+}
+
+.tox-map-switch input:checked + .tox-map-switch-track::after {
+  transform: translateX(16px);
+}
+
+.tox-map-switch input:focus-visible + .tox-map-switch-track {
+  outline: 2px solid #17232d;
+  outline-offset: 2px;
+}
+
+.tox-map-switch input:disabled + .tox-map-switch-track {
+  opacity: 0.45;
+}
+
+.tox-map.is-inactive .tox-map-switch {
+  cursor: not-allowed;
 }

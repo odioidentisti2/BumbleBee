@@ -1,0 +1,57 @@
+<div class="csv-modal" role="dialog">
+  <div class="csv-modal-header">
+    <div class="csv-modal-title">CSV Preview</div>
+  </div>
+  <div class="csv-modal-body">
+    <div class="csv-selection-list">
+      <div class="csv-selection-step is-active" data-step-name="smiles">
+        <span class="csv-selection-label">Select the SMILES header:</span>
+        <span class="csv-selection-value"></span>
+      </div>
+      <div class="csv-selection-step is-inactive" data-step-name="target">
+        <span class="csv-selection-label">Select the TARGET header:</span>
+        <span class="csv-selection-value"></span>
+      </div>
+      <div class="csv-selection-step is-inactive" data-step-name="cas">
+        <span class="csv-selection-label">Select the CAS header (optional):</span>
+        <span class="csv-selection-value"></span>
+      </div>
+    </div>
+    <div class="csv-table-wrap">
+      <table class="csv-preview-table">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="task-panel is-inactive">
+      <div class="csv-selection-step is-inactive" data-step-name="task">
+        <span class="csv-selection-label">Prediction task:</span>
+      </div>
+      <label class="task-option">
+        <input type="radio" name="prediction-task" value="binary_classification">
+        <span>Binary classification</span>
+      </label>
+      <label class="task-option">
+        <input type="radio" name="prediction-task" value="regression">
+        <span>Regression (Numeric)</span>
+      </label>
+      <div class="tox-map is-inactive">
+        <div class="tox-map-columns">
+          <span class="tox-map-label tox-map-class tox-map-zero"></span>
+          <span class="tox-map-bit tox-map-bit-low"></span>
+          <span class="tox-map-gradient"></span>
+          <span class="tox-map-bit tox-map-bit-high"></span>
+          <span class="tox-map-label tox-map-class tox-map-one"></span>
+          <label class="tox-map-switch">
+            <input type="checkbox" class="tox-map-toggle" disabled>
+            <span class="tox-map-switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="csv-modal-actions">
+    <button type="button" class="csv-modal-back" disabled>&lt;</button>
+    <button type="button" class="csv-modal-confirm" disabled>&gt;</button>
+  </div>
+</div>
