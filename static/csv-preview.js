@@ -97,8 +97,6 @@ function initCsvPreviewModal() {
   const toxMap = overlay.querySelector(".tox-map");
   const toxMapZero = overlay.querySelector(".tox-map-zero");
   const toxMapOne = overlay.querySelector(".tox-map-one");
-  const toxMapBar = overlay.querySelector(".tox-map-bar");
-  const toxMapGradient = overlay.querySelector(".tox-map-gradient");
   const toxMapToggle = overlay.querySelector(".tox-map-toggle");
   const stepNodes = {
     smiles: overlay.querySelector('[data-step-name="smiles"]'),
@@ -118,7 +116,7 @@ function initCsvPreviewModal() {
       cas: -1,
     },
     task: null,
-    toxMap: null,
+    toxClasses: null,
     toxSwapped: false,
   };
 
@@ -183,62 +181,51 @@ function initCsvPreviewModal() {
       input.checked = input.value === state.task;
     });
 
-    const showToxMap = isActive && state.task === "binary_classification" && Boolean(state.toxMap);
-    toxMap.classList.toggle("is-visible", showToxMap);
-    toxMap.classList.toggle("is-inactive", !showToxMap);
-    toxMapToggle.disabled = !showToxMap;
+    const show = isActive && state.task === "binary_classification" && Boolean(state.toxClasses);
+    toxMap.classList.toggle("is-visible", show);
+    toxMap.classList.toggle("is-inactive", !show);
+    toxMapToggle.disabled = !show;
 
-    if (showToxMap) {
+    if (show) {
       renderToxMap();
     }
   }
 
-  function scanTargetClasses(targetIndex) {
+  // First two distinct labels of the target column, in order of appearance.
+  function findToxClasses(targetIndex) {
     const labels = new Set();
-    state.rows.forEach((row) => {
-      const value = String(row[targetIndex] ?? "").trim();
-      if (value) {
-        labels.add(value);
+    for (const row of state.rows) {
+      const label = String(row[targetIndex] ?? "").trim();
+      if (label) {
+        labels.add(label);
       }
-    });
-    return [...labels].slice(0, 2);
-  }
-
-  function buildToxMap(targetIndex) {
-    if (targetIndex < 0) {
-      return null;
+      if (labels.size === 2) {
+        break;
+      }
     }
-
-    const [classA, classB] = scanTargetClasses(targetIndex);
-    if (!classA || !classB) {
-      return null;
-    }
-
-    return { classA, classB };
+    return labels.size === 2 ? [...labels] : null;
   }
 
   function classForBit(bit) {
-    const map = state.toxMap;
+    const [classA, classB] = state.toxClasses;
     if (bit === 0) {
-      return state.toxSwapped ? map.classB : map.classA;
+      return state.toxSwapped ? classB : classA;
     }
-    return state.toxSwapped ? map.classA : map.classB;
+    return state.toxSwapped ? classA : classB;
   }
 
+  // 0 is always drawn next to the green end, 1 next to the red end.
   function renderToxMap() {
-    const mirrored = state.toxSwapped;
     toxMapZero.textContent = classForBit(0);
     toxMapOne.textContent = classForBit(1);
-    toxMapToggle.checked = mirrored;
-    toxMapBar.classList.toggle("is-mirrored", mirrored);
-    toxMapGradient.classList.toggle("is-mirrored", mirrored);
+    toxMapToggle.checked = state.toxSwapped;
+    toxMap.classList.toggle("is-mirrored", state.toxSwapped);
   }
 
   function currentToxMap() {
-    if (!state.toxMap) {
+    if (!state.toxClasses) {
       return null;
     }
-
     return { [classForBit(0)]: 0, [classForBit(1)]: 1 };
   }
 
@@ -269,8 +256,12 @@ function initCsvPreviewModal() {
     state.selections.smiles = -1;
     state.selections.target = -1;
     state.selections.cas = -1;
+    resetTask();
+  }
+
+  function resetTask() {
     state.task = null;
-    state.toxMap = null;
+    state.toxClasses = null;
     state.toxSwapped = false;
   }
 
@@ -279,26 +270,15 @@ function initCsvPreviewModal() {
       state.selections.smiles = -1;
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = null;
-      state.toxMap = null;
-      state.toxSwapped = false;
-      return;
-    }
-
-    if (stepIndex === 1) {
+    } else if (stepIndex === 1) {
       state.selections.target = -1;
       state.selections.cas = -1;
-      state.task = null;
-      state.toxMap = null;
-      state.toxSwapped = false;
-      return;
+    } else {
+      state.selections.cas = -1;
     }
 
-    if (stepIndex === 2) {
-      state.selections.cas = -1;
-      state.task = null;
-      state.toxMap = null;
-      state.toxSwapped = false;
+    if (stepIndex < 2) {
+      resetTask();
     }
   }
 
@@ -324,7 +304,7 @@ function initCsvPreviewModal() {
     if (stepName === "smiles") {
       state.activeStep = 1;
     } else if (stepName === "target") {
-      state.toxMap = buildToxMap(idx);
+      state.toxClasses = findToxClasses(idx);
       state.toxSwapped = false;
       state.activeStep = 2;
     }
@@ -352,7 +332,7 @@ function initCsvPreviewModal() {
         smiles_header: state.headers[state.selections.smiles] || "",
         target_header: state.headers[state.selections.target] || "",
         id_header: state.selections.cas >= 0 ? state.headers[state.selections.cas] : "",
-        tox_map: state.task === "binary_classification" ? currentToxMap() : null,
+        tox_map: currentToxMap(),
       },
     }));
    });
@@ -370,7 +350,7 @@ function initCsvPreviewModal() {
   });
 
   toxMapToggle.addEventListener("change", () => {
-    if (!state.toxMap || state.task !== "binary_classification") {
+    if (!state.toxClasses) {
       return;
     }
 

@@ -177,8 +177,7 @@
   margin: 0;
 }
 
-/* Tox map: class1  0 [====gradient====] 1  class2
-   0 is always the green end, 1 always the red end. */
+/* Tox map: class0  0 [====gradient====] 1  class1 */
 .tox-map {
   display: none;
   font-size: 14px;
@@ -192,18 +191,9 @@
   color: #a1a8af;
 }
 
-.tox-map-switch-row {
-  display: flex;
-  justify-content: center;
-  margin-top: 6px;
-}
-
-/* Labels stretch; the 160px gradient keeps the same centre for any label length.
-   Everything lives on one explicit row, so re-columned items never wrap. */
 .tox-map-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
-  grid-template-rows: auto;
   align-items: center;
   column-gap: 6px;
 }
@@ -212,14 +202,16 @@
   grid-row: 1;
 }
 
+.tox-map-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .tox-map-bit {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-/* Start end: label (right-aligned) and the digit 0. */
-.tox-map-bit-zero {
-  grid-column: 2;
 }
 
 .tox-map-zero {
@@ -228,7 +220,18 @@
   text-align: right;
 }
 
-/* End end: the digit 1 and the label (left-aligned). */
+.tox-map-bit-zero {
+  grid-column: 2;
+}
+
+.tox-map-gradient {
+  grid-column: 3;
+  width: 160px;
+  height: 1em;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #00ff00 0%, #a3c243 50%, #ff0000 100%);
+}
+
 .tox-map-bit-one {
   grid-column: 4;
 }
@@ -239,47 +242,34 @@
   text-align: left;
 }
 
-/* Mirroring keeps 0 on green and 1 on red: the ramp is flipped and the
-   label+digit pairs trade sides. Label and digit always travel together. */
-.tox-map-bar.is-mirrored .tox-map-bit-zero {
-  grid-column: 4;
-}
-
-.tox-map-bar.is-mirrored .tox-map-zero {
+.tox-map.is-mirrored .tox-map-zero {
   grid-column: 5;
   justify-self: start;
   text-align: left;
 }
 
-.tox-map-bar.is-mirrored .tox-map-bit-one {
+.tox-map.is-mirrored .tox-map-bit-zero {
+  grid-column: 4;
+}
+
+.tox-map.is-mirrored .tox-map-bit-one {
   grid-column: 2;
 }
 
-.tox-map-bar.is-mirrored .tox-map-one {
+.tox-map.is-mirrored .tox-map-one {
   grid-column: 1;
   justify-self: end;
   text-align: right;
 }
 
-.tox-map-label {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.tox-map-gradient {
-  grid-column: 3;
-  align-self: center;
-  display: block;
-  width: 160px;
-  height: 1em;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #00ff00 0%, #a3c243 50%, #ff0000 100%);
-}
-
-.tox-map-bar.is-mirrored .tox-map-gradient {
+.tox-map.is-mirrored .tox-map-gradient {
   background: linear-gradient(90deg, #ff0000 0%, #a3c243 50%, #00ff00 100%);
+}
+
+.tox-map-switch-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
 }
 
 .tox-map-switch {
@@ -316,8 +306,6 @@
   transition: transform 0.15s ease;
 }
 
-/* No on/off colour: the track looks the same in both positions and only
-   the knob slides, so it reads as a left/right (0 <-> 1) selector. */
 .tox-map-switch input:checked + .tox-map-switch-track::after {
   transform: translateX(16px);
 }
