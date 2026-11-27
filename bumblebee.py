@@ -112,9 +112,8 @@ def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MA
     trainer.train(model, trainingset, val_set=validation_set)
 
     ### Calibration (for Explainer)
-    if EXPLAIN:  # DEBUG
-        logger.info("\nCalibrating...")
-        trainer.calibrate(model, trainingset)
+    logger.info("\nCalibrating...")
+    trainer.calibrate(model, trainingset)
 
     logger.info("\nTraining completed.")
 
@@ -178,6 +177,7 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
     test(testset, model)
 
     ### Explain
+    EXPLAIN = False
     if not EXPLAIN:
         return
     if hasattr(model, "calibration_data") and model.calibration_data is not None:
@@ -217,7 +217,6 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
                     break
                 intensity *= (2 ** plus_count) / (2 ** minus_count)
 
-EXPLAIN = False
 
 if __name__ == "__main__":
     import time
