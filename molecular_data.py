@@ -125,7 +125,10 @@ class Dataset(PyGDataset):
     
     def get_loader(self, batch_size, is_train=False):
         self.generator = reproducibility.torch_generator()
-        return DataLoader(self, batch_size=batch_size, shuffle=is_train, drop_last=is_train, generator=self.generator)
+        return DataLoader(self, batch_size, 
+                          shuffle = is_train, 
+                          drop_last= is_train and len(self) > batch_size,
+                          generator=self.generator)
 
 
 class Trainingset(Dataset):
