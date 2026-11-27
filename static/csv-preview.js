@@ -97,6 +97,7 @@ function initCsvPreviewModal() {
   const toxMap = overlay.querySelector(".tox-map");
   const toxMapZero = overlay.querySelector(".tox-map-zero");
   const toxMapOne = overlay.querySelector(".tox-map-one");
+  const toxMapBar = overlay.querySelector(".tox-map-bar");
   const toxMapGradient = overlay.querySelector(".tox-map-gradient");
   const toxMapToggle = overlay.querySelector(".tox-map-toggle");
   const stepNodes = {
@@ -216,17 +217,21 @@ function initCsvPreviewModal() {
     return { classA, classB };
   }
 
-  function orderedToxClasses() {
+  function classForBit(bit) {
     const map = state.toxMap;
-    return state.toxSwapped ? [map.classA, map.classB] : [map.classB, map.classA];
+    if (bit === 0) {
+      return state.toxSwapped ? map.classB : map.classA;
+    }
+    return state.toxSwapped ? map.classA : map.classB;
   }
 
   function renderToxMap() {
-    const [zeroClass, oneClass] = orderedToxClasses();
-    toxMapZero.textContent = zeroClass;
-    toxMapOne.textContent = oneClass;
-    toxMapToggle.checked = state.toxSwapped;
-    toxMapGradient.classList.toggle("is-mirrored", state.toxSwapped);
+    const mirrored = state.toxSwapped;
+    toxMapZero.textContent = classForBit(0);
+    toxMapOne.textContent = classForBit(1);
+    toxMapToggle.checked = mirrored;
+    toxMapBar.classList.toggle("is-mirrored", mirrored);
+    toxMapGradient.classList.toggle("is-mirrored", mirrored);
   }
 
   function currentToxMap() {
@@ -234,8 +239,7 @@ function initCsvPreviewModal() {
       return null;
     }
 
-    const [zeroClass, oneClass] = orderedToxClasses();
-    return { [zeroClass]: 0, [oneClass]: 1 };
+    return { [classForBit(0)]: 0, [classForBit(1)]: 1 };
   }
 
   function renderTable() {

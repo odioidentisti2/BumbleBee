@@ -177,10 +177,10 @@
   margin: 0;
 }
 
-/* Tox map: class1  0 [====gradient====] 1  class2 */
+/* Tox map: class1  0 [====gradient====] 1  class2
+   0 is always the green end, 1 always the red end. */
 .tox-map {
   display: none;
-  margin-left: 10px;
   font-size: 14px;
 }
 
@@ -192,46 +192,24 @@
   color: #a1a8af;
 }
 
-/* Gradient column is fixed and centered; only the labels stretch. */
-.tox-map-columns {
+.tox-map-switch-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* Labels stretch; the 160px gradient keeps the same centre for any label length.
+   Everything lives on one explicit row, so re-columned items never wrap. */
+.tox-map-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr);
-  grid-template-areas:
-    "label0 bits0 gradient bits1 label1"
-    ".      .     switch  .     .";
+  grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto;
   align-items: center;
-  column-gap: 10px;
-  row-gap: 6px;
+  column-gap: 6px;
 }
 
-.tox-map-zero {
-  grid-area: label0;
-  justify-self: end;
-  text-align: right;
-}
-
-.tox-map-bit-low {
-  grid-area: bits0;
-}
-
-.tox-map-gradient {
-  grid-area: gradient;
-}
-
-.tox-map-bit-high {
-  grid-area: bits1;
-}
-
-.tox-map-one {
-  grid-area: label1;
-  justify-self: start;
-  text-align: left;
-}
-
-.tox-map-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.tox-map-bar > * {
+  grid-row: 1;
 }
 
 .tox-map-bit {
@@ -239,22 +217,72 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Start end: label (right-aligned) and the digit 0. */
+.tox-map-bit-zero {
+  grid-column: 2;
+}
+
+.tox-map-zero {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+}
+
+/* End end: the digit 1 and the label (left-aligned). */
+.tox-map-bit-one {
+  grid-column: 4;
+}
+
+.tox-map-one {
+  grid-column: 5;
+  justify-self: start;
+  text-align: left;
+}
+
+/* Mirroring keeps 0 on green and 1 on red: the ramp is flipped and the
+   label+digit pairs trade sides. Label and digit always travel together. */
+.tox-map-bar.is-mirrored .tox-map-bit-zero {
+  grid-column: 4;
+}
+
+.tox-map-bar.is-mirrored .tox-map-zero {
+  grid-column: 5;
+  justify-self: start;
+  text-align: left;
+}
+
+.tox-map-bar.is-mirrored .tox-map-bit-one {
+  grid-column: 2;
+}
+
+.tox-map-bar.is-mirrored .tox-map-one {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+}
+
+.tox-map-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .tox-map-gradient {
+  grid-column: 3;
+  align-self: center;
   display: block;
   width: 160px;
-  margin: 0 auto;
   height: 1em;
   border-radius: 2px;
   background: linear-gradient(90deg, #00ff00 0%, #a3c243 50%, #ff0000 100%);
 }
 
-.tox-map-gradient.is-mirrored {
+.tox-map-bar.is-mirrored .tox-map-gradient {
   background: linear-gradient(90deg, #ff0000 0%, #a3c243 50%, #00ff00 100%);
 }
 
 .tox-map-switch {
-  grid-area: switch;
-  justify-self: center;
   display: inline-flex;
   align-items: center;
   cursor: pointer;
@@ -273,7 +301,6 @@
   height: 18px;
   border-radius: 9999px;
   background: #c3c8ce;
-  transition: background 0.15s ease;
 }
 
 .tox-map-switch-track::after {
@@ -289,10 +316,8 @@
   transition: transform 0.15s ease;
 }
 
-.tox-map-switch input:checked + .tox-map-switch-track {
-  background: #6fa9a4;
-}
-
+/* No on/off colour: the track looks the same in both positions and only
+   the knob slides, so it reads as a left/right (0 <-> 1) selector. */
 .tox-map-switch input:checked + .tox-map-switch-track::after {
   transform: translateX(16px);
 }

@@ -9,10 +9,13 @@
 ## Never modify my code without permission
 
 - Propose diffs; apply only after I say so.
-- Always apply changes with the `edit`/`create` tools (VS Code workspace edits) so the
-  changes show up in the editor as reviewable hunks (Keep/Undo).
-- Never write source files through `bash` (scripts, `sed`, `python - <<EOF`, `cp`, `rsync`,
-  heredocs) — those bypass the editor and I cannot review them.
+- **ALWAYS** apply source changes with the `edit`/`create` tools (VS Code workspace edits),
+  so every change shows up in the editor as a reviewable hunk (Keep/Undo). Non-negotiable.
+- **NEVER** write source files through `bash` — no scripts, `sed`, `python - <<EOF`, `cp`,
+  `mv`, `rsync`, `tee`, heredocs, or redirections. There are no exceptions. If a change
+  cannot be expressed with `edit`/`create`, stop and ask.
+- Never modify a file merely to verify behaviour; read-only commands (`grep`, `sed -n`,
+  `git diff`) are fine.
 - When you need to test a variant, work on a copy.
 
 ## Scratch work: `.scratch/` inside this repo, never `/tmp`
