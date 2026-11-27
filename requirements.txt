@@ -6,7 +6,7 @@ torch-geometric>=2.5
 
 # CUDA 13.x dropped sm_70 (V100/V100S alias T1/T2): use the 12.8 index for Volta architecture
 --extra-index-url https://download.pytorch.org/whl/cu128
-torch==2.11.0+cu128
+torch==2.8.0+cu128
 
 # Chemistry
 rdkit
