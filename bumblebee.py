@@ -117,6 +117,10 @@ def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MA
         trainer.calibrate(model, trainingset)
 
     logger.info("\nTraining completed.")
+
+    # DEBUG
+    save(model, trainingset.task + "_model.pt")
+
     return model
 
 
@@ -162,9 +166,9 @@ def main_loop(trainingset_info: dict, testset_info: dict, model_name: str | None
         # trainer.eval(model, trainingset, flag="Train")
 
         ### Save model
-        model_name = "T4_LOGp_100e.pt"
-        save(model, model_name)
-        model = load(model_name)
+        # model_name = "T4_LOGp_100e.pt"
+        # save(model, model_name)
+        # model = load(model_name)
 
     else:  # Load saved model
         model = load(model_name)
