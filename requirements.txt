@@ -1,19 +1,25 @@
 # Python version: 3.12
 
 # Core dependencies
-torch>=2.8
+# torch>=2.8
 torch-geometric>=2.5
+
+# CUDA 13.x dropped sm_70 (V100/V100S alias T1/T2): use the 12.8 index for Volta architecture
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch>=2.8,<2.15
 
 # Chemistry
 rdkit
 
 # GUI
+uvicorn[standard]
+pillow
+jinja2>=3.1.6,<4
+# Version constraints to avoid starlette 1.0 (bugged)
 fastapi<0.166
 starlette<1
-uvicorn[standard]
-jinja2>=3.1.6,<4
-pillow
 
+# Tested on:
 # fastapi==0.129.2
 # starlette==0.52.1
 # uvicorn[standard]==0.51.0
