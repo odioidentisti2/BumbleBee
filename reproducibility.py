@@ -1,6 +1,6 @@
 import torch
 
-RAND_SEED = 42
+RAND_SEED = 15
 
 
 def set_torch_seed():

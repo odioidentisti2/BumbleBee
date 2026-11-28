@@ -118,7 +118,7 @@ def train(trainingset: Trainingset, validation_set: Testset | None = None) -> MA
     logger.info("\nTraining completed.")
 
     # DEBUG
-    save(model, trainingset.task + "_model.pt")
+    save(model, trainingset.task + "_model_RAND15.pt")
 
     return model
 
