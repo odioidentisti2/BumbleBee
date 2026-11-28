@@ -7,7 +7,7 @@
   <title>Bumblebee - Test</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/csv-preview.css">
-  <link rel="stylesheet" href="/static/split-transition.css">
+  <!-- <link rel="stylesheet" href="/static/split-transition.css"> -->
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/vendor/sse.min.js" defer></script>
 </head>
@@ -17,6 +17,7 @@
 
 <body class="test-page from-{{ prev_page }}" data-page="{{ page }}"
       data-has-trained-model="{{ 'true' if has_trained_model else 'false' }}">
+  <script src="/static/split-transition.js"></script>
 
   {% include "header.html" %}
 
@@ -35,7 +36,7 @@
   </main>
 
   {% set nav = {    
-    "prev": {"label": prev_page|upper, "href": source},
+    "prev": {"label": "TRAIN", "href": "/train"},
     "next": {"label": "EXPLAIN", "href": "/explain", "disabled": false, "css_class": "nav-next"}
   } %}
   {% include "footer.html" %}

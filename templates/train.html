@@ -7,7 +7,7 @@
   <title>Bumblebee - Train</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/csv-preview.css">
-  <link rel="stylesheet" href="/static/split-transition.css">
+  <!-- <link rel="stylesheet" href="/static/split-transition.css"> -->
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/vendor/sse.min.js" defer></script>
 </head>
@@ -16,6 +16,7 @@
 {% set prev_page = source.strip("/") or "start" %}
 
 <body class="train-page from-{{ prev_page }}" data-page="{{ page }}">
+  <script src="/static/split-transition.js"></script>
   
   {% include "header.html" %}
 
