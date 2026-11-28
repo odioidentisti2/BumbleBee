@@ -1,7 +1,8 @@
 import torch
 
-RAND_SEED = 15
+from parameters import reproducibility_params
 
+RAND_SEED = reproducibility_params['RAND_SEED']
 
 def set_torch_seed():
     torch.manual_seed(RAND_SEED)

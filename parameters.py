@@ -6,6 +6,11 @@ from pprint import pformat
 OPTIMAL_BATCH_SIZE = {'cpu': 8, 'cuda': 64}  # For speed/memory tradeoff (DON'T USE FOR TRAINING)
 MODEL_BASE_DIR = "MODELS"
 
+reproducibility_params = {
+    # 'RAND_SEED': 42,
+    'RAND_SEED': 15,
+}
+
 train_params = {
     'train_batch_size': 32,
     'lr': 1e-4,
@@ -32,7 +37,7 @@ attention_params = {
     'PMA_dropout': 0.0,
 }
 
-parameters = (train_params, model_params, attention_params)
+parameters = (reproducibility_params, train_params, model_params, attention_params)
 
 def parameter_summary():
     lines = ["PARAMETERS:"]
